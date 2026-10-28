@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Respect user motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .tilt-card {
+      transform: none !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   NOTEBOOK PAPER TEXTURES (100% Pure CSS Gradients — Zero External Images)
+   ========================================================================== */
+
+/* 1. Classic Ruled Notebook Paper (for text & story sections) */
+.bg-ruled-paper {
+  background-color: #FDFBF7;
+  background-image: linear-gradient(to bottom, transparent 31px, rgba(164, 194, 224, 0.42) 31px, rgba(164, 194, 224, 0.42) 32px);
+  background-size: 100% 32px;
+}
+
+.dark .bg-ruled-paper {
+  background-color: #161C19;
+  background-image: linear-gradient(to bottom, transparent 31px, rgba(167, 181, 174, 0.11) 31px, rgba(167, 181, 174, 0.11) 32px);
+  background-size: 100% 32px;
+}
+
+/* 2. Engineering / Math Graph Paper Grid (for data, demo & metrics sections) */
+.bg-graph-paper {
+  background-color: #F8F4EA;
+  background-image:
+    linear-gradient(to right, rgba(185, 176, 152, 0.28) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(185, 176, 152, 0.28) 1px, transparent 1px),
+    linear-gradient(to right, rgba(185, 176, 152, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(185, 176, 152, 0.12) 1px, transparent 1px);
+  background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+}
+
+.dark .bg-graph-paper {
+  background-color: #1B231F;
+  background-image:
+    linear-gradient(to right, rgba(167, 181, 174, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(167, 181, 174, 0.12) 1px, transparent 1px),
+    linear-gradient(to right, rgba(167, 181, 174, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(167, 181, 174, 0.05) 1px, transparent 1px);
+  background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+}
+
+/* 3. Bullet-Journal Dot Grid Paper (for cards & how-it-works section) */
+.bg-dot-paper {
+  background-color: #FDFBF7;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.45) 1.25px, transparent 1.25px);
+  background-size: 22px 22px;
+}
+
+.dark .bg-dot-paper {
+  background-color: #161C19;
+  background-image: radial-gradient(rgba(167, 181, 174, 0.2) 1.25px, transparent 1.25px);
+  background-size: 22px 22px;
+}
+
+/* 4. Index Card Ruled Surface (with red top header line) */
+.bg-index-card {
+  background-color: #FFFDF9;
+  background-image:
+    linear-gradient(to bottom, transparent 42px, rgba(217, 56, 41, 0.45) 42px, rgba(217, 56, 41, 0.45) 44px, transparent 44px),
+    repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(164, 194, 224, 0.35) 27px, rgba(164, 194, 224, 0.35) 28px);
+}
+
+.dark .bg-index-card {
+  background-color: #232C27;
+  background-image:
+    linear-gradient(to bottom, transparent 42px, rgba(232, 139, 132, 0.35) 42px, rgba(232, 139, 132, 0.35) 44px, transparent 44px),
+    repeating-linear-gradient(to bottom, transparent 0px, transparent 27px, rgba(167, 181, 174, 0.1) 27px, rgba(167, 181, 174, 0.1) 28px);
+}
+
+/* ==========================================================================
+   NOTEBOOK STRUCTURAL DETAILS (Red Margin, Washi Tape, Torn Edges, Highlighter)
+   ========================================================================== */
+
+/* Vertical red margin line on the left side of notebook pages */
+.notebook-margin-line {
+  position: relative;
+}
+.notebook-margin-line::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2.25rem;
+  width: 2px;
+  background-color: rgba(217, 56, 41, 0.32);
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .notebook-margin-line::before {
+    left: 1rem;
+  }
+}
+
+/* Translucent Washi Tape Strip */
+.washi-tape {
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  clip-path: polygon(
+    2% 0%, 98% 2%, 100% 18%, 97% 36%, 100% 54%, 98% 72%, 100% 90%, 97% 100%,
+    3% 98%, 0% 82%, 3% 64%, 0% 46%, 2% 28%, 0% 12%
+  );
+}
+
+/* Torn Paper Bottom Edge */
+.torn-edge-bottom {
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 95%,
+    98% 98%, 95% 94%, 92% 99%, 89% 95%, 86% 98%, 83% 94%, 80% 99%,
+    77% 95%, 74% 98%, 71% 94%, 68% 99%, 65% 95%, 62% 98%, 59% 94%,
+    56% 99%, 53% 95%, 50% 98%, 47% 94%, 44% 99%, 41% 95%, 38% 98%,
+    35% 94%, 32% 99%, 29% 95%, 26% 98%, 23% 94%, 20% 99%, 17% 95%,
+    14% 98%, 11% 94%, 8% 99%, 5% 95%, 2% 98%, 0% 95%
+  );
+}
+
+/* Highlighter marker sweep behind key inline phrases */
+.marker-highlight-yellow {
+  background: linear-gradient(104deg, rgba(253, 224, 71, 0) 0.9%, rgba(253, 224, 71, 0.85) 2.4%, rgba(253, 224, 71, 0.65) 5.8%, rgba(253, 224, 71, 0.55) 93%, rgba(253, 224, 71, 0.75) 96%, rgba(253, 224, 71, 0) 98%),
+              linear-gradient(183deg, rgba(253, 224, 71, 0) 0%, rgba(253, 224, 71, 0.35) 7.9%, rgba(253, 224, 71, 0) 15%);
+  padding: 0.05em 0.35em;
+  margin: 0 -0.15em;
+  border-radius: 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.dark .marker-highlight-yellow {
+  background: linear-gradient(104deg, rgba(253, 224, 71, 0.25) 2%, rgba(253, 224, 71, 0.35) 96%, rgba(253, 224, 71, 0) 98%);
+  color: #FEF08A;
+}
+
+.marker-highlight-mint {
+  background: linear-gradient(104deg, rgba(134, 239, 172, 0) 0.9%, rgba(134, 239, 172, 0.75) 2.4%, rgba(134, 239, 172, 0.55) 93%, rgba(134, 239, 172, 0.7) 96%, rgba(134, 239, 172, 0) 98%);
+  padding: 0.05em 0.35em;
+  margin: 0 -0.15em;
+  border-radius: 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.dark .marker-highlight-mint {
+  background: linear-gradient(104deg, rgba(134, 239, 172, 0.22) 2%, rgba(134, 239, 172, 0.3) 96%, rgba(134, 239, 172, 0) 98%);
+  color: #BBF7D0;
+}
+
+.marker-highlight-pink {
+  background: linear-gradient(104deg, rgba(249, 168, 212, 0) 0.9%, rgba(249, 168, 212, 0.7) 2.4%, rgba(249, 168, 212, 0.5) 93%, rgba(249, 168, 212, 0.65) 96%, rgba(249, 168, 212, 0) 98%);
+  padding: 0.05em 0.35em;
+  margin: 0 -0.15em;
+  border-radius: 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.dark .marker-highlight-pink {
+  background: linear-gradient(104deg, rgba(249, 168, 212, 0.22) 2%, rgba(249, 168, 212, 0.3) 96%, rgba(249, 168, 212, 0) 98%);
+  color: #FBCFE8;
+}
+
+/* Tactile card tilt & hover lift */
+.tilt-card-left {
+  transform: rotate(-1.25deg);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tilt-card-left:hover,
+.tilt-card-left:focus-within {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+.tilt-card-right {
+  transform: rotate(1.25deg);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tilt-card-right:hover,
+.tilt-card-right:focus-within {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+/* SVG stroke draw animation */
+@keyframes drawStroke {
+  from {
+    stroke-dashoffset: 320;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-stroke {
+  stroke-dasharray: 320;
+  stroke-dashoffset: 320;
+  animation: drawStroke 1.2s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+
+/* Rubber stamp texture look */
+.rubber-stamp {
+  border: 2.5px solid currentColor;
+  border-radius: 0.3rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  mask-image: radial-gradient(circle at 20% 30%, black 85%, transparent 100%);
+}
+
