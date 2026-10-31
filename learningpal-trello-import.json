@@ -1,0 +1,3569 @@
+{
+  "id": "6ae1721c567255c8a4d6d97f",
+  "name": "LearningPal",
+  "desc": "A data-driven learning support system for students and teachers.",
+  "closed": false,
+  "url": "https://trello.com/b/XioxhbrI/learningpal",
+  "lists": [
+    {
+      "id": "list_info",
+      "name": "Info",
+      "pos": 1000
+    },
+    {
+      "id": "list_backlog",
+      "name": "Backlog",
+      "pos": 2000
+    },
+    {
+      "id": "6ae1721c567255c8a4d6d988",
+      "name": "To Do",
+      "pos": 3000
+    },
+    {
+      "id": "6ae1721c567255c8a4d6d989",
+      "name": "Doing",
+      "pos": 3500
+    },
+    {
+      "id": "list_in_progress",
+      "name": "In Progress",
+      "pos": 4000
+    },
+    {
+      "id": "list_in_review",
+      "name": "In Review / Testing",
+      "pos": 5000
+    },
+    {
+      "id": "6ae1721c567255c8a4d6d98a",
+      "name": "Done",
+      "pos": 6000
+    }
+  ],
+  "labels": [
+    {
+      "id": "lbl_prio_must",
+      "name": "Must-have",
+      "color": "red"
+    },
+    {
+      "id": "lbl_prio_should",
+      "name": "Should-have",
+      "color": "orange"
+    },
+    {
+      "id": "lbl_prio_nice",
+      "name": "Nice-to-have",
+      "color": "green"
+    },
+    {
+      "id": "lbl_area_fe",
+      "name": "Frontend",
+      "color": "sky"
+    },
+    {
+      "id": "lbl_area_be",
+      "name": "Backend",
+      "color": "purple"
+    },
+    {
+      "id": "lbl_area_db",
+      "name": "Database",
+      "color": "lime"
+    },
+    {
+      "id": "lbl_area_des",
+      "name": "Design",
+      "color": "pink"
+    },
+    {
+      "id": "lbl_area_test",
+      "name": "Testing",
+      "color": "yellow"
+    },
+    {
+      "id": "lbl_area_docs",
+      "name": "Docs",
+      "color": "black"
+    },
+    {
+      "id": "lbl_phase_0",
+      "name": "Phase 0",
+      "color": "blue"
+    },
+    {
+      "id": "lbl_phase_1",
+      "name": "Phase 1",
+      "color": "sky"
+    },
+    {
+      "id": "lbl_phase_2",
+      "name": "Phase 2",
+      "color": "blue"
+    },
+    {
+      "id": "lbl_phase_3",
+      "name": "Phase 3",
+      "color": "purple"
+    },
+    {
+      "id": "lbl_phase_4",
+      "name": "Phase 4",
+      "color": "purple"
+    },
+    {
+      "id": "lbl_phase_5",
+      "name": "Phase 5",
+      "color": "blue"
+    },
+    {
+      "id": "lbl_phase_6",
+      "name": "Phase 6",
+      "color": "purple"
+    },
+    {
+      "id": "lbl_phase_7",
+      "name": "Phase 7",
+      "color": "sky"
+    }
+  ],
+  "cards": [
+    {
+      "id": "card_info_000001",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_info",
+      "name": "Project Overview",
+      "desc": "**Pain Point:** Students struggle to identify specific learning gaps across topics, while teachers lack aggregated diagnostic data to deliver timely, targeted interventions.\n\n**Solution:** LearningPal is a data-driven learning support platform analyzing quiz performance by topic, pinpointing strengths and weaknesses, delivering personalized feedback and resource recommendations, and enabling teacher intervention logging.\n\n**Roles:**\n- **Student:** Takes assessments, reviews topic-level mastery, reads feedback, and accesses recommended materials.\n- **Teacher:** Inspects class/student gap analytics, overrides automated grades, manages assessments/resources, and records interventions.\n- **Admin:** Approves teacher registrations and oversees system accounts.",
+      "pos": 1000,
+      "closed": false,
+      "idLabels": [],
+      "idChecklists": [
+        "chk_000001"
+      ]
+    },
+    {
+      "id": "card_info_000002",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_info",
+      "name": "Tech Stack and Architecture",
+      "desc": "**Frontend:** React (SPA), Tailwind CSS for styling, Recharts for analytics data visualization, React Router, Context API for state management.\n\n**Backend:** Java Spring Boot following Controller → Service → Repository layered architecture, Spring Security with stateless JWT.\n\n**Database:** MySQL relational database with JPA/Hibernate ORM and foreign-key constraints.\n\n**Security:** Stateless JWT authentication, BCrypt password hashing, and role-based endpoint authorization.",
+      "pos": 2000,
+      "closed": false,
+      "idLabels": [],
+      "idChecklists": [
+        "chk_000002"
+      ]
+    },
+    {
+      "id": "card_info_000003",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_info",
+      "name": "SMART Objectives",
+      "desc": "**Core Measurable Targets:**\n1. **Student Module:** Students view assessment results and topic progress for 1 pilot subject; ≥90% of student testers find them unassisted.\n2. **Gap Analysis Engine:** Automated topic-level analysis weak-topic detection matches teacher-validated results in ≥85% of cases on 30+ student records.\n3. **Feedback & Recommendations:** Personalized feedback/resources per gap; ≥80% of student testers rate them helpful, with gap progress tracking.\n4. **Teacher Module:** Dashboard with charts and intervention log; ≥90% of teacher testers complete key tasks.\n5. **Stretch Usability:** Usability rating ≥4.0/5.0 across study plans, reminders, and ratings.",
+      "pos": 3000,
+      "closed": false,
+      "idLabels": [],
+      "idChecklists": [
+        "chk_000003"
+      ]
+    },
+    {
+      "id": "card_info_000004",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_info",
+      "name": "Rules and Decisions",
+      "desc": "**Core System Rules:**\n- **Grading & Gaps:** In-app quizzes are auto-graded. Teachers can override any grade. Gap analysis always uses the final score (teacher score if present, otherwise auto score).\n- **Teacher Signups:** Teacher accounts require explicit Admin approval before they can authenticate.\n- **Password Policy:** Passwords require 8 to 72 characters, containing at least one letter and one number.\n- **AI Grading Fallback:** Essay AI grading is nice-to-have. Core system functions independently. AI scores remain \"pending teacher review\"; failures route to a manual grading queue.",
+      "pos": 4000,
+      "closed": false,
+      "idLabels": [],
+      "idChecklists": [
+        "chk_000004"
+      ]
+    },
+    {
+      "id": "card_info_000005",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_info",
+      "name": "Git Workflow",
+      "desc": "**Branching & Code Quality:**\n- **Main Branch:** Protected; contains reviewed, stable, working code only.\n- **Feature Branches:** Each member creates a personal branch (e.g., `feature/name-task` or `name/dev`).\n- **Pull Requests:** Open a PR to merge into `main` with at least one peer code review.\n- **Secrets Management:** NEVER commit secrets or local build outputs. Keep `application.properties`, `.env`, `node_modules/`, and `target/` in `.gitignore`.",
+      "pos": 5000,
+      "closed": false,
+      "idLabels": [],
+      "idChecklists": [
+        "chk_000005"
+      ]
+    },
+    {
+      "id": "card_info_000006",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_info",
+      "name": "Definition of Done",
+      "desc": "**Standard for Completion:**\nA user story or task is marked Done when:\n1. It functions end-to-end according to acceptance criteria.\n2. It is manually verified and unit-tested where applicable.\n3. Zero secrets, API keys, or credentials are committed.\n4. Code complies with formatting and architectural guidelines.\n5. Peer code review is completed and approved on GitHub.\n6. Branch is cleanly merged into `main`.",
+      "pos": 6000,
+      "closed": false,
+      "idLabels": [],
+      "idChecklists": [
+        "chk_000006"
+      ]
+    },
+    {
+      "id": "card_task_000001",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d98a",
+      "name": "[P0] Notebook-themed landing page (React + Tailwind)",
+      "desc": "**Goal:** Build a clean, welcoming landing page styled with a notebook aesthetic using React and Tailwind CSS.\n\n**Acceptance Criteria:** The page displays product highlights, role overviews, and navigation buttons to login/signup. Responsive on mobile and desktop viewports.",
+      "pos": 1000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000007"
+      ]
+    },
+    {
+      "id": "card_task_000002",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_in_progress",
+      "name": "[P0] Signup/login backend (JWT, BCrypt, role-based security, CORS)",
+      "desc": "**Goal:** Implement secure authentication in Spring Boot using JWT, BCrypt, and Spring Security.\n\n**Acceptance Criteria:** Issues signed JWT tokens upon valid credentials. Enforces role-based endpoint permissions (Student, Teacher, Admin) and configures CORS headers.",
+      "pos": 2000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000008"
+      ]
+    },
+    {
+      "id": "card_task_000003",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_in_progress",
+      "name": "[P0] Signup/login frontend (Login, Signup, AuthContext, ProtectedRoute)",
+      "desc": "**Goal:** Build client-side authentication screens, state management, and route protection.\n\n**Acceptance Criteria:** Users can sign up and log in. Tokens are stored securely. Protected routes redirect unauthorized users to the login screen.",
+      "pos": 3000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000009"
+      ]
+    },
+    {
+      "id": "card_task_000004",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_in_progress",
+      "name": "[P0] Password rule: at least one letter and one number (backend and frontend)",
+      "desc": "**Goal:** Enforce password complexity rules across both client and server.\n\n**Acceptance Criteria:** Passwords must be 8–72 characters and contain at least one letter and one number. Invalid attempts return clear, actionable feedback.",
+      "pos": 4000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000010"
+      ]
+    },
+    {
+      "id": "card_task_000005",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_in_progress",
+      "name": "[P0] Admin approval for teacher signups (admin seed account, pending list, approve/reject, admin page)",
+      "desc": "**Goal:** Restrict teacher logins until approved by an administrator.\n\n**Acceptance Criteria:** Teachers sign up with status PENDING and cannot log in. Admins can view pending teachers, approve or reject them, and see an updated roster. Seed initial admin account.",
+      "pos": 5000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000011"
+      ]
+    },
+    {
+      "id": "card_task_000006",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d988",
+      "name": "[P0] Set up repo, branches, and .gitignore (no secrets)",
+      "desc": "**Goal:** Initialize project repositories, git branches, and ignore rules.\n\n**Acceptance Criteria:** Repo is structured for frontend and backend. Secrets, build folders, and environments are ignored. Branching policy documented in README.",
+      "pos": 6000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_docs",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000012"
+      ]
+    },
+    {
+      "id": "card_task_000007",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d988",
+      "name": "[P0] React Router and frontend folder structure",
+      "desc": "**Goal:** Structure the React application with clean folder hierarchy and declarative client routing.\n\n**Acceptance Criteria:** React Router v6 configured with modular paths for landing, auth, student, teacher, and admin layouts.",
+      "pos": 7000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000013"
+      ]
+    },
+    {
+      "id": "card_task_000008",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d988",
+      "name": "[P0] Mock data (JSON shaped like the future API responses) and service layer",
+      "desc": "**Goal:** Provide mock JSON services enabling frontend development ahead of backend integration.\n\n**Acceptance Criteria:** Frontend service modules return realistic JSON mock responses mirroring final API schema for assessments, results, gaps, and resources.",
+      "pos": 8000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000014"
+      ]
+    },
+    {
+      "id": "card_task_000009",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d988",
+      "name": "[P0] Spring Boot project setup and MySQL connection",
+      "desc": "**Goal:** Initialize Spring Boot application with MySQL connectivity and JPA configuration.\n\n**Acceptance Criteria:** Spring Boot starts cleanly, connects to local/Docker MySQL, and executes database health checks without errors.",
+      "pos": 9000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000015"
+      ]
+    },
+    {
+      "id": "card_task_000010",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d988",
+      "name": "[P0] Database schema design (users, subjects, topics, assessments, questions, results, resources, interventions)",
+      "desc": "**Goal:** Design relational database schema supporting users, topic hierarchy, testing, analysis, and interventions.\n\n**Acceptance Criteria:** Entity models and SQL migration scripts define all core tables with proper primary keys, foreign keys, and indexes.",
+      "pos": 10000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_db",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000016"
+      ]
+    },
+    {
+      "id": "card_task_000011",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "6ae1721c567255c8a4d6d988",
+      "name": "[P0] API contract: list of endpoints and JSON shapes shared by frontend and backend",
+      "desc": "**Goal:** Standardize API contracts and DTO shapes between frontend and backend teams.\n\n**Acceptance Criteria:** Comprehensive API documentation detailing HTTP methods, URL routes, request payloads, response schemas, and status codes.",
+      "pos": 11000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_docs",
+        "lbl_phase_0"
+      ],
+      "idChecklists": [
+        "chk_000017"
+      ]
+    },
+    {
+      "id": "card_task_000012",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P1] Student dashboard",
+      "desc": "**Goal:** Build the primary student landing view summarizing progress and recent assessments.\n\n**Acceptance Criteria:** Displays quick stats, recent quiz scores, active topic alerts, and navigation links. Meets Objective 1 navigation clarity.",
+      "pos": 12000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_1"
+      ],
+      "idChecklists": [
+        "chk_000018"
+      ]
+    },
+    {
+      "id": "card_task_000013",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P1] Assessments list",
+      "desc": "**Goal:** Display available, in-progress, and completed assessments for the pilot subject.\n\n**Acceptance Criteria:** Students can filter by status and view topic tags, duration, question count, and past score badges.",
+      "pos": 13000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_1"
+      ],
+      "idChecklists": [
+        "chk_000019"
+      ]
+    },
+    {
+      "id": "card_task_000014",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P1] Take assessment (multiple-choice)",
+      "desc": "**Goal:** Provide an intuitive quiz-taking interface for multiple-choice questions.\n\n**Acceptance Criteria:** Question pagination/navigation, option selection, answer persistence, auto-grading submission, and confirmation dialog.",
+      "pos": 14000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_1"
+      ],
+      "idChecklists": [
+        "chk_000020"
+      ]
+    },
+    {
+      "id": "card_task_000015",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P1] Results and explanations page",
+      "desc": "**Goal:** Show post-assessment score breakdown with detailed answer explanations.\n\n**Acceptance Criteria:** Displays overall score, topic-by-topic breakdown, correct answers, and feedback. Directly supports Objective 1.",
+      "pos": 15000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_1"
+      ],
+      "idChecklists": [
+        "chk_000021"
+      ]
+    },
+    {
+      "id": "card_task_000016",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P1] Topic progress page",
+      "desc": "**Goal:** Render cumulative student mastery across all topics in the pilot subject.\n\n**Acceptance Criteria:** Visual progress bars, mastery level indicators (Strong/Developing/Gap), and links to drill into specific topic details. Ties to Objective 1.",
+      "pos": 16000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_1"
+      ],
+      "idChecklists": [
+        "chk_000022"
+      ]
+    },
+    {
+      "id": "card_task_000017",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P1] Usability check: students find results without help (90% target)",
+      "desc": "**Goal:** Conduct usability testing verifying students locate results and progress unassisted.\n\n**Acceptance Criteria:** Objective 1 validation: at least 90% of student testers find assessment results and topic progress without staff intervention.",
+      "pos": 17000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_test",
+        "lbl_phase_1"
+      ],
+      "idChecklists": [
+        "chk_000023"
+      ]
+    },
+    {
+      "id": "card_task_000018",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P2] Define mastery score formula and strength/gap thresholds",
+      "desc": "**Goal:** Establish mathematical formulas and threshold constants for gap detection.\n\n**Acceptance Criteria:** Formulate weighted topic scoring and clear threshold boundaries (e.g., <70% = Gap, 70-84% = Developing, >=85% = Strength). Documented for implementation.",
+      "pos": 18000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_2"
+      ],
+      "idChecklists": [
+        "chk_000024"
+      ]
+    },
+    {
+      "id": "card_task_000019",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P2] Implement gap analysis in the Spring service layer",
+      "desc": "**Goal:** Code the algorithmic gap analysis engine in Spring service layer.\n\n**Acceptance Criteria:** Aggregates topic scores per student using effective final scores (teacher override if present, else auto score) and categorizes gaps accurately.",
+      "pos": 19000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_2"
+      ],
+      "idChecklists": [
+        "chk_000025"
+      ]
+    },
+    {
+      "id": "card_task_000020",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P2] Unit tests (JUnit) for the analysis logic",
+      "desc": "**Goal:** Ensure comprehensive JUnit test coverage for the gap calculation engine.\n\n**Acceptance Criteria:** Unit tests verify correct categorization across boundary conditions, missing scores, multiple attempts, and teacher override precedence.",
+      "pos": 20000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_test",
+        "lbl_phase_2"
+      ],
+      "idChecklists": [
+        "chk_000026"
+      ]
+    },
+    {
+      "id": "card_task_000021",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P2] Build a validation set of 30+ student records with teacher-labeled weak topics",
+      "desc": "**Goal:** Create benchmark ground-truth dataset of 30+ student records with teacher-verified gaps.\n\n**Acceptance Criteria:** Objective 2 dataset: 30+ realistic student performance records with educator-annotated weak topics ready for automated validation.",
+      "pos": 21000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_test",
+        "lbl_phase_2"
+      ],
+      "idChecklists": [
+        "chk_000027"
+      ]
+    },
+    {
+      "id": "card_task_000022",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P2] Measure match rate against teacher labels (85% target)",
+      "desc": "**Goal:** Run algorithmic gap analysis on validation dataset and compute match accuracy.\n\n**Acceptance Criteria:** Objective 2 validation: automated engine achieves >=85% match rate compared against teacher-labeled ground-truth records.",
+      "pos": 22000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_test",
+        "lbl_phase_2"
+      ],
+      "idChecklists": [
+        "chk_000028"
+      ]
+    },
+    {
+      "id": "card_task_000023",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P2] Re-run analysis automatically after a teacher grade override",
+      "desc": "**Goal:** Trigger real-time gap recalculation whenever a teacher modifies an assessment grade.\n\n**Acceptance Criteria:** Overriding a score immediately re-evaluates the student's topic mastery and updates gap records using the updated teacher score.",
+      "pos": 23000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_2"
+      ],
+      "idChecklists": [
+        "chk_000029"
+      ]
+    },
+    {
+      "id": "card_task_000024",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P3] Personalized feedback generation per weak topic",
+      "desc": "**Goal:** Generate targeted explanatory feedback tailored to each student's specific gap.\n\n**Acceptance Criteria:** Produces clear diagnostic explanations identifying misconception patterns per weak topic, fulfilling Objective 3 prerequisites.",
+      "pos": 24000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_3"
+      ],
+      "idChecklists": [
+        "chk_000030"
+      ]
+    },
+    {
+      "id": "card_task_000025",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P3] Resource model, tagged by topic and type",
+      "desc": "**Goal:** Define and seed the learning resource database entities.\n\n**Acceptance Criteria:** Resource entity stores title, URL, description, topic tag, difficulty, and type (article, video, quiz, practice exercise). Seeded with pilot topic data.",
+      "pos": 25000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_db",
+        "lbl_phase_3"
+      ],
+      "idChecklists": [
+        "chk_000031"
+      ]
+    },
+    {
+      "id": "card_task_000026",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P3] Recommendation matching (gap topic to resources and activities)",
+      "desc": "**Goal:** Implement matching engine linking identified student gaps to optimal remedial materials.\n\n**Acceptance Criteria:** Automatically pairs each student gap with relevant, prioritized resources and practice exercises ordered by effectiveness.",
+      "pos": 26000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_3"
+      ],
+      "idChecklists": [
+        "chk_000032"
+      ]
+    },
+    {
+      "id": "card_task_000027",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P3] Topic detail page: feedback, resources, mark as completed",
+      "desc": "**Goal:** Build student UI displaying topic-specific diagnostic feedback and recommended materials.\n\n**Acceptance Criteria:** Displays personalized advice, clickable resources, and a toggle enabling students to mark study items as completed. Ties to Objective 3.",
+      "pos": 27000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_3"
+      ],
+      "idChecklists": [
+        "chk_000033"
+      ]
+    },
+    {
+      "id": "card_task_000028",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P3] Progress tracking per identified gap",
+      "desc": "**Goal:** Provide visual progress tracking showing student improvement over time on gap topics.\n\n**Acceptance Criteria:** Objective 3 fulfillment: students can view chronological mastery progression and resolved gap indicators following remediation.",
+      "pos": 28000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_3"
+      ],
+      "idChecklists": [
+        "chk_000034"
+      ]
+    },
+    {
+      "id": "card_task_000029",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P3] Helpfulness survey for student testers (80% target)",
+      "desc": "**Goal:** Administer feedback helpfulness survey to student pilot group.\n\n**Acceptance Criteria:** Objective 3 validation: at least 80% of student testers rate personalized feedback and recommended resources as helpful.",
+      "pos": 29000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_test",
+        "lbl_phase_3"
+      ],
+      "idChecklists": [
+        "chk_000035"
+      ]
+    },
+    {
+      "id": "card_task_000030",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Teacher dashboard with class gap chart (Recharts)",
+      "desc": "**Goal:** Build teacher dashboard featuring class-wide visual gap analytics using Recharts.\n\n**Acceptance Criteria:** Interactive bar/pie charts display topic mastery distribution, highlighting class-wide weak areas. Meets Objective 4 requirement.",
+      "pos": 30000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000036"
+      ]
+    },
+    {
+      "id": "card_task_000031",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Student list with filters and gap flags",
+      "desc": "**Goal:** Provide searchable student roster highlighting individuals with critical learning gaps.\n\n**Acceptance Criteria:** Teachers can filter students by name, topic gap, or performance tier and view immediate visual gap warning flags.",
+      "pos": 31000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000037"
+      ]
+    },
+    {
+      "id": "card_task_000032",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Student detail: gaps, progress, intervention history",
+      "desc": "**Goal:** Detailed individual student view showing gaps, score trajectories, and logged interventions.\n\n**Acceptance Criteria:** Displays comprehensive student diagnostic profile, topic mastery trends, past quiz attempts, and chronological intervention records.",
+      "pos": 32000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000038"
+      ]
+    },
+    {
+      "id": "card_task_000033",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Grade Review: view auto grades, override with comment",
+      "desc": "**Goal:** Create interface for teachers to inspect auto-grades and submit overrides with explanatory notes.\n\n**Acceptance Criteria:** Displays student submission, system auto-grade, editable score input, and required comment field. Overrides update final score.",
+      "pos": 33000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000039"
+      ]
+    },
+    {
+      "id": "card_task_000034",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Interventions: log and monitor",
+      "desc": "**Goal:** Enable teachers to record, schedule, and track educational interventions.\n\n**Acceptance Criteria:** Objective 4 core feature: teachers log intervention type (e.g., 1-on-1, remedial group), notes, date, and monitor student post-intervention status.",
+      "pos": 34000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000040"
+      ]
+    },
+    {
+      "id": "card_task_000035",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Assessment manager: question bank with topic tagging, create assessments, record scores per topic",
+      "desc": "**Goal:** Teacher tool to manage question bank, author quizzes with topic tags, and review scores.\n\n**Acceptance Criteria:** Teachers create assessments, assign questions tagged by topic, set duration, and view topic-level score distributions.",
+      "pos": 35000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000041"
+      ]
+    },
+    {
+      "id": "card_task_000036",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Resource manager",
+      "desc": "**Goal:** Teacher portal to curate, edit, and categorize remedial learning resources.\n\n**Acceptance Criteria:** Teachers can add new learning materials, assign topic tags, designate media types, edit existing entries, or delete outdated links.",
+      "pos": 36000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000042"
+      ]
+    },
+    {
+      "id": "card_task_000037",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P4] Teacher task testing (90% target)",
+      "desc": "**Goal:** Conduct structured task-based usability testing with educator participants.\n\n**Acceptance Criteria:** Objective 4 validation: at least 90% of teacher testers successfully complete key workflows (viewing charts, overriding grades, logging interventions).",
+      "pos": 37000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_test",
+        "lbl_phase_4"
+      ],
+      "idChecklists": [
+        "chk_000043"
+      ]
+    },
+    {
+      "id": "card_task_000038",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P5] Student endpoints (results, progress, feedback)",
+      "desc": "**Goal:** Implement Spring Boot REST controllers serving student-facing data.\n\n**Acceptance Criteria:** Endpoints deliver assessment results, aggregated topic mastery scores, and personalized feedback/recommendation payloads for authenticated students.",
+      "pos": 38000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_5"
+      ],
+      "idChecklists": [
+        "chk_000044"
+      ]
+    },
+    {
+      "id": "card_task_000039",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P5] Teacher endpoints (students, interventions, grading, assessments)",
+      "desc": "**Goal:** Implement REST endpoints powering teacher analytics, grading, and management.\n\n**Acceptance Criteria:** Endpoints support class analytics, student roster, grade overrides, intervention CRUD, and assessment authoring operations.",
+      "pos": 39000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_5"
+      ],
+      "idChecklists": [
+        "chk_000045"
+      ]
+    },
+    {
+      "id": "card_task_000040",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P5] Replace mock services with real API calls",
+      "desc": "**Goal:** Transition frontend data layers from mock JSON to live Spring Boot REST endpoints.\n\n**Acceptance Criteria:** Axios client configured with JWT interceptors; all UI components consume real backend endpoints cleanly without regressions.",
+      "pos": 40000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_fe",
+        "lbl_phase_5"
+      ],
+      "idChecklists": [
+        "chk_000046"
+      ]
+    },
+    {
+      "id": "card_task_000041",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P5] Role-based access rules on all endpoints",
+      "desc": "**Goal:** Secure all REST endpoints with explicit role-based authorization guards.\n\n**Acceptance Criteria:** Enforces @PreAuthorize checks. Students cannot access teacher endpoints, unapproved teachers cannot access data, and admin endpoints are isolated.",
+      "pos": 41000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_5"
+      ],
+      "idChecklists": [
+        "chk_000047"
+      ]
+    },
+    {
+      "id": "card_task_000042",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P5] Error handling and input validation across the API",
+      "desc": "**Goal:** Implement global exception handling and robust request DTO validation.\n\n**Acceptance Criteria:** @ControllerAdvice intercepts errors, returning consistent JSON schemas with helpful error messages and accurate HTTP status codes (400, 401, 403, 404, 500).",
+      "pos": 42000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_must",
+        "lbl_area_be",
+        "lbl_phase_5"
+      ],
+      "idChecklists": [
+        "chk_000048"
+      ]
+    },
+    {
+      "id": "card_task_000043",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P6] Rubric manager",
+      "desc": "**Goal:** Build teacher interface to create and configure multi-criterion grading rubrics.\n\n**Acceptance Criteria:** Teachers define criteria, descriptions, score ranges, and performance levels used for essay assessment evaluation.",
+      "pos": 43000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_fe",
+        "lbl_phase_6"
+      ],
+      "idChecklists": [
+        "chk_000049"
+      ]
+    },
+    {
+      "id": "card_task_000044",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P6] Essay question type and student answer box",
+      "desc": "**Goal:** Support free-form essay questions in the assessment engine.\n\n**Acceptance Criteria:** Students can view essay prompts and input long-form answers with word counters, autosave drafts, and submission confirmation.",
+      "pos": 44000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_fe",
+        "lbl_phase_6"
+      ],
+      "idChecklists": [
+        "chk_000050"
+      ]
+    },
+    {
+      "id": "card_task_000045",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P6] LLM grading service in Spring (API key kept on the backend, structured JSON output)",
+      "desc": "**Goal:** Implement backend LLM integration to grade student essays against teacher rubrics.\n\n**Acceptance Criteria:** API keys secured strictly on backend. Service sends prompt and rubric, parsing structured JSON with criterion scores and explanatory critique.",
+      "pos": 45000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_be",
+        "lbl_phase_6"
+      ],
+      "idChecklists": [
+        "chk_000051"
+      ]
+    },
+    {
+      "id": "card_task_000046",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P6] “AI-graded, pending review” status with teacher approve/edit in Grade Review",
+      "desc": "**Goal:** Enforce mandatory teacher oversight for all AI-generated essay evaluations.\n\n**Acceptance Criteria:** AI scores receive \"AI-graded, pending review\" status. Teachers can accept, edit, or reject the AI score before it becomes final.",
+      "pos": 46000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_be",
+        "lbl_phase_6"
+      ],
+      "idChecklists": [
+        "chk_000052"
+      ]
+    },
+    {
+      "id": "card_task_000047",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P6] Fallback manual grading queue when the AI call fails",
+      "desc": "**Goal:** Implement resilient error handling routing failed AI evaluations to manual teacher queue.\n\n**Acceptance Criteria:** If LLM request times out, fails, or returns invalid JSON, system routes submission to manual grading queue without breaking student flow.",
+      "pos": 47000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_be",
+        "lbl_phase_6"
+      ],
+      "idChecklists": [
+        "chk_000053"
+      ]
+    },
+    {
+      "id": "card_task_000048",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P6] Open decision: do provisional AI essay scores count toward gap analysis immediately, or only after teacher confirmation?",
+      "desc": "**Goal:** Document and resolve policy regarding provisional AI scores in gap calculations.\n\n**Acceptance Criteria:** Team decision documented. Default recommendation: provisional scores are excluded from gap analysis until teacher confirmation to prevent unverified flags.",
+      "pos": 48000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_docs",
+        "lbl_phase_6"
+      ],
+      "idChecklists": [
+        "chk_000054"
+      ]
+    },
+    {
+      "id": "card_task_000049",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] User testing plan and test scripts",
+      "desc": "**Goal:** Prepare comprehensive testing protocol and scripted user scenarios.\n\n**Acceptance Criteria:** Detailed test scripts covering student and teacher journeys, objective verification benchmarks, and observer scoring rubrics.",
+      "pos": 49000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_should",
+        "lbl_area_test",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000055"
+      ]
+    },
+    {
+      "id": "card_task_000050",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Usability survey (target average of 4 out of 5)",
+      "desc": "**Goal:** Deploy comprehensive usability survey to evaluate student and teacher satisfaction.\n\n**Acceptance Criteria:** Objective 5 validation: system achieves an average usability score of >=4.0 out of 5.0 across student and teacher cohorts.",
+      "pos": 50000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_should",
+        "lbl_area_test",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000056"
+      ]
+    },
+    {
+      "id": "card_task_000051",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Fix issues from testing",
+      "desc": "**Goal:** Prioritize and resolve defects discovered during pilot testing.\n\n**Acceptance Criteria:** All high-severity usability and functional bugs resolved and regression tested prior to final presentation.",
+      "pos": 51000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_should",
+        "lbl_area_test",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000057"
+      ]
+    },
+    {
+      "id": "card_task_000052",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Stretch: personalized study plans",
+      "desc": "**Goal:** Generate automated weekly study schedules targeted at identified learning gaps.\n\n**Acceptance Criteria:** Students can generate and view a personalized multi-day calendar allocating daily study sessions for their weakest topics.",
+      "pos": 52000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_fe",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000058"
+      ]
+    },
+    {
+      "id": "card_task_000053",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Stretch: reminders",
+      "desc": "**Goal:** Send notification prompts to encourage timely assessment completion and gap review.\n\n**Acceptance Criteria:** In-app notification center alerts students of upcoming quiz deadlines and unfinished remedial recommendations.",
+      "pos": 53000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_be",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000059"
+      ]
+    },
+    {
+      "id": "card_task_000054",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Stretch: students rate recommended resources",
+      "desc": "**Goal:** Allow students to rate resource usefulness with a 1-5 star rating.\n\n**Acceptance Criteria:** Students can submit 1–5 star ratings on recommended materials; average rating displays to help guide peer remediation.",
+      "pos": 54000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_fe",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000060"
+      ]
+    },
+    {
+      "id": "card_task_000055",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Stretch: more resource types (videos, notes, practice exercises)",
+      "desc": "**Goal:** Broaden resource catalog with rich media types including embedded video and notes.\n\n**Acceptance Criteria:** UI supports embedded YouTube/Vimeo players, PDF/notes viewer modal, and interactive practice drill questions.",
+      "pos": 55000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_nice",
+        "lbl_area_fe",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000061"
+      ]
+    },
+    {
+      "id": "card_task_000056",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Deployment preparation",
+      "desc": "**Goal:** Configure production deployment pipelines and environment configurations.\n\n**Acceptance Criteria:** Docker containers created for Spring Boot and React; cloud/production environment properties configured securely without secrets in source control.",
+      "pos": 56000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_should",
+        "lbl_area_be",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000062"
+      ]
+    },
+    {
+      "id": "card_task_000057",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idList": "list_backlog",
+      "name": "[P7] Documentation and final presentation",
+      "desc": "**Goal:** Finalize academic project report, user guide, and presentation slide deck.\n\n**Acceptance Criteria:** Complete project README, architecture diagrams, objective verification metrics report, and final presentation slide deck.",
+      "pos": 57000,
+      "closed": false,
+      "idLabels": [
+        "lbl_prio_should",
+        "lbl_area_docs",
+        "lbl_phase_7"
+      ],
+      "idChecklists": [
+        "chk_000063"
+      ]
+    }
+  ],
+  "checklists": [
+    {
+      "id": "chk_000001",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_info_000001",
+      "name": "Key Pillars",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000200",
+          "idChecklist": "chk_000001",
+          "name": "Review project scope and target stakeholder needs",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000201",
+          "idChecklist": "chk_000001",
+          "name": "Align feature deliveries across agile sprints",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000202",
+          "idChecklist": "chk_000001",
+          "name": "Validate privacy and data compliance for academic records",
+          "state": "incomplete",
+          "pos": 3000
+        }
+      ]
+    },
+    {
+      "id": "chk_000002",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_info_000002",
+      "name": "Architecture Layers",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000300",
+          "idChecklist": "chk_000002",
+          "name": "Verify Controller layer handles HTTP routing and DTO validation",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000301",
+          "idChecklist": "chk_000002",
+          "name": "Enforce business logic isolation within the Service layer",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000302",
+          "idChecklist": "chk_000002",
+          "name": "Ensure Repository layer encapsulates JPA / database queries",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000303",
+          "idChecklist": "chk_000002",
+          "name": "Maintain modular and reusable React UI components",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000003",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_info_000003",
+      "name": "Evaluation Metrics",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000400",
+          "idChecklist": "chk_000003",
+          "name": "Track 90% unassisted navigation rate on student results",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000401",
+          "idChecklist": "chk_000003",
+          "name": "Achieve 85% algorithmic gap match on 30+ validation records",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000402",
+          "idChecklist": "chk_000003",
+          "name": "Gather 80% helpfulness rating on personalized feedback",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000403",
+          "idChecklist": "chk_000003",
+          "name": "Verify 90% teacher task completion rate during usability tests",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_000404",
+          "idChecklist": "chk_000003",
+          "name": "Reach 4.0/5.0 overall usability score on stretch modules",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000004",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_info_000004",
+      "name": "Rule Enforcement",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000500",
+          "idChecklist": "chk_000004",
+          "name": "Ensure gap calculations read effective final scores",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000501",
+          "idChecklist": "chk_000004",
+          "name": "Prevent unapproved teacher logins at auth filter",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000502",
+          "idChecklist": "chk_000004",
+          "name": "Validate password constraints on client and server",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000503",
+          "idChecklist": "chk_000004",
+          "name": "Queue failed LLM calls for manual grading review",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000005",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_info_000005",
+      "name": "Workflow Steps",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000600",
+          "idChecklist": "chk_000005",
+          "name": "Branch out from latest main",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000601",
+          "idChecklist": "chk_000005",
+          "name": "Verify gitignore ignores secrets and environment files",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000602",
+          "idChecklist": "chk_000005",
+          "name": "Test code locally before pushing",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000603",
+          "idChecklist": "chk_000005",
+          "name": "Create Pull Request with descriptive summary",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_000604",
+          "idChecklist": "chk_000005",
+          "name": "Obtain peer approval before merging into main",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000006",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_info_000006",
+      "name": "DoD Checklist",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000700",
+          "idChecklist": "chk_000006",
+          "name": "Implement end-to-end functionality per acceptance criteria",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000701",
+          "idChecklist": "chk_000006",
+          "name": "Execute manual verification and automated test suite",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000702",
+          "idChecklist": "chk_000006",
+          "name": "Confirm no sensitive secrets or keys are committed",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000703",
+          "idChecklist": "chk_000006",
+          "name": "Obtain peer code review approval on pull request",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_000704",
+          "idChecklist": "chk_000006",
+          "name": "Merge pull request successfully into main branch",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000007",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000001",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000800",
+          "idChecklist": "chk_000007",
+          "name": "Design notebook-style paper lines and binder UI accents in Tailwind",
+          "state": "complete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000801",
+          "idChecklist": "chk_000007",
+          "name": "Build responsive hero section with call-to-action buttons",
+          "state": "complete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000802",
+          "idChecklist": "chk_000007",
+          "name": "Add feature highlight cards explaining student and teacher benefits",
+          "state": "complete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000803",
+          "idChecklist": "chk_000007",
+          "name": "Link navigation CTAs to Login and Signup routes",
+          "state": "complete",
+          "pos": 4000
+        },
+        {
+          "id": "item_000804",
+          "idChecklist": "chk_000007",
+          "name": "Verify responsiveness across tablet and mobile viewports",
+          "state": "complete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000008",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000002",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_000900",
+          "idChecklist": "chk_000008",
+          "name": "Configure Spring Security filter chain and CORS policy",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_000901",
+          "idChecklist": "chk_000008",
+          "name": "Implement JWT utility service for token generation and validation",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_000902",
+          "idChecklist": "chk_000008",
+          "name": "Create authentication controller for signup and login endpoints",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_000903",
+          "idChecklist": "chk_000008",
+          "name": "Hash user passwords using BCryptPasswordEncoder",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_000904",
+          "idChecklist": "chk_000008",
+          "name": "Enforce role-based access checks for Student, Teacher, and Admin",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000009",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000003",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001000",
+          "idChecklist": "chk_000009",
+          "name": "Create AuthContext to store session token and user role state",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001001",
+          "idChecklist": "chk_000009",
+          "name": "Build responsive Login form with client-side validation",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001002",
+          "idChecklist": "chk_000009",
+          "name": "Build Signup form with role selector (Student/Teacher)",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001003",
+          "idChecklist": "chk_000009",
+          "name": "Implement ProtectedRoute wrapper checking authentication status",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_001004",
+          "idChecklist": "chk_000009",
+          "name": "Handle logout and token expiration smoothly",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000010",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000004",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001100",
+          "idChecklist": "chk_000010",
+          "name": "Define regex validation rule: 8 to 72 chars, >= 1 letter, >= 1 digit",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001101",
+          "idChecklist": "chk_000010",
+          "name": "Implement backend Bean Validation annotation on user DTOs",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001102",
+          "idChecklist": "chk_000010",
+          "name": "Add real-time client validation feedback in Signup form",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001103",
+          "idChecklist": "chk_000010",
+          "name": "Write unit tests verifying valid and edge-case invalid passwords",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000011",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000005",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001200",
+          "idChecklist": "chk_000011",
+          "name": "Seed default admin account on database startup",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001201",
+          "idChecklist": "chk_000011",
+          "name": "Set teacher account status to PENDING upon registration",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001202",
+          "idChecklist": "chk_000011",
+          "name": "Block login attempts for unapproved teacher accounts",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001203",
+          "idChecklist": "chk_000011",
+          "name": "Build admin endpoints to list, approve, and reject teacher accounts",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_001204",
+          "idChecklist": "chk_000011",
+          "name": "Create Admin dashboard page to manage pending approvals",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000012",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000006",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001300",
+          "idChecklist": "chk_000012",
+          "name": "Configure .gitignore for node_modules, target, .env, and properties",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001301",
+          "idChecklist": "chk_000012",
+          "name": "Create initial frontend and backend directory scaffold",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001302",
+          "idChecklist": "chk_000012",
+          "name": "Set up main and development branch protection rules",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001303",
+          "idChecklist": "chk_000012",
+          "name": "Document branch conventions and setup steps in README",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000013",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000007",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001400",
+          "idChecklist": "chk_000013",
+          "name": "Organize folders into components, pages, services, context, and assets",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001401",
+          "idChecklist": "chk_000013",
+          "name": "Install and configure React Router v6",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001402",
+          "idChecklist": "chk_000013",
+          "name": "Define route paths for Student, Teacher, and Admin modules",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001403",
+          "idChecklist": "chk_000013",
+          "name": "Create 404 Not Found error page layout",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000014",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000008",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001500",
+          "idChecklist": "chk_000014",
+          "name": "Create mock JSON datasets for assessments, gaps, and resources",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001501",
+          "idChecklist": "chk_000014",
+          "name": "Build mock service layer mimicking asynchronous API latency",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001502",
+          "idChecklist": "chk_000014",
+          "name": "Provide toggle to switch between mock service and live Axios client",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001503",
+          "idChecklist": "chk_000014",
+          "name": "Verify mock data adheres to backend contract specifications",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000015",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000009",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001600",
+          "idChecklist": "chk_000015",
+          "name": "Initialize Spring Boot project with Web, Security, JPA, and MySQL dependencies",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001601",
+          "idChecklist": "chk_000015",
+          "name": "Configure application.properties datasource and Hibernate dialect",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001602",
+          "idChecklist": "chk_000015",
+          "name": "Set up Docker Compose file for local MySQL instance",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001603",
+          "idChecklist": "chk_000015",
+          "name": "Verify clean startup and connection pool initialization",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000016",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000010",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001700",
+          "idChecklist": "chk_000016",
+          "name": "Design ER diagram covering all 8 core entities",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001701",
+          "idChecklist": "chk_000016",
+          "name": "Create JPA Entity classes with proper relationships and cascade rules",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001702",
+          "idChecklist": "chk_000016",
+          "name": "Add database indexes on student_id, topic_id, and assessment_id",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001703",
+          "idChecklist": "chk_000016",
+          "name": "Validate schema creation and foreign key constraints on MySQL",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000017",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000011",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001800",
+          "idChecklist": "chk_000017",
+          "name": "Draft OpenAPI / Swagger specification or Markdown API guide",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001801",
+          "idChecklist": "chk_000017",
+          "name": "Define shared request and response DTO schemas for all roles",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001802",
+          "idChecklist": "chk_000017",
+          "name": "Specify standard error response format and HTTP status codes",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001803",
+          "idChecklist": "chk_000017",
+          "name": "Review contract with frontend and backend developers",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000018",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000012",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_001900",
+          "idChecklist": "chk_000018",
+          "name": "Create student layout with persistent sidebar and top navigation",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_001901",
+          "idChecklist": "chk_000018",
+          "name": "Display overview cards for overall mastery and completed quizzes",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_001902",
+          "idChecklist": "chk_000018",
+          "name": "Render quick-action cards for pending assessments and gap reviews",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_001903",
+          "idChecklist": "chk_000018",
+          "name": "Ensure responsive layout across mobile and desktop devices",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000019",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000013",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002000",
+          "idChecklist": "chk_000019",
+          "name": "Build assessment card grid with status badges (Available, Completed)",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002001",
+          "idChecklist": "chk_000019",
+          "name": "Implement subject and topic filtering controls",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002002",
+          "idChecklist": "chk_000019",
+          "name": "Display assessment metadata including estimated duration and question count",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002003",
+          "idChecklist": "chk_000019",
+          "name": "Provide clear \"Start Quiz\" and \"Review Results\" call-to-action buttons",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000020",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000014",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002100",
+          "idChecklist": "chk_000020",
+          "name": "Build interactive question viewer with radio button option selectors",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002101",
+          "idChecklist": "chk_000020",
+          "name": "Implement question tracker sidebar allowing jumping between questions",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002102",
+          "idChecklist": "chk_000020",
+          "name": "Add submission modal confirming all questions are answered",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002103",
+          "idChecklist": "chk_000020",
+          "name": "Send answers to auto-grading endpoint upon submission",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000021",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000015",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002200",
+          "idChecklist": "chk_000021",
+          "name": "Render score banner with percentage and mastery level",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002201",
+          "idChecklist": "chk_000021",
+          "name": "Display topic-level performance score breakdown",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002202",
+          "idChecklist": "chk_000021",
+          "name": "Show question-by-question review highlighting correct and chosen answers",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002203",
+          "idChecklist": "chk_000021",
+          "name": "Add clear button navigating directly to topic recommendations",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000022",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000016",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002300",
+          "idChecklist": "chk_000022",
+          "name": "Build topic list view with color-coded mastery progress bars",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002301",
+          "idChecklist": "chk_000022",
+          "name": "Categorize topics into Strengths, Developing, and Learning Gaps",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002302",
+          "idChecklist": "chk_000022",
+          "name": "Provide interactive drill-down button to view detailed topic feedback",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002303",
+          "idChecklist": "chk_000022",
+          "name": "Add summary indicators showing percentage of syllabus mastered",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000023",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000017",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002400",
+          "idChecklist": "chk_000023",
+          "name": "Formulate unassisted test scenario and task instruction sheet",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002401",
+          "idChecklist": "chk_000023",
+          "name": "Recruit student participants representing diverse technical familiarity",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002402",
+          "idChecklist": "chk_000023",
+          "name": "Observe and record navigation completion rate without prompting",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002403",
+          "idChecklist": "chk_000023",
+          "name": "Compile pass/fail metrics and confirm meeting the >=90% target",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000024",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000018",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002500",
+          "idChecklist": "chk_000024",
+          "name": "Consult pedagogical rules to establish gap threshold percentage",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002501",
+          "idChecklist": "chk_000024",
+          "name": "Define formula incorporating question difficulty weights if applicable",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002502",
+          "idChecklist": "chk_000024",
+          "name": "Document boundary rules for Strengths, Moderate, and Gaps",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002503",
+          "idChecklist": "chk_000024",
+          "name": "Obtain team consensus and finalize formula specification",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000025",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000019",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002600",
+          "idChecklist": "chk_000025",
+          "name": "Implement GapAnalysisService with topic aggregation logic",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002601",
+          "idChecklist": "chk_000025",
+          "name": "Enforce rule: use teacher override score when present, else auto score",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002602",
+          "idChecklist": "chk_000025",
+          "name": "Map calculated scores to mastery tiers (Strength / Moderate / Gap)",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002603",
+          "idChecklist": "chk_000025",
+          "name": "Persist and return analyzed gap records per student",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000026",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000020",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002700",
+          "idChecklist": "chk_000026",
+          "name": "Write JUnit tests for edge case scores (exact threshold boundaries)",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002701",
+          "idChecklist": "chk_000026",
+          "name": "Test teacher override score precedence over automatic quiz scores",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002702",
+          "idChecklist": "chk_000026",
+          "name": "Test empty and incomplete assessment scenarios",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002703",
+          "idChecklist": "chk_000026",
+          "name": "Verify mock repository isolation with Mockito",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000027",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000021",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002800",
+          "idChecklist": "chk_000027",
+          "name": "Synthesize or curate 30+ diverse student assessment attempt histories",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002801",
+          "idChecklist": "chk_000027",
+          "name": "Engage domain educator to review and label ground-truth weak topics",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002802",
+          "idChecklist": "chk_000027",
+          "name": "Format validation records into structured JSON/SQL test dataset",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002803",
+          "idChecklist": "chk_000027",
+          "name": "Validate dataset integrity and ensure complete topic coverage",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000028",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000022",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_002900",
+          "idChecklist": "chk_000028",
+          "name": "Execute gap analysis algorithm against all 30+ validation records",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_002901",
+          "idChecklist": "chk_000028",
+          "name": "Compare algorithmic gap output against teacher benchmark labels",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_002902",
+          "idChecklist": "chk_000028",
+          "name": "Calculate precision, recall, and overall percentage agreement",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_002903",
+          "idChecklist": "chk_000028",
+          "name": "Verify result meets or exceeds the 85% success benchmark",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000029",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000023",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003000",
+          "idChecklist": "chk_000029",
+          "name": "Attach post-update event listener or service hook on grade override",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003001",
+          "idChecklist": "chk_000029",
+          "name": "Recalculate affected topic scores using the new teacher grade",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003002",
+          "idChecklist": "chk_000029",
+          "name": "Update student gap records in database within transactional boundary",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003003",
+          "idChecklist": "chk_000029",
+          "name": "Verify topic mastery badges immediately reflect overridden scores",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000030",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000024",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003100",
+          "idChecklist": "chk_000030",
+          "name": "Draft template-based feedback catalog mapped to common mistake patterns",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003101",
+          "idChecklist": "chk_000030",
+          "name": "Implement FeedbackService to assemble personalized advice per weak topic",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003102",
+          "idChecklist": "chk_000030",
+          "name": "Associate feedback with student gap records",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003103",
+          "idChecklist": "chk_000030",
+          "name": "Expose feedback payload through REST API endpoint",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000031",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000025",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003200",
+          "idChecklist": "chk_000031",
+          "name": "Define Resource JPA entity and repository interface",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003201",
+          "idChecklist": "chk_000031",
+          "name": "Add topic foreign key and resource type enum tags",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003202",
+          "idChecklist": "chk_000031",
+          "name": "Create database migration with initial catalog of learning materials",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003203",
+          "idChecklist": "chk_000031",
+          "name": "Verify resource retrieval queries filtered by topic and difficulty",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000032",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000026",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003300",
+          "idChecklist": "chk_000032",
+          "name": "Implement RecommendationService matching weak topics to resources",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003301",
+          "idChecklist": "chk_000032",
+          "name": "Prioritize remedial items based on student deficiency severity",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003302",
+          "idChecklist": "chk_000032",
+          "name": "Limit recommendations to top curated resources per gap",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003303",
+          "idChecklist": "chk_000032",
+          "name": "Write unit tests confirming correct resources returned per topic",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000033",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000027",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003400",
+          "idChecklist": "chk_000033",
+          "name": "Build topic detail layout displaying personalized diagnostic advice",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003401",
+          "idChecklist": "chk_000033",
+          "name": "Render list of recommended resources with external link badges",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003402",
+          "idChecklist": "chk_000033",
+          "name": "Implement \"Mark as Completed\" checkbox for each resource",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003403",
+          "idChecklist": "chk_000033",
+          "name": "Update student topic progress indicator dynamically on completion",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000034",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000028",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003500",
+          "idChecklist": "chk_000034",
+          "name": "Create gap progress timeline component showing initial vs current score",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003501",
+          "idChecklist": "chk_000034",
+          "name": "Display \"Gap Resolved\" milestone badge when retake score exceeds threshold",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003502",
+          "idChecklist": "chk_000034",
+          "name": "Show completion percentage of assigned remedial resources",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003503",
+          "idChecklist": "chk_000034",
+          "name": "Verify updates persist across user login sessions",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000035",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000029",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003600",
+          "idChecklist": "chk_000035",
+          "name": "Design 5-point Likert scale survey on resource relevance and clarity",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003601",
+          "idChecklist": "chk_000035",
+          "name": "Deploy survey to student cohort following study session",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003602",
+          "idChecklist": "chk_000035",
+          "name": "Aggregate responses and calculate helpfulness satisfaction percentage",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003603",
+          "idChecklist": "chk_000035",
+          "name": "Verify satisfaction equals or exceeds the 80% benchmark target",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000036",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000030",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003700",
+          "idChecklist": "chk_000036",
+          "name": "Integrate Recharts library into teacher analytics dashboard",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003701",
+          "idChecklist": "chk_000036",
+          "name": "Build class-level topic mastery distribution bar chart",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003702",
+          "idChecklist": "chk_000036",
+          "name": "Display alert badges for topics where >30% of class has a gap",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003703",
+          "idChecklist": "chk_000036",
+          "name": "Add summary metric tiles (Total Students, Flagged Gaps, Interventions)",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000037",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000031",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003800",
+          "idChecklist": "chk_000037",
+          "name": "Build searchable and sortable student table view",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003801",
+          "idChecklist": "chk_000037",
+          "name": "Add filter dropdowns for topic, mastery status, and intervention status",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003802",
+          "idChecklist": "chk_000037",
+          "name": "Render color-coded warning chips for active learning gaps",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003803",
+          "idChecklist": "chk_000037",
+          "name": "Add navigation link to individual student detail profiles",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000038",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000032",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_003900",
+          "idChecklist": "chk_000038",
+          "name": "Build student profile header with key academic indicators",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_003901",
+          "idChecklist": "chk_000038",
+          "name": "Display topic mastery breakdown and historical quiz attempt scores",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_003902",
+          "idChecklist": "chk_000038",
+          "name": "Render timeline feed of past teacher interventions and student notes",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_003903",
+          "idChecklist": "chk_000038",
+          "name": "Include quick-action button to log a new intervention",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000039",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000033",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004000",
+          "idChecklist": "chk_000039",
+          "name": "Build grading review screen displaying student answers and system scores",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004001",
+          "idChecklist": "chk_000039",
+          "name": "Add score override input with numerical validation bounds",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004002",
+          "idChecklist": "chk_000039",
+          "name": "Include mandatory teacher comment / justification text box",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004003",
+          "idChecklist": "chk_000039",
+          "name": "Submit override to backend and confirm gap recalculation trigger",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000040",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000034",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004100",
+          "idChecklist": "chk_000040",
+          "name": "Create modal form to log interventions with type, date, and description",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004101",
+          "idChecklist": "chk_000040",
+          "name": "Display active intervention list with status badges (Planned, Completed)",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004102",
+          "idChecklist": "chk_000040",
+          "name": "Link logged interventions to specific student gap topics",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004103",
+          "idChecklist": "chk_000040",
+          "name": "Provide toggle to mark intervention as completed with outcome notes",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000041",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000035",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004200",
+          "idChecklist": "chk_000041",
+          "name": "Build question authoring form with options, correct answer, and topic tag",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004201",
+          "idChecklist": "chk_000041",
+          "name": "Create assessment builder selecting questions from bank",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004202",
+          "idChecklist": "chk_000041",
+          "name": "Set assessment title, instructions, time limit, and active status",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004203",
+          "idChecklist": "chk_000041",
+          "name": "Display assessment submission summary with topic score statistics",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000042",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000036",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004300",
+          "idChecklist": "chk_000042",
+          "name": "Build resource management table with search and topic filters",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004301",
+          "idChecklist": "chk_000042",
+          "name": "Create form to add new resource with URL, topic tag, and resource type",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004302",
+          "idChecklist": "chk_000042",
+          "name": "Implement edit modal to update titles, links, and descriptions",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004303",
+          "idChecklist": "chk_000042",
+          "name": "Add delete confirmation dialog for removing obsolete resources",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000043",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000037",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004400",
+          "idChecklist": "chk_000043",
+          "name": "Prepare teacher test protocol covering charts, overrides, and interventions",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004401",
+          "idChecklist": "chk_000043",
+          "name": "Facilitate testing sessions with educator participants",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004402",
+          "idChecklist": "chk_000043",
+          "name": "Record completion success rates for each core teacher task",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004403",
+          "idChecklist": "chk_000043",
+          "name": "Verify overall task completion rate meets or exceeds 90% target",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000044",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000038",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004500",
+          "idChecklist": "chk_000044",
+          "name": "Implement GET /api/student/assessments and submission endpoints",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004501",
+          "idChecklist": "chk_000044",
+          "name": "Implement GET /api/student/results/{id} with topic score breakdown",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004502",
+          "idChecklist": "chk_000044",
+          "name": "Implement GET /api/student/topics/progress endpoint",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004503",
+          "idChecklist": "chk_000044",
+          "name": "Implement GET /api/student/recommendations endpoint",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_004504",
+          "idChecklist": "chk_000044",
+          "name": "Write integration tests for student REST controllers",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000045",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000039",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004600",
+          "idChecklist": "chk_000045",
+          "name": "Implement GET /api/teacher/class-summary gap analytics endpoint",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004601",
+          "idChecklist": "chk_000045",
+          "name": "Implement GET and PUT /api/teacher/grades/{id}/override with audit notes",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004602",
+          "idChecklist": "chk_000045",
+          "name": "Implement CRUD endpoints for /api/teacher/interventions",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004603",
+          "idChecklist": "chk_000045",
+          "name": "Implement assessment and question bank management endpoints",
+          "state": "incomplete",
+          "pos": 4000
+        },
+        {
+          "id": "item_004604",
+          "idChecklist": "chk_000045",
+          "name": "Verify teacher endpoints enforce TEACHER or ADMIN authority",
+          "state": "incomplete",
+          "pos": 5000
+        }
+      ]
+    },
+    {
+      "id": "chk_000046",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000040",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004700",
+          "idChecklist": "chk_000046",
+          "name": "Configure Axios client with baseURL and JWT bearer token interceptor",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004701",
+          "idChecklist": "chk_000046",
+          "name": "Replace mock student service calls with live HTTP requests",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004702",
+          "idChecklist": "chk_000046",
+          "name": "Replace mock teacher and admin calls with live API clients",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004703",
+          "idChecklist": "chk_000046",
+          "name": "Verify smooth loading states and error handling during live requests",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000047",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000041",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004800",
+          "idChecklist": "chk_000047",
+          "name": "Apply @PreAuthorize(\"hasRole('STUDENT')\") on student endpoints",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004801",
+          "idChecklist": "chk_000047",
+          "name": "Apply @PreAuthorize(\"hasRole('TEACHER')\") on teacher management APIs",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004802",
+          "idChecklist": "chk_000047",
+          "name": "Apply @PreAuthorize(\"hasRole('ADMIN')\") on teacher approval routes",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004803",
+          "idChecklist": "chk_000047",
+          "name": "Add automated security tests verifying 403 Forbidden on unauthorized roles",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000048",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000042",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_004900",
+          "idChecklist": "chk_000048",
+          "name": "Create GlobalExceptionHandler with @ExceptionHandler methods",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_004901",
+          "idChecklist": "chk_000048",
+          "name": "Add Bean Validation annotations (@NotNull, @Size, @Min) on all DTOs",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_004902",
+          "idChecklist": "chk_000048",
+          "name": "Format validation failures into user-friendly error response maps",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_004903",
+          "idChecklist": "chk_000048",
+          "name": "Write tests verifying proper error responses for malformed payloads",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000049",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000043",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005000",
+          "idChecklist": "chk_000049",
+          "name": "Create rubric builder form with dynamic criteria rows",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005001",
+          "idChecklist": "chk_000049",
+          "name": "Allow assigning point weightings and performance tier descriptions",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005002",
+          "idChecklist": "chk_000049",
+          "name": "Link created rubrics to specific essay assessment questions",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005003",
+          "idChecklist": "chk_000049",
+          "name": "Verify rubric serialization and persistence via backend",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000050",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000044",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005100",
+          "idChecklist": "chk_000050",
+          "name": "Extend question component to support essay prompt display",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005101",
+          "idChecklist": "chk_000050",
+          "name": "Implement textarea answer input with live word counter",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005102",
+          "idChecklist": "chk_000050",
+          "name": "Add local storage autosave to protect against lost input",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005103",
+          "idChecklist": "chk_000050",
+          "name": "Submit essay response payload to backend assessment submission API",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000051",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000045",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005200",
+          "idChecklist": "chk_000051",
+          "name": "Store LLM API credentials securely in environment variables",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005201",
+          "idChecklist": "chk_000051",
+          "name": "Construct structured prompt incorporating rubric criteria and student text",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005202",
+          "idChecklist": "chk_000051",
+          "name": "Parse LLM response into validated score and feedback DTOs",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005203",
+          "idChecklist": "chk_000051",
+          "name": "Ensure system operates seamlessly if LLM features are disabled",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000052",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000046",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005300",
+          "idChecklist": "chk_000052",
+          "name": "Assign status PENDING_REVIEW to all AI-graded essay submissions",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005301",
+          "idChecklist": "chk_000052",
+          "name": "Display AI-suggested marks and critique notes in Teacher Grade Review",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005302",
+          "idChecklist": "chk_000052",
+          "name": "Allow teacher to approve or modify score with single click",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005303",
+          "idChecklist": "chk_000052",
+          "name": "Update score status to FINAL once confirmed by educator",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000053",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000047",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005400",
+          "idChecklist": "chk_000053",
+          "name": "Wrap LLM API calls with try-catch and timeout circuit breakers",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005401",
+          "idChecklist": "chk_000053",
+          "name": "Catch exceptions and flag submission as MANUAL_GRADING_REQUIRED",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005402",
+          "idChecklist": "chk_000053",
+          "name": "Add visual alert in teacher dashboard for submissions in manual queue",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005403",
+          "idChecklist": "chk_000053",
+          "name": "Verify core quiz submission succeeds even when LLM service is offline",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000054",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000048",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005500",
+          "idChecklist": "chk_000054",
+          "name": "Document pros and cons of immediate vs confirmed gap inclusion",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005501",
+          "idChecklist": "chk_000054",
+          "name": "Align with stakeholders on recommended default (require confirmation)",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005502",
+          "idChecklist": "chk_000054",
+          "name": "Update gap calculation service logic based on decision",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005503",
+          "idChecklist": "chk_000054",
+          "name": "Record final architectural decision in project documentation",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000055",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000049",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005600",
+          "idChecklist": "chk_000055",
+          "name": "Draft end-to-end user testing plan covering all 5 objectives",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005601",
+          "idChecklist": "chk_000055",
+          "name": "Write step-by-step test scripts for student participant cohorts",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005602",
+          "idChecklist": "chk_000055",
+          "name": "Write step-by-step test scripts for teacher participant cohorts",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005603",
+          "idChecklist": "chk_000055",
+          "name": "Prepare data collection sheets for usability metrics",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000056",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000050",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005700",
+          "idChecklist": "chk_000056",
+          "name": "Create standard System Usability Scale (SUS) / 5-point Likert questionnaire",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005701",
+          "idChecklist": "chk_000056",
+          "name": "Distribute survey to all pilot testing participants",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005702",
+          "idChecklist": "chk_000056",
+          "name": "Analyze quantitative scores and compute aggregate mean rating",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005703",
+          "idChecklist": "chk_000056",
+          "name": "Confirm system attains the >=4.0/5.0 target benchmark",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000057",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000051",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005800",
+          "idChecklist": "chk_000057",
+          "name": "Triage user testing feedback into bug and enhancement backlog",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005801",
+          "idChecklist": "chk_000057",
+          "name": "Fix high-priority navigation bottlenecks and layout flaws",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005802",
+          "idChecklist": "chk_000057",
+          "name": "Resolve backend validation edge cases identified by testers",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005803",
+          "idChecklist": "chk_000057",
+          "name": "Perform regression testing on all modified workflows",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000058",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000052",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_005900",
+          "idChecklist": "chk_000058",
+          "name": "Design study plan calendar UI component",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_005901",
+          "idChecklist": "chk_000058",
+          "name": "Implement scheduling logic allocating study intervals per weak topic",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_005902",
+          "idChecklist": "chk_000058",
+          "name": "Allow students to adjust target hours and days of week",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_005903",
+          "idChecklist": "chk_000058",
+          "name": "Save study plan preferences in local storage or user profile",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000059",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000053",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_006000",
+          "idChecklist": "chk_000059",
+          "name": "Build in-app notification dropdown component with badge counter",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_006001",
+          "idChecklist": "chk_000059",
+          "name": "Create backend scheduled task checking pending gap tasks",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_006002",
+          "idChecklist": "chk_000059",
+          "name": "Trigger notification alerts for unread recommendations",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_006003",
+          "idChecklist": "chk_000059",
+          "name": "Allow students to dismiss or mark notifications as read",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000060",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000054",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_006100",
+          "idChecklist": "chk_000060",
+          "name": "Add interactive 5-star rating widget to resource cards",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_006101",
+          "idChecklist": "chk_000060",
+          "name": "Implement backend endpoint to record and average student ratings",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_006102",
+          "idChecklist": "chk_000060",
+          "name": "Display cumulative rating score and voter count on resources",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_006103",
+          "idChecklist": "chk_000060",
+          "name": "Sort recommendations by rating quality when applicable",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000061",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000055",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_006200",
+          "idChecklist": "chk_000061",
+          "name": "Implement responsive video embed modal for YouTube / video URLs",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_006201",
+          "idChecklist": "chk_000061",
+          "name": "Add PDF and rich markdown viewer for lecture notes and study guides",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_006202",
+          "idChecklist": "chk_000061",
+          "name": "Create quick practice drill mini-module for instant feedback",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_006203",
+          "idChecklist": "chk_000061",
+          "name": "Add media-type filter badges in the recommendation library",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000062",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000056",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_006300",
+          "idChecklist": "chk_000062",
+          "name": "Create multi-stage Dockerfile for React production Nginx build",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_006301",
+          "idChecklist": "chk_000062",
+          "name": "Create Dockerfile for Spring Boot production jar build",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_006302",
+          "idChecklist": "chk_000062",
+          "name": "Configure docker-compose.prod.yml orchestrating app and MySQL",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_006303",
+          "idChecklist": "chk_000062",
+          "name": "Document deployment checklist and environment variable provisioning",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    },
+    {
+      "id": "chk_000063",
+      "idBoard": "6ae1721c567255c8a4d6d97f",
+      "idCard": "card_task_000057",
+      "name": "Subtasks",
+      "pos": 1000,
+      "checkItems": [
+        {
+          "id": "item_006400",
+          "idChecklist": "chk_000063",
+          "name": "Compile final technical architecture documentation and ER diagrams",
+          "state": "incomplete",
+          "pos": 1000
+        },
+        {
+          "id": "item_006401",
+          "idChecklist": "chk_000063",
+          "name": "Document SMART objective outcomes and test results",
+          "state": "incomplete",
+          "pos": 2000
+        },
+        {
+          "id": "item_006402",
+          "idChecklist": "chk_000063",
+          "name": "Produce student and teacher quick-start user guides",
+          "state": "incomplete",
+          "pos": 3000
+        },
+        {
+          "id": "item_006403",
+          "idChecklist": "chk_000063",
+          "name": "Prepare slide deck and live demonstration script for evaluation",
+          "state": "incomplete",
+          "pos": 4000
+        }
+      ]
+    }
+  ]
+}

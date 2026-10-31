@@ -1,0 +1,11 @@
+{
+  "name": "learningpal-workspace",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "cd backend && mvn spring-boot:run",
+    "dev:backend": "cd backend && mvn spring-boot:run"
+  }
+}
+
