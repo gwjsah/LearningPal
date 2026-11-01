@@ -90,7 +90,7 @@ export function SquigglyUnderline({
 /**
  * Hand-drawn red-pen circle around key stats or words
  */
-export function HandDrawnCircle({ className = ' inset-0 w-full h-full', color = '#D93829' }) {
+export function HandDrawnCircle({ className = 'inset-0 w-full h-full', color = '#D93829' }) {
   return (
     <svg
       viewBox="0 0 120 60"

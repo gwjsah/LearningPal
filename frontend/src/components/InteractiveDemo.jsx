@@ -39,6 +39,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
     'res-a2': true,
   });
   const [helpfulVotes, setHelpfulVotes] = useState({ 'res-b5a': true });
+  const [expandedStrengthIds, setExpandedStrengthIds] = useState({});
 
   // Teacher View state
   const [selectedStudentId, setSelectedStudentId] = useState('stu-1');
@@ -174,7 +175,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
               aria-selected={activeRole === 'student'}
               aria-controls="panel-student"
               onClick={() => onChangeRole('student')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-t-2 border-x-2 border-ink dark:border-white/35 font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-2 border-b-0 border-ink dark:border-white/35 font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 activeRole === 'student'
                   ? 'bg-highlighter-yellow text-ink translate-y-[2px] pb-4 shadow-[0_-3px_10px_rgba(0,0,0,0.06)] z-20'
                   : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:bg-highlighter-yellowSoft/60'
@@ -194,7 +195,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
               aria-selected={activeRole === 'teacher'}
               aria-controls="panel-teacher"
               onClick={() => onChangeRole('teacher')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-t-2 border-x-2 border-ink dark:border-white/35 font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-2 border-b-0 border-ink dark:border-white/35 font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 activeRole === 'teacher'
                   ? 'bg-highlighter-mint text-ink translate-y-[2px] pb-4 shadow-[0_-3px_10px_rgba(0,0,0,0.06)] z-20'
                   : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:bg-highlighter-mintSoft/60'
@@ -483,6 +484,12 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredTopics.map((topic) => {
                           const isGap = topic.liveMastery < 70;
+                          const isStrength = topic.liveMastery >= 80;
+                          const isResourcesVisible =
+                            !isStrength ||
+                            topicFilter === 'strengths' ||
+                            Boolean(expandedStrengthIds[topic.id]);
+
                           return (
                             <div
                               key={topic.id}
@@ -541,7 +548,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                                 </div>
 
                                 {/* Personalized Feedback */}
-                                <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted mb-4 bg-paper-card/80 dark:bg-chalkboard/60 p-2.5 rounded-xl border border-ink/10 dark:border-white/10">
+                                <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted mb-3 bg-paper-card/80 dark:bg-chalkboard/60 p-2.5 rounded-xl border border-ink/10 dark:border-white/10">
                                   <strong className="text-ink dark:text-white">Diagnostic Feedback: </strong>
                                   {topic.feedback}
                                 </p>
@@ -549,67 +556,87 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
 
                               {/* Recommended Resources Checklist */}
                               <div className="space-y-2 pt-2 border-t border-ink/10 dark:border-white/10">
-                                <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
-                                  Recommended Learning Resources (Check to complete):
-                                </span>
-                                {topic.resources.map((res) => (
-                                  <div
-                                    key={res.id}
-                                    className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs transition-all ${
-                                      res.isDone
-                                        ? 'bg-highlighter-mintSoft/60 dark:bg-emerald-950/40 border-emerald-600/30 text-ink dark:text-emerald-200'
-                                        : 'bg-paper-card dark:bg-chalkboard-card border-ink/20 dark:border-white/15 text-ink dark:text-chalkboard-chalk'
-                                    }`}
-                                  >
-                                    <label className="flex items-start gap-2.5 cursor-pointer flex-1">
-                                      <input
-                                        type="checkbox"
-                                        checked={res.isDone}
-                                        onChange={() => toggleResourceComplete(res.id)}
-                                        className="mt-0.5 h-4 w-4 rounded border-ink text-redpen focus:ring-redpen"
-                                      />
-                                      <div>
-                                        <span
-                                          className={`font-bold block ${
-                                            res.isDone ? 'line-through opacity-75' : ''
-                                          }`}
-                                        >
-                                          {res.title}
-                                        </span>
-                                        <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted flex items-center gap-2 mt-0.5">
-                                          <span>{res.type}</span>
-                                          <span>•</span>
-                                          <span className="inline-flex items-center gap-0.5">
-                                            <Clock className="w-3 h-3" /> {res.duration}
-                                          </span>
-                                          <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                                            +{res.boost}% mastery
-                                          </span>
-                                        </span>
-                                      </div>
-                                    </label>
-
-                                    {/* Resource Rating Preview Button */}
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted">
+                                    {isStrength
+                                      ? `Mastered Topic Resources (${topic.resources.length})`
+                                      : 'Recommended Learning Resources (Check to complete):'}
+                                  </span>
+                                  {isStrength && topicFilter !== 'strengths' && (
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        setHelpfulVotes((prev) => ({
+                                        setExpandedStrengthIds((prev) => ({
                                           ...prev,
-                                          [res.id]: !prev[res.id],
+                                          [topic.id]: !prev[topic.id],
                                         }))
                                       }
-                                      className={`shrink-0 px-2 py-1 rounded-md border text-[11px] font-mono flex items-center gap-1 transition-colors ${
-                                        helpfulVotes[res.id]
-                                          ? 'bg-highlighter-yellow text-ink border-ink font-bold'
-                                          : 'border-ink/20 text-ink-muted dark:text-chalkboard-muted hover:text-ink'
-                                      }`}
-                                      title="Preview of Upcoming Feature: Rate Resource Helpfulness"
+                                      className="text-[11px] font-mono font-bold text-ink-blue dark:text-highlighter-yellow hover:text-redpen underline cursor-pointer"
                                     >
-                                      <ThumbsUp className="w-3 h-3" />
-                                      <span>{helpfulVotes[res.id] ? 'Helpful!' : 'Rate'}</span>
+                                      {isResourcesVisible ? 'Condense' : 'Expand resources'}
                                     </button>
-                                  </div>
-                                ))}
+                                  )}
+                                </div>
+
+                                {isResourcesVisible &&
+                                  topic.resources.map((res) => (
+                                    <div
+                                      key={res.id}
+                                      className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs transition-all ${
+                                        res.isDone
+                                          ? 'bg-highlighter-mintSoft/60 dark:bg-emerald-950/40 border-emerald-600/30 text-ink dark:text-emerald-200'
+                                          : 'bg-paper-card dark:bg-chalkboard-card border-ink/20 dark:border-white/15 text-ink dark:text-chalkboard-chalk'
+                                      }`}
+                                    >
+                                      <label className="flex items-start gap-2.5 cursor-pointer flex-1">
+                                        <input
+                                          type="checkbox"
+                                          checked={res.isDone}
+                                          onChange={() => toggleResourceComplete(res.id)}
+                                          className="mt-0.5 h-4 w-4 rounded border-ink text-redpen focus:ring-redpen"
+                                        />
+                                        <div>
+                                          <span
+                                            className={`font-bold block ${
+                                              res.isDone ? 'line-through opacity-75' : ''
+                                            }`}
+                                          >
+                                            {res.title}
+                                          </span>
+                                          <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted flex items-center gap-2 mt-0.5">
+                                            <span>{res.type}</span>
+                                            <span>•</span>
+                                            <span className="inline-flex items-center gap-0.5">
+                                              <Clock className="w-3 h-3" /> {res.duration}
+                                            </span>
+                                            <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                                              +{res.boost}% mastery
+                                            </span>
+                                          </span>
+                                        </div>
+                                      </label>
+
+                                      {/* Resource Rating Preview Button */}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setHelpfulVotes((prev) => ({
+                                            ...prev,
+                                            [res.id]: !prev[res.id],
+                                          }))
+                                        }
+                                        className={`shrink-0 px-2 py-1 rounded-md border text-[11px] font-mono flex items-center gap-1 transition-colors ${
+                                          helpfulVotes[res.id]
+                                            ? 'bg-highlighter-yellow text-ink border-ink font-bold'
+                                            : 'border-ink/20 text-ink-muted dark:text-chalkboard-muted hover:text-ink'
+                                        }`}
+                                        title="Preview of Upcoming Feature: Rate Resource Helpfulness"
+                                      >
+                                        <ThumbsUp className="w-3 h-3" />
+                                        <span>{helpfulVotes[res.id] ? 'Helpful!' : 'Rate'}</span>
+                                      </button>
+                                    </div>
+                                  ))}
                               </div>
                             </div>
                           );
@@ -729,7 +756,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         </div>
 
                         {/* Heatmap Summary Strip */}
-                        <div className="mt-3 pt-3 border-t border-ink/10 dark:border-white/10 grid grid-cols-5 gap-1.5 text-center">
+                        <div className="mt-3 pt-3 border-t border-ink/10 dark:border-white/10 grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
                           {teacherView.classTopicData.map((t) => (
                             <div
                               key={t.topic}
@@ -755,7 +782,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                               <span>Students with Priority Topic Gaps</span>
                             </h4>
                             <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                              Click student to pre-fill log
+                              Click student to pre-fill student &amp; topic
                             </span>
                           </div>
 
@@ -769,8 +796,9 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                                   onClick={() => {
                                     setSelectedStudentId(stu.id);
                                     setNewLogStudent(stu.name);
+                                    setNewLogTopic(stu.weakestTopic.replace(/\s*\(\d+%\)$/, ''));
                                   }}
-                                  className={`w-full text-left p-3 rounded-xl border transition-all ${
+                                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
                                     isSelected
                                       ? 'bg-highlighter-mintSoft/70 dark:bg-emerald-950/40 border-ink dark:border-emerald-400 shadow-sm'
                                       : 'bg-paper-card dark:bg-chalkboard-card border-ink/15 dark:border-white/10 hover:border-ink/40'
@@ -823,7 +851,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         <div>
                           <h4 className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
                             <ClipboardCheck className="w-5 h-5 text-redpen" />
-                            <span>Teacher Intervention Log & Progress Tracker</span>
+                            <span>Teacher Intervention Log &amp; Progress Tracker</span>
                           </h4>
                           <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
                             Record targeted 1-on-1 check-ins, small-group reviews, or practice assignments and track their impact.
@@ -840,10 +868,14 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-paper-card dark:bg-chalkboard-card p-3.5 rounded-xl border border-ink/20 dark:border-white/15"
                       >
                         <div className="sm:col-span-3">
-                          <label className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
+                          <label
+                            htmlFor="intervention-student-select"
+                            className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1"
+                          >
                             Student / Group
                           </label>
                           <select
+                            id="intervention-student-select"
                             value={newLogStudent}
                             onChange={(e) => setNewLogStudent(e.target.value)}
                             className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
@@ -857,25 +889,33 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         </div>
 
                         <div className="sm:col-span-3">
-                          <label className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
+                          <label
+                            htmlFor="intervention-topic-select"
+                            className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1"
+                          >
                             Targeted Gap Topic
                           </label>
                           <select
+                            id="intervention-topic-select"
                             value={newLogTopic}
                             onChange={(e) => setNewLogTopic(e.target.value)}
                             className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
                           >
-                            <option value="Meiosis & Chromosome Crossing">Meiosis & Chromosome Crossing</option>
-                            <option value="Enzyme Kinetics & pH Curves">Enzyme Kinetics & pH Curves</option>
-                            <option value="DNA Replication & Transcription">DNA Replication & Transcription</option>
+                            <option value="Meiosis & Chromosome Crossing">Meiosis &amp; Chromosome Crossing</option>
+                            <option value="Enzyme Kinetics & pH Curves">Enzyme Kinetics &amp; pH Curves</option>
+                            <option value="DNA Replication & Transcription">DNA Replication &amp; Transcription</option>
                           </select>
                         </div>
 
                         <div className="sm:col-span-3">
-                          <label className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
+                          <label
+                            htmlFor="intervention-type-select"
+                            className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1"
+                          >
                             Support Action
                           </label>
                           <select
+                            id="intervention-type-select"
                             value={newLogType}
                             onChange={(e) => setNewLogType(e.target.value)}
                             className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
@@ -890,11 +930,28 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         <div className="sm:col-span-3 flex items-end">
                           <button
                             type="submit"
-                            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-2 border-ink bg-highlighter-mint hover:bg-emerald-300 text-ink font-bold text-xs shadow-[2px_2px_0_#1B2534] transition-all"
+                            className="w-full min-h-[38px] flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-2 border-ink bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink font-bold text-xs shadow-notebook-sm transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           >
                             <PlusCircle className="w-4 h-4" />
                             <span>Log Intervention</span>
                           </button>
+                        </div>
+
+                        <div className="sm:col-span-12">
+                          <label
+                            htmlFor="intervention-note-input"
+                            className="block text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted mb-1"
+                          >
+                            Observation / Follow-up Note (Optional)
+                          </label>
+                          <input
+                            id="intervention-note-input"
+                            type="text"
+                            value={newLogNote}
+                            onChange={(e) => setNewLogNote(e.target.value)}
+                            placeholder="e.g. Reviewed homologous chromosome pairing diagram; student completed 3 practice items."
+                            className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-3 py-1.5 text-xs text-ink dark:text-chalkboard-chalk placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/60"
+                          />
                         </div>
                       </form>
 
@@ -922,9 +979,23 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                               </div>
                               <p className="text-xs text-ink-muted dark:text-chalkboard-muted">{entry.note}</p>
                             </div>
-                            <span className="shrink-0 self-start sm:self-center px-2.5 py-1 rounded-lg bg-highlighter-mintSoft dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-600/20">
-                              {entry.outcome}
-                            </span>
+                            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+                              <span className="px-2.5 py-1 rounded-lg bg-highlighter-mintSoft dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-600/20">
+                                {entry.outcome}
+                              </span>
+                              {entry.date === 'Just Now' && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setInterventions((prev) => prev.filter((item) => item.id !== entry.id))
+                                  }
+                                  className="px-2 py-1 rounded-md border border-redpen/30 text-[11px] font-mono text-redpen hover:bg-redpen-soft transition-colors cursor-pointer"
+                                  title="Remove this logged intervention"
+                                >
+                                  Undo
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -939,4 +1010,3 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
     </section>
   );
 }
-

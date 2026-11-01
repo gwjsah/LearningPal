@@ -85,7 +85,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
 
           <Link
             to="/signup"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-redpen hover:bg-redpen-dark text-white border border-ink shadow-[2px_2px_0_#1B2534] hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-redpen hover:bg-redpen-dark text-white border border-ink shadow-notebook-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <UserPlus className="w-4 h-4 shrink-0" />
             <span>Sign Up</span>
@@ -95,7 +95,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
           <button
             type="button"
             onClick={onToggleDarkMode}
-            className="p-2 rounded-xl border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="p-2 rounded-xl border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
             aria-label={darkMode ? 'Switch to Paper Light Mode' : 'Switch to Chalkboard Night Study Mode'}
             title={darkMode ? 'Paper Mode (Light)' : 'Chalkboard Mode (Night Study)'}
           >
@@ -104,7 +104,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
 
           {/* Student / Teacher Segmented Notebook Tab CTA */}
           <div
-            className="inline-flex items-center p-1 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-warm dark:bg-chalkboard-surface shadow-[2px_2px_0_rgba(27,37,52,0.85)] shrink-0"
+            className="inline-flex items-center p-1 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-warm dark:bg-chalkboard-surface shadow-notebook-sm shrink-0"
             role="group"
             aria-label="Jump to interactive demo by role"
           >
@@ -133,9 +133,21 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
               <span>Teacher</span>
             </button>
           </div>
+
+          {/* Section Index Drawer Trigger for Tablet / Compact Laptop (768px - 1279px) */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="xl:hidden p-2 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            aria-expanded={mobileMenuOpen}
+            aria-label="Toggle section index menu"
+            title="Notebook Section Index"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
 
-        {/* Mobile Menu & Dark Mode Trigger */}
+        {/* Mobile Menu & Dark Mode Trigger (< 768px) */}
         <div className="flex items-center gap-2 md:hidden shrink-0">
           <Link
             to="/login"
@@ -163,9 +175,9 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
         </div>
       </nav>
 
-      {/* Mobile Dropdown Notebook Drawer */}
+      {/* Responsive Dropdown Notebook Drawer (< 1280px) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
+        <div className="xl:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
           <div className="grid grid-cols-2 gap-2">
             {navLinks.map((link) => (
               <a
@@ -202,7 +214,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
             <button
               type="button"
               onClick={() => handleRoleJump('student')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-ink bg-highlighter-yellow text-ink font-bold text-sm shadow-[2px_2px_0_#1B2534]"
+              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-ink bg-highlighter-yellow text-ink font-bold text-sm shadow-notebook-sm"
             >
               <GraduationCap className="w-4 h-4" />
               <span>Student Notebook View</span>
@@ -210,7 +222,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
             <button
               type="button"
               onClick={() => handleRoleJump('teacher')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-ink bg-highlighter-mint text-ink font-bold text-sm shadow-[2px_2px_0_#1B2534]"
+              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-ink bg-highlighter-mint text-ink font-bold text-sm shadow-notebook-sm"
             >
               <BookOpenCheck className="w-4 h-4" />
               <span>Teacher Gradebook View</span>

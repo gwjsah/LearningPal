@@ -10,7 +10,8 @@ import {
   Star,
 } from 'lucide-react';
 import { featuresContent } from '../data/content';
-import { PaperClip, WashiTape, SquigglyUnderline } from './Doodles';
+import { PaperClip, WashiTape } from './Doodles';
+import { SectionHeading } from './NotebookPrimitives';
 
 export default function FeaturesGrid() {
   const cardIcons = {
@@ -22,11 +23,11 @@ export default function FeaturesGrid() {
   };
 
   const tapeColors = {
-    yellow: 'bg-highlighter-yellow/80 dark:bg-yellow-500/40',
-    mint: 'bg-highlighter-mint/80 dark:bg-emerald-500/40',
-    pink: 'bg-highlighter-pink/80 dark:bg-pink-500/40',
-    sky: 'bg-highlighter-sky/80 dark:bg-sky-500/40',
-    red: 'bg-redpen/30 dark:bg-red-500/35',
+    yellow: 'bg-highlighter-yellow/80 dark:bg-highlighter-yellow/40',
+    mint: 'bg-highlighter-mint/80 dark:bg-highlighter-mint/40',
+    pink: 'bg-highlighter-pink/80 dark:bg-highlighter-pink/40',
+    sky: 'bg-highlighter-sky/80 dark:bg-highlighter-sky/40',
+    red: 'bg-redpen/30 dark:bg-redpen/35',
   };
 
   const coreFeatures = featuresContent.features.filter((f) => !f.isComingSoon);
@@ -39,24 +40,13 @@ export default function FeaturesGrid() {
       className="relative py-20 lg:py-28 bg-dot-paper border-b-2 border-ink/15 dark:border-white/15"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Heading */}
-        <div className="max-w-3xl mx-auto text-center space-y-4">
-          <span className="inline-block px-3 py-1 rounded-md font-mono text-xs font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950/70 text-ink dark:text-blue-200 border border-ink/20 dark:border-blue-500/30">
-            {featuresContent.sectionLabel}
-          </span>
-          <h2
-            id="features-heading"
-            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight"
-          >
-            {featuresContent.headline}
-          </h2>
-          <div className="flex justify-center">
-            <SquigglyUnderline className="w-52 h-3" color="#D93829" />
-          </div>
-          <p className="text-base sm:text-lg text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-            {featuresContent.subheadline}
-          </p>
-        </div>
+        <SectionHeading
+          id="features-heading"
+          label={featuresContent.sectionLabel}
+          badgeClassName="bg-highlighter-skySoft dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border-ink/20 dark:border-white/25"
+          headline={featuresContent.headline}
+          subheadline={featuresContent.subheadline}
+        />
 
         {/* 4 Core Index Cards Grid */}
         <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-9">
@@ -69,7 +59,6 @@ export default function FeaturesGrid() {
                 key={feat.id}
                 className={`relative rounded-2xl bg-index-card border-2 border-ink dark:border-white/30 p-6 sm:p-7 shadow-paper flex flex-col justify-between ${feat.rotation}`}
               >
-                {/* Alternating Washi Tape or Paper Clip */}
                 {idx % 2 === 0 ? (
                   <WashiTape colorClass={tapeClass} rotate={idx === 0 ? '-rotate-2' : 'rotate-2'} />
                 ) : (
@@ -77,13 +66,12 @@ export default function FeaturesGrid() {
                 )}
 
                 <div>
-                  {/* Index Card Top Header above the red index line */}
                   <div className="flex items-center justify-between gap-2 pb-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-redpen dark:text-red-400">
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-redpen">
                         {feat.number}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-highlighter-mintSoft text-emerald-950">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-highlighter-mintSoft text-ink">
                         {feat.status}
                       </span>
                     </div>
@@ -92,7 +80,6 @@ export default function FeaturesGrid() {
                     </div>
                   </div>
 
-                  {/* Card Title & Description */}
                   <h3 className="text-xl sm:text-2xl font-extrabold text-ink dark:text-chalkboard-chalk mt-2">
                     {feat.title}
                   </h3>
@@ -101,14 +88,13 @@ export default function FeaturesGrid() {
                   </p>
                 </div>
 
-                {/* Bullet Highlights */}
                 <ul className="mt-6 pt-4 border-t border-ink/15 dark:border-white/15 space-y-2">
                   {feat.highlights.map((bullet) => (
                     <li
                       key={bullet}
                       className="flex items-start gap-2 text-xs sm:text-sm font-medium text-ink dark:text-chalkboard-chalk"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-ink-blue dark:text-highlighter-mint shrink-0 mt-0.5" />
                       <span>{bullet}</span>
                     </li>
                   ))}
@@ -121,15 +107,15 @@ export default function FeaturesGrid() {
         {/* 5th Feature Card: "Coming Soon" Clippings with Rubber Stamps & Tape Labels */}
         {comingSoonCard && (
           <article className="relative mt-10 rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-dashed border-ink/50 dark:border-white/35 p-6 sm:p-8 shadow-paper">
-            <WashiTape colorClass="bg-highlighter-pink/80 dark:bg-pink-500/40" rotate="rotate-1" />
+            <WashiTape colorClass="bg-highlighter-pink/80 dark:bg-highlighter-pink/40" rotate="rotate-1" />
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-ink/15 dark:border-white/15">
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-redpen dark:text-red-400">
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-redpen">
                     {comingSoonCard.number} • Next in the Notebook
                   </span>
-                  <span className="rubber-stamp px-2.5 py-0.5 text-xs font-mono text-redpen dark:text-red-400 -rotate-2">
+                  <span className="rubber-stamp px-2.5 py-0.5 text-xs font-mono text-redpen -rotate-2">
                     COMING SOON
                   </span>
                 </div>
@@ -141,12 +127,11 @@ export default function FeaturesGrid() {
                 </p>
               </div>
 
-              <div className="font-hand text-2xl font-bold text-redpen dark:text-red-400 lg:text-right">
+              <div className="font-hand text-2xl font-bold text-redpen lg:text-right">
                 ✎ Scheduled for Phase 2 Release
               </div>
             </div>
 
-            {/* 3 Paper Clippings for Study Plans, Reminders, and Resource Ratings */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               {comingSoonCard.comingSoonItems.map((item, idx) => {
                 const subIcons = [CalendarClock, BellRing, Star];
@@ -161,11 +146,10 @@ export default function FeaturesGrid() {
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <div className="w-9 h-9 rounded-lg bg-paper-card dark:bg-chalkboard-card border border-ink/15 flex items-center justify-center">
-                          <SubIcon className="w-4 h-4 text-redpen dark:text-red-400" />
+                          <SubIcon className="w-4 h-4 text-redpen" />
                         </div>
-                        {/* Rubber Stamp / Tape Label */}
                         <span
-                          className={`rubber-stamp px-2 py-0.5 text-[10px] font-mono text-redpen dark:text-red-400 bg-redpen-soft/60 dark:bg-red-950/60 ${badgeRotations[idx]}`}
+                          className={`rubber-stamp px-2 py-0.5 text-[10px] font-mono text-redpen bg-redpen-soft/60 ${badgeRotations[idx]}`}
                         >
                           {item.badge}
                         </span>
@@ -181,7 +165,7 @@ export default function FeaturesGrid() {
 
                     <div className="mt-4 pt-2.5 border-t border-dashed border-ink/15 dark:border-white/10 flex items-center justify-between text-[11px] font-mono text-ink-light dark:text-chalkboard-muted">
                       <span>Roadmap Item #{idx + 1}</span>
-                      <span className="font-bold text-ink dark:text-yellow-200">In Prototyping</span>
+                      <span className="font-bold text-ink dark:text-highlighter-yellow">In Prototyping</span>
                     </div>
                   </div>
                 );
@@ -193,4 +177,3 @@ export default function FeaturesGrid() {
     </section>
   );
 }
-

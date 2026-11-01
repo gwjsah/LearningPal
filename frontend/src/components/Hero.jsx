@@ -19,9 +19,34 @@ import {
   BinderHoles,
 } from './Doodles';
 
+const TOPIC_RECOMMENDATIONS = {
+  organelles: {
+    topic: 'Cell Organelles & Membrane',
+    title: '5-Min Membrane Transport Mastery Challenge',
+    matchReason: 'Confirmed 94% strength — try an optional AP-level synthesis prompt.',
+  },
+  atp: {
+    topic: 'ATP & Cellular Respiration',
+    title: 'Electron Transport Chain Quick-Check Flashcards',
+    matchReason: '82% mastery — 1 quick review locks in oxidative phosphorylation.',
+  },
+  enzymes: {
+    topic: 'Enzyme Kinetics & pH Curves',
+    title: 'Interactive pH Denaturation Curve Plotter (10 min)',
+    matchReason: '61% score — 2 graph-reading errors on optimal pH & competitive inhibition.',
+  },
+  meiosis: {
+    topic: 'Meiosis & Chromosome Crossing',
+    title: 'Interactive Visual Guide: Crossing-Over in Prophase I (8 min)',
+    matchReason: 'Matched to your visual learning style & 3 missed questions on chromatid exchange.',
+  },
+};
+
 export default function Hero({ onSelectDemoRole }) {
   const [selectedTopicId, setSelectedTopicId] = useState('meiosis');
   const { heroCard } = heroContent;
+  const activeRecommendation =
+    TOPIC_RECOMMENDATIONS[selectedTopicId] || heroCard.pinnedRecommendation;
 
   const handleOpenDemo = (role) => {
     onSelectDemoRole(role);
@@ -68,20 +93,21 @@ export default function Hero({ onSelectDemoRole }) {
 
             {/* Two Primary CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
-              <Link
-                to="/signup"
-                className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-[4px_4px_0_#1B2534] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_#1B2534] active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
+              <button
+                type="button"
+                onClick={() => handleOpenDemo('student')}
+                className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen cursor-pointer"
               >
                 <span>{heroContent.primaryCta}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+              </button>
 
               <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-emerald-950/50 text-ink dark:text-chalkboard-chalk font-bold text-base shadow-[4px_4px_0_#1B2534] dark:shadow-[4px_4px_0_rgba(255,255,255,0.2)] hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
+                to="/signup"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
               >
-                <BookOpen className="w-4 h-4 text-ink-blue dark:text-emerald-300" />
-                <span>Log In</span>
+                <BookOpen className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
+                <span>Create Free Notebook</span>
               </Link>
             </div>
 
@@ -377,19 +403,19 @@ export default function Hero({ onSelectDemoRole }) {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-redpen dark:text-red-300">
-                          ★ Recommended Next Step ({heroCard.pinnedRecommendation.topic})
+                          ★ Recommended Next Step ({activeRecommendation.topic})
                         </span>
                         <p className="text-sm font-bold text-ink dark:text-chalkboard-chalk mt-0.5">
-                          {heroCard.pinnedRecommendation.title}
+                          {activeRecommendation.title}
                         </p>
                         <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-0.5">
-                          {heroCard.pinnedRecommendation.matchReason}
+                          {activeRecommendation.matchReason}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleOpenDemo('student')}
-                        className="shrink-0 px-3 py-1.5 rounded-lg bg-ink text-paper dark:bg-highlighter-yellow dark:text-ink text-xs font-mono font-bold hover:opacity-90 transition-opacity"
+                        className="shrink-0 px-3 py-1.5 rounded-lg bg-ink text-paper dark:bg-highlighter-yellow dark:text-ink text-xs font-mono font-bold hover:opacity-90 transition-opacity cursor-pointer"
                       >
                         Start →
                       </button>

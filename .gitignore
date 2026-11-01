@@ -7,15 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies and Build Artifacts
+node_modules/
+dist/
+dist-ssr/
 *.local
 target/
 graphify-out/
+
+# Environment Variables & Secrets
 .env
 .env*.local
 !.env.example
+
+# Spring Boot Configuration & Secrets
+application.properties
+!application.properties.example
 
 # Editor directories and files
 .vscode/*
@@ -27,4 +34,3 @@ graphify-out/
 *.njsproj
 *.sln
 *.sw?
-application.properties

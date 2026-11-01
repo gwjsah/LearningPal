@@ -1,0 +1,339 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T22:26:00+08:00",
+  "title": "Design System: LearningPal",
+  "extensions": {
+    "colorMeta": {
+      "redpen": {
+        "role": "primary",
+        "displayName": "Grading Red Pen",
+        "canonical": "#D93829",
+        "tonalRamp": ["#2D0805", "#54110B", "#821C13", "#B52B1E", "#D93829", "#E86A5E", "#F4A8A1", "#FDE8E6"]
+      },
+      "redpen-dark": {
+        "role": "primary",
+        "displayName": "Accessible Dark Red Ink",
+        "canonical": "#B52B1E",
+        "tonalRamp": ["#240604", "#470E09", "#6E1710", "#912117", "#B52B1E", "#D65A4E", "#EFA199", "#FCE4E1"]
+      },
+      "redpen-soft": {
+        "role": "primary",
+        "displayName": "Soft Red Margin Tint",
+        "canonical": "#FDE8E6",
+        "tonalRamp": ["#3B120F", "#6B241E", "#9E3B33", "#CC5E55", "#E88B84", "#F4B8B3", "#F9D5D2", "#FDE8E6"]
+      },
+      "redpen-margin": {
+        "role": "primary",
+        "displayName": "Vertical Red Margin Line",
+        "canonical": "#E88B84",
+        "tonalRamp": ["#38100D", "#66201B", "#96352E", "#C2524A", "#E88B84", "#F0ACA7", "#F7CECB", "#FCECEB"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Fountain-Pen Navy",
+        "canonical": "#1B2534",
+        "tonalRamp": ["#0F151E", "#1B2534", "#2C3B52", "#415573", "#5C7394", "#8297B5", "#B3C2D6", "#E6ECF4"]
+      },
+      "ink-blue": {
+        "role": "secondary",
+        "displayName": "Ballpoint Blue Ink",
+        "canonical": "#1E3A5F",
+        "tonalRamp": ["#0E1C30", "#1E3A5F", "#2B5285", "#3B6CA8", "#5889C4", "#82AAE0", "#B4CEF0", "#E5EFFB"]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Pencil Graphite Muted",
+        "canonical": "#4A5568",
+        "tonalRamp": ["#171B22", "#282F3A", "#394251", "#4A5568", "#68758B", "#8D99AC", "#B8C1CE", "#E7EBF0"]
+      },
+      "ink-light": {
+        "role": "neutral",
+        "displayName": "Faint Caption Graphite",
+        "canonical": "#64748B",
+        "tonalRamp": ["#191E24", "#2C343F", "#455162", "#64748B", "#8392A7", "#A4B0C0", "#C8D0DB", "#ECEFF3"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Warm Cream Paper",
+        "canonical": "#FDFBF7",
+        "tonalRamp": ["#2B2720", "#4D463B", "#756C5C", "#A19684", "#C7BEB0", "#E5DEC9", "#F6F1E6", "#FDFBF7"]
+      },
+      "paper-warm": {
+        "role": "neutral",
+        "displayName": "Aged Manila Paper",
+        "canonical": "#F6F1E6",
+        "tonalRamp": ["#29241B", "#4B4334", "#736752", "#9E9077", "#C4B8A1", "#E3DEC8", "#F6F1E6", "#FCF9F2"]
+      },
+      "paper-card": {
+        "role": "neutral",
+        "displayName": "Crisp Index Card",
+        "canonical": "#FFFDF9",
+        "tonalRamp": ["#2C2923", "#504B40", "#7A7364", "#A69E8E", "#CFC8BA", "#EBE5D8", "#F8F5EE", "#FFFDF9"]
+      },
+      "paper-rule": {
+        "role": "neutral",
+        "displayName": "Cyan-Blue Ruling Line",
+        "canonical": "#D8E3EC",
+        "tonalRamp": ["#1B2630", "#314454", "#4D687F", "#6E8FA9", "#95B1C7", "#B8CDD9", "#D8E3EC", "#F0F5F9"]
+      },
+      "paper-grid": {
+        "role": "neutral",
+        "displayName": "Graph-Paper Grid Line",
+        "canonical": "#E3DEC8",
+        "tonalRamp": ["#28251C", "#4A4535", "#706852", "#9A9075", "#BFB69C", "#E3DEC8", "#F1EEE0", "#FAF8F2"]
+      },
+      "paper-edge": {
+        "role": "neutral",
+        "displayName": "Deckle Paper Edge",
+        "canonical": "#E5DEC9",
+        "tonalRamp": ["#29251C", "#4C4535", "#736952", "#9D9175", "#C3B89E", "#E5DEC9", "#F2EFE2", "#FAF8F3"]
+      },
+      "highlighter-yellow": {
+        "role": "secondary",
+        "displayName": "Fluorescent Yellow Highlighter",
+        "canonical": "#FDE047",
+        "tonalRamp": ["#332A04", "#5E4E09", "#8F7710", "#C4A41B", "#EAB308", "#FDE047", "#FEF08A", "#FEF9C3"]
+      },
+      "highlighter-yellow-soft": {
+        "role": "secondary",
+        "displayName": "Soft Yellow Marker Wash",
+        "canonical": "#FEF9C3",
+        "tonalRamp": ["#332B05", "#61520B", "#947D16", "#C9AC28", "#FACC15", "#FDE68A", "#FEF3C7", "#FEF9C3"]
+      },
+      "highlighter-mint": {
+        "role": "tertiary",
+        "displayName": "Fluorescent Mint Highlighter",
+        "canonical": "#86EFAC",
+        "tonalRamp": ["#062E16", "#0D542A", "#15803D", "#22C55E", "#4ADE80", "#86EFAC", "#BBF7D0", "#DCFCE7"]
+      },
+      "highlighter-mint-soft": {
+        "role": "tertiary",
+        "displayName": "Soft Mint Marker Wash",
+        "canonical": "#DCFCE7",
+        "tonalRamp": ["#072E16", "#11572C", "#1C8244", "#2EB862", "#5CE08C", "#98F2B8", "#C4F9D6", "#DCFCE7"]
+      },
+      "highlighter-pink": {
+        "role": "tertiary",
+        "displayName": "Fluorescent Pink Highlighter",
+        "canonical": "#F9A8D4",
+        "tonalRamp": ["#380A22", "#691441", "#9D174D", "#DB2777", "#EC4899", "#F9A8D4", "#FBCFE8", "#FCE7F3"]
+      },
+      "highlighter-pink-soft": {
+        "role": "tertiary",
+        "displayName": "Soft Pink Marker Wash",
+        "canonical": "#FCE7F3",
+        "tonalRamp": ["#360B21", "#63163E", "#96245F", "#C84689", "#EB7AB3", "#F5B0D4", "#F9D2E7", "#FCE7F3"]
+      },
+      "highlighter-sky": {
+        "role": "tertiary",
+        "displayName": "Sky Tab Marker",
+        "canonical": "#93C5FD",
+        "tonalRamp": ["#0B1E3B", "#163A70", "#1D4ED8", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#EFF6FF"]
+      },
+      "chalkboard": {
+        "role": "neutral",
+        "displayName": "Night Study Chalkboard",
+        "canonical": "#161C19",
+        "tonalRamp": ["#0D110F", "#161C19", "#1F2723", "#26302B", "#3A4740", "#5C6E65", "#A7B5AE", "#F3F4F0"]
+      },
+      "chalkboard-surface": {
+        "role": "neutral",
+        "displayName": "Elevated Slate Surface",
+        "canonical": "#1F2723",
+        "tonalRamp": ["#111614", "#1F2723", "#2C3732", "#3E4D46", "#566960", "#788C82", "#ADBCB5", "#E8EDE9"]
+      },
+      "chalkboard-card": {
+        "role": "neutral",
+        "displayName": "Dark Index Card",
+        "canonical": "#26302B",
+        "tonalRamp": ["#141A17", "#26302B", "#35423C", "#495B53", "#63786E", "#879B91", "#B7C4BE", "#ECF0EE"]
+      },
+      "chalkboard-chalk": {
+        "role": "neutral",
+        "displayName": "Crisp Chalk White",
+        "canonical": "#F3F4F0",
+        "tonalRamp": ["#212420", "#3D423B", "#5E655B", "#838B80", "#A7B5AE", "#C8CFC6", "#E1E5DF", "#F3F4F0"]
+      },
+      "chalkboard-muted": {
+        "role": "neutral",
+        "displayName": "Dusted Chalk Muted",
+        "canonical": "#A7B5AE",
+        "tonalRamp": ["#1C211E", "#333C37", "#4F5C55", "#708078", "#91A199", "#A7B5AE", "#C9D3CE", "#EBF0ED"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display Headline",
+        "purpose": "Hero headlines on the landing page, paired with inline highlighter sweeps."
+      },
+      "headline": {
+        "displayName": "Section & Portal Headline",
+        "purpose": "Page section headers and role portal welcome banners."
+      },
+      "title": {
+        "displayName": "Card & Topic Title",
+        "purpose": "Individual feature cards, syllabus topics, and form sheet titles."
+      },
+      "body": {
+        "displayName": "Diagnostic Body Copy",
+        "purpose": "Readable narrative paragraphs, diagnostic feedback, and form instructions."
+      },
+      "label": {
+        "displayName": "Monospace Ledger Label",
+        "purpose": "Uppercase field labels, syllabus codes (BIO-204), page index numbers, and status tags."
+      },
+      "hand": {
+        "displayName": "Handwritten Margin Note",
+        "purpose": "Short tutor margin notes, brand wordmark suffix, and organic callouts."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-paper",
+        "value": "0 2px 5px rgba(27, 37, 52, 0.06), 0 8px 20px -4px rgba(27, 37, 52, 0.08), 1px 1px 0 rgba(27, 37, 52, 0.08)",
+        "purpose": "Default rest shadow for secondary index cards and metric panels."
+      },
+      {
+        "name": "shadow-lifted",
+        "value": "0 14px 28px -6px rgba(27, 37, 52, 0.14), 0 4px 10px -2px rgba(27, 37, 52, 0.08), 2px 3px 0 rgba(27, 37, 52, 0.1)",
+        "purpose": "Elevated notebook sheets, auth forms, hero diagnostic card, and admin approval ledger."
+      },
+      {
+        "name": "shadow-sticky",
+        "value": "2px 6px 14px rgba(27, 37, 52, 0.12), 0 1px 2px rgba(27, 37, 52, 0.08)",
+        "purpose": "Tilted sticky-note scenario cards and pinned callouts."
+      },
+      {
+        "name": "shadow-press",
+        "value": "3px 3px 0 #1B2534",
+        "purpose": "Hard offset ink shadow for primary buttons and interactive badges."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-notebook",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Tactile card tilt straightening and hover lift transitions (280ms)."
+      },
+      {
+        "name": "ease-draw",
+        "value": "cubic-bezier(0.33, 1, 0.68, 1)",
+        "purpose": "Hand-drawn SVG stroke animation curve (1200ms)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Red-Pen Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Tactile primary CTA button with 2px fountain-pen navy border and hard 3px offset press shadow.",
+      "html": "<button class=\"ds-btn-primary\"><span>Open Notebook</span><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4\"/><polyline points=\"10 17 15 12 10 7\"/><line x1=\"15\" y1=\"12\" x2=\"3\" y2=\"12\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 12px; border: 2px solid #1B2534; background-color: #D93829; color: #FFFDF9; font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; font-weight: 700; box-shadow: 3px 3px 0 #1B2534; cursor: pointer; transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; } .ds-btn-primary:hover { background-color: #B52B1E; transform: translateY(-1px); box-shadow: 4px 4px 0 #1B2534; } .ds-btn-primary:active { transform: translateY(0); box-shadow: 1px 1px 0 #1B2534; } .ds-btn-primary:focus-visible { outline: 2px solid #D93829; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Index-Card Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Crisp index-card button for secondary actions like Log In and Refresh Ledger.",
+      "html": "<button class=\"ds-btn-secondary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E3A5F\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/><path d=\"M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16\"/><path d=\"M16 16h5v5\"/></svg><span>Refresh Ledger</span></button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: 2px solid #1B2534; background-color: #F6F1E6; color: #1B2534; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; box-shadow: 2px 2px 0 #1B2534; cursor: pointer; transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; } .ds-btn-secondary:hover { background-color: #FFFDF9; transform: translateY(-1px); box-shadow: 3px 3px 0 #1B2534; } .ds-btn-secondary:active { transform: translateY(0); box-shadow: 1px 1px 0 #1B2534; } .ds-btn-secondary:focus-visible { outline: 2px solid #D93829; outline-offset: 2px; }"
+    },
+    {
+      "name": "Mint Approve Action Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Fluorescent mint confirmation button used in the Admin Teacher Verification queue.",
+      "html": "<button class=\"ds-btn-approve\" aria-label=\"Approve Maria Santos\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#065F46\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"/></svg><span>Approve</span></button>",
+      "css": ".ds-btn-approve { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; border: 2px solid #1B2534; background-color: #86EFAC; color: #1B2534; font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px; font-weight: 700; box-shadow: 2px 2px 0 #1B2534; cursor: pointer; transition: background-color 0.18s ease, transform 0.18s ease; } .ds-btn-approve:hover { background-color: #4ADE80; transform: translateY(-1px); } .ds-btn-approve:active { transform: translateY(0); } .ds-btn-approve:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }"
+    },
+    {
+      "name": "Notebook Input Field",
+      "kind": "input",
+      "refersTo": "input-notebook",
+      "description": "Labeled form input with monospace uppercase header, red required marker, and red-pen focus ring.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-email\">Email Address <span class=\"ds-req\">*</span></label><input id=\"ds-email\" class=\"ds-input\" type=\"email\" placeholder=\"e.g. maria.santos@school.edu\" /><p class=\"ds-hint\">Rule: Use your school or personal learning email</p></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; max-width: 340px; } .ds-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1B2534; } .ds-req { color: #D93829; } .ds-input { padding: 10px 14px; border-radius: 12px; border: 2px solid rgba(27, 37, 52, 0.3); background-color: #FFFDF9; color: #1B2534; font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: border-color 0.18s ease, box-shadow 0.18s ease; } .ds-input::placeholder { color: #64748B; } .ds-input:hover { border-color: rgba(27, 37, 52, 0.6); } .ds-input:focus, .ds-input:focus-visible { outline: none; border-color: #1B2534; box-shadow: 0 0 0 2px #D93829; } .ds-hint { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #4A5568; }"
+    },
+    {
+      "name": "Segmented Role Switcher",
+      "kind": "nav",
+      "refersTo": "button-secondary",
+      "description": "Tactile Student/Teacher segmented toggle illuminated with fluorescent yellow and mint markers.",
+      "html": "<div class=\"ds-role-group\" role=\"radiogroup\" aria-label=\"Account role selection\"><button type=\"button\" class=\"ds-role-btn ds-role-active\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 10v6M2 10l10-5 10 5-10 5z\"/><path d=\"M6 12v5c3 3 9 3 12 0v-5\"/></svg><span>Student (Instant)</span></button><button type=\"button\" class=\"ds-role-btn\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/></svg><span>Teacher (Approval)</span></button></div>",
+      "css": ".ds-role-group { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 12px; border: 2px solid #1B2534; background-color: #F6F1E6; box-shadow: 2px 2px 0 #1B2534; } .ds-role-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: #4A5568; font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.18s ease; } .ds-role-btn:hover { color: #1B2534; } .ds-role-active { background-color: #FDE047; color: #1B2534; border-color: #1B2534; box-shadow: 0 1px 2px rgba(27, 37, 52, 0.12); } .ds-role-btn:focus-visible { outline: 2px solid #D93829; outline-offset: 1px; }"
+    },
+    {
+      "name": "Diagnostic Status Stamp & Chip",
+      "kind": "chip",
+      "refersTo": "card-notebook",
+      "description": "Topic mastery status chips and rubber-stamp evaluation badges.",
+      "html": "<div class=\"ds-chip-row\"><span class=\"ds-chip-mint\">94% Strength ★</span><span class=\"ds-chip-gap\">52% Priority Gap !</span><span class=\"ds-stamp\">Target: A</span></div>",
+      "css": ".ds-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; } .ds-chip-mint { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(27, 37, 52, 0.2); background-color: #DCFCE7; color: #1B2534; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; } .ds-chip-gap { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(217, 56, 41, 0.35); background-color: #FDE8E6; color: #B52B1E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; } .ds-stamp { display: inline-block; padding: 3px 8px; border: 2.5px solid #D93829; border-radius: 5px; color: #D93829; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-2deg); }"
+    },
+    {
+      "name": "Ruled Notebook Sheet Card",
+      "kind": "card",
+      "refersTo": "card-notebook",
+      "description": "Signature notebook page container with spiral binder holes, ruled paper lines, and vertical red margin.",
+      "html": "<div class=\"ds-sheet\"><div class=\"ds-sheet-top\"><div class=\"ds-holes\"><span class=\"ds-hole\"></span><span class=\"ds-hole\"></span><span class=\"ds-hole\"></span></div><span class=\"ds-page-ref\">Page 01 • Topic Diagnostic</span></div><div class=\"ds-sheet-body\"><span class=\"ds-tag\">Honors Biology • BIO-204</span><h3 class=\"ds-sheet-title\">Meiosis &amp; Chromosome Crossing</h3><p class=\"ds-sheet-copy\">Matched to 3 missed questions on homologous chromosome separation in Anaphase I.</p><p class=\"ds-sheet-note\">“Focus 15 mins on the Spindle Sort lab before Friday!”</p></div></div>",
+      "css": ".ds-sheet { max-width: 420px; border-radius: 16px; border: 2px solid #1B2534; background-color: #FFFDF9; box-shadow: 0 14px 28px -6px rgba(27, 37, 52, 0.14), 2px 3px 0 rgba(27, 37, 52, 0.1); overflow: hidden; } .ds-sheet-top { display: flex; align-items: center; justify-content: space-between; padding: 8px 20px; background-color: #F6F1E6; border-bottom: 1px solid rgba(27, 37, 52, 0.15); } .ds-holes { display: flex; gap: 10px; } .ds-hole { width: 10px; height: 10px; border-radius: 9999px; background-color: #FDFBF7; border: 1px solid rgba(27, 37, 52, 0.4); } .ds-page-ref { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #D93829; } .ds-sheet-body { position: relative; padding: 20px 24px 20px 52px; background-color: #FDFBF7; background-image: linear-gradient(to bottom, transparent 31px, rgba(164, 194, 224, 0.42) 31px, rgba(164, 194, 224, 0.42) 32px); background-size: 100% 32px; } .ds-sheet-body::before { content: ''; position: absolute; top: 0; bottom: 0; left: 32px; width: 2px; background-color: rgba(217, 56, 41, 0.32); } .ds-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; background-color: #FEF9C3; border: 1px solid rgba(27, 37, 52, 0.2); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #1B2534; } .ds-sheet-title { margin: 8px 0 4px; font-family: 'DM Sans', system-ui, sans-serif; font-size: 18px; font-weight: 800; color: #1B2534; } .ds-sheet-copy { margin: 0 0 8px; font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px; line-height: 1.55; color: #4A5568; } .ds-sheet-note { margin: 0; font-family: 'Caveat', cursive; font-size: 19px; font-weight: 700; color: #B52B1E; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Tactile Study Notebook",
+    "overview": "LearningPal's visual system transforms abstract academic diagnostics into the familiar, reassuring artifacts of a physical study desk: ruled composition pages, crisp index cards, vertical red margin lines, spiral binder hole punches, fluorescent highlighter sweeps, and encouraging teacher annotations. Instead of feeling like a cold corporate enterprise dashboard or a gamified cartoon app, every surface behaves like a well-organized notebook where complex assessment data is broken down into clear, human-scale study checklists and gradebook ledgers.\n\nAcross both persuasive storytelling (/) and operational workspaces (/login, /signup, /student, /teacher, /admin), the interface balances tactile stationery craft with high-contrast typographic precision. Pure CSS paper textures (bg-ruled-paper, bg-graph-paper, bg-dot-paper, bg-index-card) anchor the spatial hierarchy without relying on external raster images, while a dedicated Chalkboard Night Study mode (dark class) translates the warm cream paper palette into a calm slate chalkboard surface for late-night revision.\n\nWe explicitly reject generic SaaS glassmorphism, neon cyberpunk gradients, sterile #FFFFFF backgrounds, and ungrounded floating cards that lack physical borders.",
+    "keyCharacteristics": [
+      "Pure-CSS Stationery Surfaces: Ruled lines (32px vertical rhythm), engineering graph grids (24px / 96px), dot grids (22px), and red-ruled index cards rendered entirely with CSS gradients.",
+      "Structural Ink Borders & Tactile Press Shadows: Interactive controls and primary sheets use crisp 2px fountain-pen navy borders paired with hard offset ink shadows (3px 3px 0 #1B2534) that physically depress on click.",
+      "Semantic Highlighter Coding: Fluorescent yellow, mint green, pink, and sky markers encode learner status (Strength, On Track, Gap Detected, Priority Gap) at a glance.",
+      "Three-Voice Typography: Geometric sans-serif (DM Sans) for effortless reading, monospace (JetBrains Mono) for syllabus codes and metrics, and handwritten script (Caveat / Patrick Hand) strictly reserved for margin encouragement and organic annotations."
+    ],
+    "rules": [
+      {
+        "name": "The Unbleached Canvas Rule",
+        "body": "Never use pure #FFFFFF as a page or card background in light mode; always ground surfaces in Warm Cream Paper (#FDFBF7), Aged Manila (#F6F1E6), or Crisp Index Card (#FFFDF9).",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic Marker Rule",
+        "body": "Highlighter colors encode diagnostic meaning: Mint (#86EFAC) signifies confirmed mastery or approval, Yellow (#FDE047) signifies active focus or developing concepts, and Red Pen (#D93829) signifies priority learning gaps or primary actions.",
+        "section": "colors"
+      },
+      {
+        "name": "The Margin-Only Script Rule",
+        "body": "Handwritten fonts (Caveat, Patrick Hand) are strictly limited to short margin callouts, decorative brand accents, and pull-quote tags — never use them for form labels, data tables, error messages, or multi-sentence body paragraphs.",
+        "section": "typography"
+      },
+      {
+        "name": "The Monospace Ledger Rule",
+        "body": "All syllabus codes, page numbers, timestamps, role authorities (ROLE_STUDENT), and uppercase field labels use JetBrains Mono to distinguish structural metadata from narrative content.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ink-Bordered Surface Rule",
+        "body": "Every elevated card, sheet, or primary button must pair its shadow with a visible border (border-2 border-ink or border border-ink/20). Shadows never float without a physical paper edge.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do pair .notebook-margin-line containers with left padding of at least pl-12 sm:pl-16 so text and form inputs never collide with the vertical red margin line at left: 2.25rem.",
+      "Do use 2px solid #1B2534 borders and hard offset shadows (3px 3px 0 #1B2534) on primary CTAs and notebook sheets to preserve the tactile stationery character.",
+      "Do keep operational tables and forms (Login, Signup, Admin Approval Queue) at 0deg rotation so data entry and scanning remain effortless.",
+      "Do provide explicit aria-label context on row-level table actions (e.g., Approve Maria Santos, Reject Maria Santos) and role=\"alert\" on error banners."
+    ],
+    "donts": [
+      "Don't use pure #FFFFFF backgrounds or cold blue-gray SaaS shadows; always use Warm Cream Paper (#FDFBF7), Crisp Index Card (#FFFDF9), or Aged Manila (#F6F1E6).",
+      "Don't apply .tilt-card-left or .tilt-card-right rotations to multi-field forms, data tables, or dense text blocks.",
+      "Don't set body paragraphs, form labels, or table cells in Caveat or Patrick Hand; reserve handwritten fonts strictly for short annotations and brand accents.",
+      "Don't compress navigation items into a narrow centered container; keep the top header full-width (w-full) with shrink-0 action groups."
+    ]
+  }
+}
+

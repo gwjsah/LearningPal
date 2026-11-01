@@ -1,7 +1,8 @@
 import React from 'react';
 import { AlertTriangle, Clock, FileQuestion } from 'lucide-react';
 import { problemContent } from '../data/content';
-import { PushPin, PaperClip, WashiTape, SquigglyUnderline } from './Doodles';
+import { PushPin, PaperClip, WashiTape } from './Doodles';
+import { Button, SectionHeading } from './NotebookPrimitives';
 
 export default function Problem() {
   const icons = {
@@ -27,23 +28,13 @@ export default function Problem() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="max-w-3xl mx-auto text-center space-y-4">
-          <span className="inline-block px-3 py-1 rounded-md font-mono text-xs font-bold uppercase tracking-wider bg-redpen-soft text-redpen-dark dark:bg-red-950/80 dark:text-red-300 border border-redpen/30">
-            {problemContent.sectionLabel}
-          </span>
-          <h2
-            id="problem-heading"
-            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight"
-          >
-            {problemContent.headline}
-          </h2>
-          <div className="flex justify-center">
-            <SquigglyUnderline className="w-56 h-3" color="#D93829" />
-          </div>
-          <p className="text-base sm:text-lg text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-            {problemContent.subheadline}
-          </p>
-        </div>
+        <SectionHeading
+          id="problem-heading"
+          label={problemContent.sectionLabel}
+          badgeClassName="bg-redpen-soft text-redpen-dark border-redpen/30"
+          headline={problemContent.headline}
+          subheadline={problemContent.subheadline}
+        />
 
         {/* 3 Relatable Scenario Sticky Notes / Torn Notebook Pages */}
         <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-9 items-stretch">
@@ -81,8 +72,8 @@ export default function Problem() {
                     </div>
                   </div>
 
-                  {/* Relatable First-Person Quote */}
-                  <blockquote className="font-note text-xl sm:text-[1.3rem] leading-snug text-ink dark:text-chalkboard-chalk bg-paper/65 dark:bg-chalkboard/50 p-3.5 rounded-xl border-l-4 border-redpen">
+                  {/* Relatable First-Person Quote (Readable sans body text) */}
+                  <blockquote className="font-sans font-semibold italic text-base sm:text-lg leading-relaxed text-ink dark:text-chalkboard-chalk bg-paper/75 dark:bg-chalkboard/50 p-3.5 rounded-xl border border-ink/20 dark:border-white/20">
                     {scenario.quote}
                   </blockquote>
 
@@ -116,15 +107,11 @@ export default function Problem() {
               Students don’t lack effort—they lack <span className="marker-highlight-mint">topic-level visibility</span> into what to practice next.
             </p>
           </div>
-          <a
-            href="#how-it-works"
-            className="shrink-0 px-4 py-2.5 rounded-xl border-2 border-ink bg-highlighter-yellow text-ink font-bold text-sm shadow-[2px_2px_0_#1B2534] hover:translate-y-[-1px] transition-transform"
-          >
+          <Button href="#how-it-works" variant="yellow" size="md" className="shrink-0">
             See the 3-Step Fix ↓
-          </a>
+          </Button>
         </div>
       </div>
     </section>
   );
 }
-

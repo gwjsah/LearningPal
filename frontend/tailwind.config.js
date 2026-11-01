@@ -36,6 +36,7 @@ export default {
           pink: '#F9A8D4',      // Pink marker for attention/interventions
           pinkSoft: '#FCE7F3',
           sky: '#93C5FD',       // Blue highlighter tab accent
+          skySoft: '#DBEAFE',   // Soft blue highlighter tint
         },
         chalkboard: {
           DEFAULT: '#161C19',   // Night study dark slate/chalkboard
@@ -56,9 +57,20 @@ export default {
         lifted: '0 14px 28px -6px rgba(27, 37, 52, 0.14), 0 4px 10px -2px rgba(27, 37, 52, 0.08), 2px 3px 0 rgba(27, 37, 52, 0.1)',
         sticky: '2px 6px 14px rgba(27, 37, 52, 0.12), 0 1px 2px rgba(27, 37, 52, 0.08)',
         stamp: 'inset 0 0 0 2px currentColor',
+        'notebook-sm': '2px 2px 0 #1B2534',
+        notebook: '3px 3px 0 #1B2534',
+        'notebook-lg': '4px 4px 0 #1B2534',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.2s ease-out forwards',
       },
     },
   },
   plugins: [],
 };
-

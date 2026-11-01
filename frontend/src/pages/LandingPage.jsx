@@ -1,6 +1,7 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import { useTheme } from '../context/ThemeContext';
 
 // Lazy-load below-the-fold landing page sections
 const Problem = lazy(() => import('../components/Problem'));
@@ -22,19 +23,10 @@ function SectionFallback() {
 
 export default function LandingPage() {
   const [activeDemoRole, setActiveDemoRole] = useState('student');
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [darkMode]);
+  const { darkMode, toggleDarkMode } = useTheme();
 
   return (
-    <div className="min-h-screen flex flex-col bg-paper text-ink dark:bg-chalkboard dark:text-chalkboard-chalk transition-colors">
+    <div className="min-h-screen flex flex-col bg-paper text-ink dark:bg-chalkboard dark:text-chalkboard-chalk transition-colors overflow-x-hidden">
       {/* Keyboard Accessibility Skip Link */}
       <a
         href="#main-content"
@@ -48,7 +40,7 @@ export default function LandingPage() {
         activeDemoRole={activeDemoRole}
         onSelectDemoRole={setActiveDemoRole}
         darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode((prev) => !prev)}
+        onToggleDarkMode={toggleDarkMode}
       />
 
       {/* Main Page Sections */}

@@ -115,6 +115,8 @@ spring.datasource.password=YOUR_MYSQL_PASSWORD
 ```
 
 ### Step B: Run the Backend
+> **Setup Note:** Copy application.properties.example to application.properties in backend/src/main/resources/, fill in your MySQL credentials, JWT secret, and admin credentials, then run the backend.
+
 ```bash
 cd backend
 mvn spring-boot:run

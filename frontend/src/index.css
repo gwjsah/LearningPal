@@ -8,21 +8,23 @@
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   }
 
-  /* Respect user motion preferences */
+  /* Respect user motion preferences without destroying focus or instant state feedback */
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
     }
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
+    .animate-draw-stroke {
+      animation: none !important;
+      stroke-dashoffset: 0 !important;
     }
-    .tilt-card {
+    .animate-fadeIn,
+    .animate-spin {
+      animation-duration: 0.01s !important;
+    }
+    .tilt-card-left,
+    .tilt-card-right {
       transform: none !important;
+      transition: none !important;
     }
   }
 }
@@ -227,4 +229,3 @@
   font-weight: 700;
   mask-image: radial-gradient(circle at 20% 30%, black 85%, transparent 100%);
 }
-

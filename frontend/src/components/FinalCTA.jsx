@@ -51,20 +51,38 @@ export default function FinalCTA({ onSelectDemoRole }) {
 
             {/* Dual Action Buttons */}
             <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/signup"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-[4px_4px_0_#1B2534] hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+              <button
+                type="button"
+                onClick={() => handleJump('student')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
               >
                 <span>{finalCtaContent.primaryCta}</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
 
-              <Link
-                to="/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-ink dark:border-white/40 bg-highlighter-mint hover:bg-emerald-300 text-ink font-bold text-base shadow-[4px_4px_0_#1B2534] hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+              <button
+                type="button"
+                onClick={() => handleJump('teacher')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-ink dark:border-white/40 bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
               >
                 <BookOpenCheck className="w-4 h-4" />
-                <span>Log In</span>
+                <span>{finalCtaContent.secondaryCta}</span>
+              </button>
+            </div>
+
+            <div className="pt-1 flex items-center justify-center gap-4 text-xs font-mono">
+              <Link
+                to="/signup"
+                className="font-bold text-ink-blue dark:text-highlighter-yellow hover:text-redpen underline decoration-redpen decoration-2 underline-offset-2"
+              >
+                Create Free Account →
+              </Link>
+              <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
+              <Link
+                to="/login"
+                className="font-bold text-ink dark:text-chalkboard-chalk hover:text-redpen underline underline-offset-2"
+              >
+                Existing User Log In
               </Link>
             </div>
 

@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, AlertCircle, ArrowRight, Eye, EyeOff, BookOpen } from 'lucide-react';
+import { LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ThemeToggleButton } from '../context/ThemeContext';
 import { LearningPalLogo } from '../components/Doodles';
+import { Button, Field, NotebookCard } from '../components/NotebookPrimitives';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -28,7 +26,7 @@ export default function Login() {
     setServerError('');
 
     if (!formData.email.trim() || !formData.password) {
-      setServerError('Please enter both your email and password.');
+      setServerError('Please enter both your email address and password.');
       return;
     }
 
@@ -40,7 +38,6 @@ export default function Login() {
         password: formData.password,
       });
 
-      // Role-based destination redirect
       const roleHomeMap = {
         STUDENT: '/student',
         TEACHER: '/teacher',
@@ -53,7 +50,6 @@ export default function Login() {
 
       navigate(destination, { replace: true });
     } catch (err) {
-      // Server error message (e.g., 401 Incorrect email or password, 403 awaiting approval)
       setServerError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setSubmitting(false);
@@ -61,154 +57,121 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-paper flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* Brand Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
+    <div className="min-h-screen bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk flex flex-col justify-center py-10 sm:px-6 lg:px-8 transition-colors overflow-x-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-highlighter-yellow focus:text-ink focus:font-bold focus:shadow-lg"
+      >
+        Skip to login form
+      </a>
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 mb-4 flex items-center justify-between">
+        <Link
+          to="/"
+          className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-redpen focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded px-1 py-0.5 transition-colors"
+        >
+          ← Back to Cover Page
+        </Link>
+        <ThemeToggleButton />
+      </div>
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6 px-4">
         <Link
           to="/"
           className="inline-flex items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1"
         >
           <LearningPalLogo className="w-10 h-10 transition-transform group-hover:-rotate-6" />
-          <span className="font-bold text-2xl tracking-tight text-ink flex items-center">
+          <span className="font-bold text-2xl tracking-tight text-ink dark:text-chalkboard-chalk flex items-center">
             Learning<span className="font-hand text-3xl text-redpen -mt-1">Pal</span>
           </span>
         </Link>
-        <h1 className="mt-3 text-2xl font-extrabold text-ink tracking-tight font-sans">
+        <h1 className="mt-3 text-2xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight font-sans">
           Open Your Learning Notebook
         </h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <p className="mt-1 text-sm text-ink-muted dark:text-chalkboard-muted">
           Log in with your student, teacher, or administrator account
         </p>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        {/* Notebook Page Sheet (Pure CSS Notebook Look) */}
-        <div className="relative bg-paper-card border-2 border-ink shadow-lifted rounded-2xl overflow-hidden notebook-margin-line">
-          {/* Top Spiral Binder Holes */}
-          <div
-            className="flex items-center justify-between px-6 py-2 bg-paper-warm border-b border-ink/15 text-xs font-mono text-ink-muted"
-            aria-hidden="true"
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full bg-paper border border-ink/40 shadow-inner inline-block" />
-              <span className="w-3 h-3 rounded-full bg-paper border border-ink/40 shadow-inner inline-block" />
-              <span className="w-3 h-3 rounded-full bg-paper border border-ink/40 shadow-inner inline-block" />
+      <main id="main-content" className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <NotebookCard
+          pageLabel="Page 01 • User Authentication"
+          ruled
+          marginLine
+          lifted
+          bodyClassName="space-y-6"
+        >
+          {serverError && (
+            <div
+              id="login-server-error"
+              role="alert"
+              aria-live="polite"
+              className="flex items-start gap-3 p-3.5 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-sm font-medium shadow-sm animate-fadeIn"
+            >
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-redpen" aria-hidden="true" />
+              <div className="leading-snug">{serverError}</div>
             </div>
-            <span className="text-[11px] font-semibold text-redpen tracking-wider uppercase">
-              Page 01 • User Authentication
-            </span>
-          </div>
+          )}
 
-          {/* Form Surface with Classic Ruled Lines */}
-          <div className="p-6 sm:p-8 pl-12 sm:pl-16 bg-ruled-paper space-y-6">
-            {/* Server Error Alert */}
-            {serverError && (
-              <div
-                role="alert"
-                aria-live="polite"
-                className="flex items-start gap-3 p-3.5 rounded-xl border-2 border-redpen bg-redpen-soft/90 text-redpen-dark text-sm font-medium shadow-sm animate-fadeIn"
-              >
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-redpen" />
-                <div className="leading-snug">{serverError}</div>
-              </div>
-            )}
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            <Field
+              id="email"
+              name="email"
+              type="email"
+              label="Email Address"
+              autoComplete="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="e.g. maria.santos@school.edu"
+              describedBy={serverError ? 'login-server-error' : undefined}
+            />
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
-              {/* Email Address */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-mono font-bold uppercase tracking-wider text-ink mb-1.5"
-                >
-                  Email Address <span className="text-redpen">*</span>
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="e.g. maria.santos@school.edu"
-                  className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 bg-paper-card text-ink font-medium text-sm placeholder:text-ink-light focus:outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-redpen transition-all"
-                />
-              </div>
+            <Field
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              autoComplete="current-password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your account password"
+              describedBy={serverError ? 'login-server-error' : undefined}
+            />
 
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="password"
-                    className="block text-xs font-mono font-bold uppercase tracking-wider text-ink"
-                  >
-                    Password <span className="text-redpen">*</span>
-                  </label>
-                </div>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Enter your account password"
-                    className="w-full px-3.5 py-2.5 pr-11 rounded-xl border-2 border-ink/30 bg-paper-card text-ink font-medium text-sm placeholder:text-ink-light focus:outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-redpen transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen p-1 rounded"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-sm shadow-[3px_3px_0_#1B2534] hover:translate-y-[-1px] hover:shadow-[4px_4px_0_#1B2534] active:translate-y-0 active:shadow-[1px_1px_0_#1B2534] disabled:opacity-60 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Opening Notebook…</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Open Notebook</span>
-                      <LogIn className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-
-            {/* Bottom Notebook Links */}
-            <div className="pt-4 border-t border-ink/10 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-ink-muted gap-2">
-              <span>Don't have an account yet?</span>
-              <Link
-                to="/signup"
-                className="font-bold text-ink-blue hover:text-redpen underline decoration-redpen decoration-2 underline-offset-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
-              >
-                Sign up here →
-              </Link>
+            <div className="pt-2">
+              <Button type="submit" variant="primary" size="md" disabled={submitting} className="w-full py-3.5">
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Opening Notebook…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Open Notebook</span>
+                    <LogIn className="w-4 h-4" aria-hidden="true" />
+                  </>
+                )}
+              </Button>
             </div>
-          </div>
-        </div>
+          </form>
 
-        {/* Bottom Note */}
-        <p className="mt-4 text-center font-hand text-lg text-ink-muted">
+          <div className="pt-4 border-t border-ink/10 dark:border-white/15 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted gap-2">
+            <span>Don't have an account yet?</span>
+            <Link
+              to="/signup"
+              className="font-bold text-ink-blue dark:text-highlighter-yellow hover:text-redpen underline decoration-redpen decoration-2 underline-offset-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded px-1"
+            >
+              Sign up here →
+            </Link>
+          </div>
+        </NotebookCard>
+
+        <p className="mt-4 text-center font-hand text-xl text-ink-muted dark:text-chalkboard-muted">
           “Every page is a fresh step toward mastery.”
         </p>
-      </div>
+      </main>
     </div>
   );
 }
-
