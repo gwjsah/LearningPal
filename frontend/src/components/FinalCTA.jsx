@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpenCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, LogIn, Sparkles } from 'lucide-react';
 import { finalCtaContent } from '../data/content';
 import { BinderHoles, PushPin, SquigglyUnderline } from './Doodles';
 
 export default function FinalCTA({ onSelectDemoRole }) {
   const handleJump = (role) => {
-    onSelectDemoRole(role);
+    if (onSelectDemoRole) onSelectDemoRole(role);
     const demoEl = document.getElementById('demo');
     if (demoEl) {
       demoEl.scrollIntoView({ behavior: 'smooth' });
@@ -16,11 +16,11 @@ export default function FinalCTA({ onSelectDemoRole }) {
   return (
     <section
       aria-labelledby="final-cta-heading"
-      className="relative py-20 lg:py-28 bg-dot-paper overflow-hidden"
+      className="relative py-16 lg:py-24 bg-dot-paper overflow-hidden"
     >
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Torn Notebook Page Container */}
-        <div className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/35 shadow-lifted torn-edge-bottom pb-12 overflow-hidden">
+        <div className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/35 shadow-lifted torn-edge-bottom pb-10 overflow-hidden">
           <PushPin color="#D93829" />
 
           {/* Top Horizontal Binder Holes Strip */}
@@ -28,65 +28,58 @@ export default function FinalCTA({ onSelectDemoRole }) {
             <BinderHoles vertical={false} />
           </div>
 
-          <div className="p-6 sm:p-12 lg:p-14 text-center space-y-6 bg-ruled-paper">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-md bg-highlighter-yellow text-ink font-mono text-xs font-bold uppercase tracking-wider border border-ink/20">
+          <div className="p-6 sm:p-10 lg:p-12 text-center space-y-5 bg-ruled-paper">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-highlighter-yellow text-ink font-mono text-xs font-bold uppercase tracking-wider border border-ink/20">
               <Sparkles className="w-3.5 h-3.5 text-redpen" />
               <span>{finalCtaContent.eyebrow}</span>
             </div>
 
             <h2
               id="final-cta-heading"
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight max-w-2xl mx-auto leading-tight"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight max-w-xl mx-auto leading-tight"
             >
               {finalCtaContent.headline}
             </h2>
 
             <div className="flex justify-center">
-              <SquigglyUnderline className="w-64 h-3.5" color="#D93829" />
+              <SquigglyUnderline className="w-56 h-3" color="#D93829" />
             </div>
 
-            <p className="text-base sm:text-lg text-ink-muted dark:text-chalkboard-muted max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-ink-muted dark:text-chalkboard-muted max-w-xl mx-auto leading-relaxed">
               {finalCtaContent.subheadline}
             </p>
 
-            {/* Dual Action Buttons */}
-            <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => handleJump('student')}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
+            {/* Direct Conversion Action Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+              <Link
+                to="/signup"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
               >
                 <span>{finalCtaContent.primaryCta}</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleJump('teacher')}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-ink dark:border-white/40 bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
-              >
-                <BookOpenCheck className="w-4 h-4" />
-                <span>{finalCtaContent.secondaryCta}</span>
-              </button>
-            </div>
-
-            <div className="pt-1 flex items-center justify-center gap-4 text-xs font-mono">
-              <Link
-                to="/signup"
-                className="font-bold text-ink-blue dark:text-highlighter-yellow hover:text-redpen underline decoration-redpen decoration-2 underline-offset-2"
-              >
-                Create Free Account →
               </Link>
-              <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
+
               <Link
                 to="/login"
-                className="font-bold text-ink dark:text-chalkboard-chalk hover:text-redpen underline underline-offset-2"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
               >
-                Existing User Log In
+                <LogIn className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
+                <span>Log In</span>
               </Link>
             </div>
 
-            <p className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted pt-2">
+            <div className="pt-2 flex items-center justify-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+              <span>Want to explore first?</span>
+              <button
+                type="button"
+                onClick={() => handleJump('student')}
+                className="font-bold text-ink dark:text-chalkboard-chalk hover:text-redpen underline underline-offset-2 cursor-pointer"
+              >
+                Try the interactive demo ↑
+              </button>
+            </div>
+
+            <p className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted pt-1">
               {finalCtaContent.footnote}
             </p>
           </div>
@@ -95,4 +88,3 @@ export default function FinalCTA({ onSelectDemoRole }) {
     </section>
   );
 }
-

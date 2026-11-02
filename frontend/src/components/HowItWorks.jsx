@@ -1,7 +1,7 @@
 import React from 'react';
-import { Database, Cpu, Compass, Check } from 'lucide-react';
+import { Database, Cpu, Compass } from 'lucide-react';
 import { howItWorksContent } from '../data/content';
-import { HandDrawnCircle, StarDoodle } from './Doodles';
+import { HandDrawnCircle } from './Doodles';
 import { SectionHeading } from './NotebookPrimitives';
 
 export default function HowItWorks() {
@@ -11,7 +11,7 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       aria-labelledby="how-heading"
-      className="relative py-20 lg:py-28 bg-ruled-paper notebook-margin-line border-b-2 border-ink/15 dark:border-white/15 overflow-hidden"
+      className="relative py-16 lg:py-24 bg-ruled-paper notebook-margin-line border-b-2 border-ink/15 dark:border-white/15 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-10 sm:pl-14 lg:pl-16">
         <SectionHeading
@@ -23,7 +23,7 @@ export default function HowItWorks() {
         />
 
         {/* 3-Step Flow with Hand-Drawn Connecting Dashed Doodle Path */}
-        <div className="relative mt-16">
+        <div className="relative mt-12 sm:mt-16">
           <svg
             viewBox="0 0 1000 120"
             fill="none"
@@ -60,42 +60,42 @@ export default function HowItWorks() {
             />
           </svg>
 
-          <ol className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9">
+          <ol className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {howItWorksContent.steps.map((step, idx) => {
               const Icon = stepIcons[idx] || Compass;
 
               return (
                 <li
                   key={step.number}
-                  className={`rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/30 p-6 sm:p-7 shadow-paper flex flex-col justify-between ${
+                  className={`rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/30 p-6 sm:p-7 shadow-paper flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 ${
                     idx === 1 ? 'lg:-translate-y-2' : ''
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-3 mb-5">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-14 h-14 flex items-center justify-center">
+                        <div className="relative w-12 h-12 flex items-center justify-center">
                           <HandDrawnCircle className="absolute inset-0 w-full h-full" />
-                          <span className="font-hand text-3xl font-bold text-redpen">
+                          <span className="font-hand text-2xl font-bold text-redpen">
                             #{step.number}
                           </span>
                         </div>
                         <div>
-                          <span className="text-xs font-mono font-bold uppercase tracking-widest text-redpen block">
+                          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-redpen block">
                             Step {step.number}
                           </span>
-                          <span className="font-hand text-3xl font-bold text-ink dark:text-chalkboard-chalk">
+                          <span className="font-hand text-2xl font-bold text-ink dark:text-chalkboard-chalk">
                             {step.verb}
                           </span>
                         </div>
                       </div>
 
-                      <div className="w-11 h-11 rounded-xl bg-highlighter-yellowSoft dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-highlighter-yellowSoft dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 flex items-center justify-center">
                         <Icon className="w-5 h-5 text-ink dark:text-highlighter-yellow" />
                       </div>
                     </div>
 
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-mono font-semibold bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15 dark:border-white/15 mb-2">
                         {step.badge}
                       </span>
@@ -104,39 +104,16 @@ export default function HowItWorks() {
                       </h3>
                     </div>
 
-                    <p className="text-sm sm:text-base text-ink-muted dark:text-chalkboard-muted leading-relaxed mb-6">
+                    <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
                       {step.description}
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-paper-warm/75 dark:bg-chalkboard/60 border border-ink/15 dark:border-white/15 p-3.5 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted">
-                      <span>{step.artifactTitle}</span>
-                      <StarDoodle className="w-4 h-4" />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      {step.artifactItems.map((item) => (
-                        <div
-                          key={item.label}
-                          className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-paper-card dark:bg-chalkboard-card border border-ink/10 dark:border-white/10 text-xs"
-                        >
-                          <span className="font-medium text-ink dark:text-chalkboard-chalk flex items-center gap-1.5 truncate">
-                            <Check className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint shrink-0" />
-                            <span className="truncate">{item.label}</span>
-                          </span>
-                          <span
-                            className={`shrink-0 px-2 py-0.5 rounded font-mono text-[10px] font-bold text-ink ${item.color}`}
-                          >
-                            {item.meta}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <p className="pt-1 text-right font-hand text-lg font-bold text-redpen">
+                  <div className="pt-5 mt-5 border-t border-ink/10 dark:border-white/10 flex items-center justify-between">
+                    <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">Key benefit</span>
+                    <span className="font-hand text-base font-bold text-redpen dark:text-red-400">
                       ↳ {step.handNote}
-                    </p>
+                    </span>
                   </div>
                 </li>
               );

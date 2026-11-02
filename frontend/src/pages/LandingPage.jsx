@@ -4,12 +4,8 @@ import Hero from '../components/Hero';
 import { useTheme } from '../context/ThemeContext';
 
 // Lazy-load below-the-fold landing page sections
-const Problem = lazy(() => import('../components/Problem'));
 const HowItWorks = lazy(() => import('../components/HowItWorks'));
 const InteractiveDemo = lazy(() => import('../components/InteractiveDemo'));
-const FeaturesGrid = lazy(() => import('../components/FeaturesGrid'));
-const GoalsImpact = lazy(() => import('../components/GoalsImpact'));
-const WhoItsFor = lazy(() => import('../components/WhoItsFor'));
 const FinalCTA = lazy(() => import('../components/FinalCTA'));
 const Footer = lazy(() => import('../components/Footer'));
 
@@ -48,12 +44,8 @@ export default function LandingPage() {
         <Hero onSelectDemoRole={setActiveDemoRole} />
 
         <Suspense fallback={<SectionFallback />}>
-          <Problem />
           <HowItWorks />
           <InteractiveDemo activeRole={activeDemoRole} onChangeRole={setActiveDemoRole} />
-          <FeaturesGrid />
-          <GoalsImpact />
-          <WhoItsFor onSelectDemoRole={setActiveDemoRole} />
           <FinalCTA onSelectDemoRole={setActiveDemoRole} />
         </Suspense>
       </main>
@@ -64,4 +56,3 @@ export default function LandingPage() {
     </div>
   );
 }
-

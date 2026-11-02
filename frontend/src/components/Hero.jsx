@@ -93,23 +93,34 @@ export default function Hero({ onSelectDemoRole }) {
 
             {/* Two Primary CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
-              <button
-                type="button"
-                onClick={() => handleOpenDemo('student')}
-                className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen cursor-pointer"
+              <Link
+                to="/signup"
+                className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
               >
                 <span>{heroContent.primaryCta}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </button>
+              </Link>
 
-              <Link
-                to="/signup"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
+              <button
+                type="button"
+                onClick={() => handleOpenDemo('student')}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen cursor-pointer"
               >
                 <BookOpen className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
-                <span>Create Free Notebook</span>
-              </Link>
+                <span>{heroContent.secondaryCta}</span>
+              </button>
             </div>
+
+            {/* Subtle login link */}
+            <p className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+              Already using LearningPal?{' '}
+              <Link
+                to="/login"
+                className="font-bold text-ink dark:text-chalkboard-chalk hover:text-redpen underline underline-offset-2"
+              >
+                Log in here →
+              </Link>
+            </p>
 
             {/* Handwritten Margin Callout */}
             <div className="pt-2 flex items-center gap-3 text-redpen dark:text-red-400">

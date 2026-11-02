@@ -34,7 +34,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
         </div>
         <div className="flex items-center gap-6">
           <span className="text-redpen dark:text-red-400 font-semibold">Subject Ref: BIO-204 / MTH-301</span>
-          <span>Page Index • 01–06</span>
+          <span>Page Index • 01–02</span>
         </div>
       </div>
 
@@ -60,7 +60,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
         </Link>
 
         {/* Notebook Divider Tab Links (Desktop) */}
-        <div className="hidden xl:flex items-end self-end gap-1.5 pt-2 shrink-0">
+        <div className="hidden lg:flex items-end self-end gap-1.5 pt-2 shrink-0">
           {navLinks.map((link) => (
             <a
               key={link.href}
@@ -134,11 +134,11 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
             </button>
           </div>
 
-          {/* Section Index Drawer Trigger for Tablet / Compact Laptop (768px - 1279px) */}
+          {/* Section Index Drawer Trigger for Tablet / Mobile (< 1024px) */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="lg:hidden p-2 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle section index menu"
             title="Notebook Section Index"
@@ -175,9 +175,9 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
         </div>
       </nav>
 
-      {/* Responsive Dropdown Notebook Drawer (< 1280px) */}
+      {/* Responsive Dropdown Notebook Drawer (< 1024px) */}
       {mobileMenuOpen && (
-        <div className="xl:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
+        <div className="lg:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
           <div className="grid grid-cols-2 gap-2">
             {navLinks.map((link) => (
               <a
