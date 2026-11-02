@@ -19,12 +19,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service managing user signup, authentication, and session retrieval.
  */
 @Service
 public class AuthService {
+
+    // shortcut: in-memory map clears on restart; upgrade to distributed rate limiter (Redis/Bucket4j) for clustered deployments.
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000L;
+    private final ConcurrentHashMap<String, FailedAttempt> loginAttempts = new ConcurrentHashMap<>();
+
+    private record FailedAttempt(int count, long lockUntil, long lastAttempt) {}
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -93,20 +101,31 @@ public class AuthService {
     /**
      * Authenticates an existing user.
      * - Wrong email and wrong password return the identical 401 error.
+     * - Temporarily locks out email after 5 consecutive failed attempts.
      * - Account status is evaluated ONLY after the password is confirmed valid.
      */
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         String normalizedEmail = request.getEmail().trim().toLowerCase(Locale.ROOT);
 
-        // Find user by normalized email
-        User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new InvalidCredentialsException("Incorrect email or password"));
+        long now = System.currentTimeMillis();
+        FailedAttempt attempt = loginAttempts.get(normalizedEmail);
+        if (attempt != null && attempt.lockUntil() > 0 && now < attempt.lockUntil()) {
+            long minutesRemaining = Math.max(1, (attempt.lockUntil() - now + 59999L) / 60000L);
+            throw new AccountStatusException("Too many failed login attempts. Please try again in " + minutesRemaining + " minute(s).");
+        }
 
-        // Verify password against BCrypt hash
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        // Find user by normalized email
+        User user = userRepository.findByEmail(normalizedEmail).orElse(null);
+
+        // Verify credentials against BCrypt hash
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            recordFailedLogin(normalizedEmail);
             throw new InvalidCredentialsException("Incorrect email or password");
         }
+
+        // Credentials valid: clear failed attempts
+        loginAttempts.remove(normalizedEmail);
 
         // Verify account approval status
         if (user.getStatus() == UserStatus.PENDING) {
@@ -119,6 +138,18 @@ public class AuthService {
         // Active account: issue JWT
         String token = jwtService.generateToken(user);
         return new AuthResponse(token, UserDto.fromEntity(user));
+    }
+
+    private void recordFailedLogin(String email) {
+        long now = System.currentTimeMillis();
+        loginAttempts.compute(email, (k, current) -> {
+            if (current == null || (current.lockUntil() > 0 && now >= current.lockUntil()) || (now - current.lastAttempt() > LOCKOUT_DURATION_MS)) {
+                return new FailedAttempt(1, 0L, now);
+            }
+            int newCount = current.count() + 1;
+            long lockUntil = newCount >= MAX_FAILED_ATTEMPTS ? now + LOCKOUT_DURATION_MS : 0L;
+            return new FailedAttempt(newCount, lockUntil, now);
+        });
     }
 
     /**

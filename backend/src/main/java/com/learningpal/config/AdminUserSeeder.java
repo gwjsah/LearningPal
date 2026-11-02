@@ -45,6 +45,15 @@ public class AdminUserSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (!userRepository.existsByRole(Role.ADMIN)) {
+            // shortcut: allows dev fallback seed credentials; upgrade to requiring APP_ADMIN_PASSWORD env var in prod profile.
+            if (adminPassword == null || adminPassword.isBlank() || adminPassword.length() < 8 || "REPLACE_WITH_STRONG_PASSWORD".equalsIgnoreCase(adminPassword.trim())) {
+                log.error("ADMIN SEED SKIPPED: 'app.admin.password' is unset, placeholder, or shorter than 8 characters. Set a secure password via APP_ADMIN_PASSWORD environment variable.");
+                return;
+            }
+            if ("AdminPass123".equals(adminPassword)) {
+                log.warn("SECURITY WARNING: Using default development admin password. Set APP_ADMIN_PASSWORD in production!");
+            }
+
             String normalizedEmail = adminEmail.trim().toLowerCase(Locale.ROOT);
             User admin = new User(
                     adminFullName,

@@ -1,5 +1,7 @@
 package com.learningpal.config;
 
+import com.learningpal.entity.UserStatus;
+import com.learningpal.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,19 +17,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Locale;
 
 /**
  * Intercepts incoming requests to extract and validate the Bearer JWT.
- * If valid, establishes the authenticated principal in Spring's SecurityContext
- * with the appropriate role authority (ROLE_STUDENT, ROLE_TEACHER, ROLE_ADMIN).
+ * Verifies that the user exists and is ACTIVE in the database before granting authentication.
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtService jwtService) {
+    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -47,27 +51,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String jwt = authHeader.substring(7).trim();
 
-        // If valid, populate security context
+        // If valid signature, check user status in database
         if (jwtService.isTokenValid(jwt)) {
             String email = jwtService.extractEmail(jwt);
-            String role = jwtService.extractRole(jwt);
 
-            if (email != null && role != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Roles in Spring Security use the ROLE_ prefix for hasRole() checks
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+            // shortcut: direct DB lookup per request; upgrade to Redis cache or revoked-token blacklist if DB load grows.
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                userRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT)).ifPresent(user -> {
+                    if (user.getStatus() == UserStatus.ACTIVE) {
+                        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        email,
-                        null,
-                        Collections.singletonList(authority)
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                user.getEmail(),
+                                null,
+                                Collections.singletonList(authority)
+                        );
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                });
             }
         }
 
-        // Proceed down the filter chain (anonymous if invalid or missing)
+        // Proceed down the filter chain (anonymous if invalid, inactive, or missing)
         filterChain.doFilter(request, response);
     }
 }

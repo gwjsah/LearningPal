@@ -10,8 +10,8 @@ export const siteMetadata = {
 };
 
 export const navLinks = [
-  { label: 'How It Works', href: '#how-it-works', tabColor: 'bg-highlighter-yellowSoft dark:bg-yellow-950/60' },
-  { label: 'Interactive Demo', href: '#demo', tabColor: 'bg-highlighter-mintSoft dark:bg-emerald-950/60' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Interactive Demo', href: '#demo' },
 ];
 
 export const heroContent = {

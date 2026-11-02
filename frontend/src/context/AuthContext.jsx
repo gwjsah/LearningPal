@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 
+// shortcut: JWT stored in localStorage for dev convenience; upgrade to HttpOnly SameSite=Strict cookies with reverse proxy for production XSS defense.
 const TOKEN_KEY = 'learningpal_token';
 
 const AuthContext = createContext(null);

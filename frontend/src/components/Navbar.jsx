@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, GraduationCap, BookOpenCheck, Moon, Sun, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, Moon, Sun, LogIn, UserPlus } from 'lucide-react';
 import { siteMetadata, navLinks } from '../data/content';
 import { LearningPalLogo } from './Doodles';
 
-export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onToggleDarkMode }) {
+export default function Navbar({ darkMode, onToggleDarkMode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleRoleJump = (role) => {
-    onSelectDemoRole(role);
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
     setMobileMenuOpen(false);
-    const demoEl = document.getElementById('demo');
-    if (demoEl) {
-      demoEl.scrollIntoView({ behavior: 'smooth' });
+
+    const targetId = href.replace('#', '');
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth' });
+      window.history.pushState(null, '', href);
     }
   };
 
@@ -21,7 +24,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
       id="top"
       className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-white/15 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors"
     >
-      {/* Top spiral-punch strip - Full width horizontally, slim vertically */}
+      {/* Top spiral-punch strip */}
       <div
         className="hidden sm:flex items-center justify-between w-full px-6 sm:px-10 lg:px-16 py-1 bg-paper-warm/90 dark:bg-chalkboard-surface border-b border-ink/10 dark:border-white/10 text-xs font-mono text-ink-muted dark:text-chalkboard-muted"
         aria-hidden="true"
@@ -38,12 +41,12 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
         </div>
       </div>
 
-      {/* Main Navigation - Full width horizontally, sleek h-16 vertically */}
+      {/* Main Navigation Bar */}
       <nav
-        className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4 lg:gap-8"
+        className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4"
         aria-label="Primary Notebook Navigation"
       >
-        {/* Brand Wordmark - Uncompressed and fixed shrink-0 */}
+        {/* Brand Wordmark (Left) */}
         <Link
           to="/"
           className="group flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1 shrink-0"
@@ -59,25 +62,29 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
           </div>
         </Link>
 
-        {/* Notebook Divider Tab Links (Desktop) */}
-        <div className="hidden lg:flex items-end self-end gap-1.5 pt-2 shrink-0">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className={`px-3.5 py-2 text-sm font-medium text-ink dark:text-chalkboard-chalk rounded-t-lg border-t border-x border-ink/15 dark:border-white/15 ${link.tabColor} hover:-translate-y-0.5 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen`}
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-
-        {/* Right Controls: Auth Links, Theme Toggle, Role Switcher - Expanded horizontally */}
+        {/* Right Section: Nav Buttons + Auth Links + Theme Toggle */}
         <div className="hidden md:flex items-center gap-3 lg:gap-4 shrink-0">
-          {/* Direct Auth Links with generous horizontal padding */}
+          {/* Plain Text Nav Buttons: "How It Works" & "Interactive Demo" */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="px-3.5 py-1.5 rounded-lg text-sm font-semibold text-ink dark:text-chalkboard-chalk bg-transparent border-0 hover:bg-paper-hover active:bg-paper-pressed dark:hover:bg-chalkboard-hover dark:active:bg-chalkboard-pressed transition-colors duration-150 motion-reduce:transition-none cursor-pointer whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen focus-visible:ring-offset-paper dark:focus-visible:ring-offset-chalkboard"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+
+          {/* Subtle Vertical Divider */}
+          <div className="w-px h-6 bg-ink/15 dark:bg-white/15 my-auto" aria-hidden="true" />
+
+          {/* Direct Auth Links */}
           <Link
             to="/login"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <LogIn className="w-4 h-4 text-ink-blue dark:text-chalkboard-chalk shrink-0" />
             <span>Log In</span>
@@ -85,7 +92,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
 
           <Link
             to="/signup"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-redpen hover:bg-redpen-dark text-white border border-ink shadow-notebook-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-redpen hover:bg-redpen-dark text-white border border-ink shadow-notebook-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <UserPlus className="w-4 h-4 shrink-0" />
             <span>Sign Up</span>
@@ -101,53 +108,9 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
           >
             {darkMode ? <Sun className="w-4 h-4 text-highlighter-yellow" /> : <Moon className="w-4 h-4 text-ink" />}
           </button>
-
-          {/* Student / Teacher Segmented Notebook Tab CTA */}
-          <div
-            className="inline-flex items-center p-1 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-warm dark:bg-chalkboard-surface shadow-notebook-sm shrink-0"
-            role="group"
-            aria-label="Jump to interactive demo by role"
-          >
-            <button
-              type="button"
-              onClick={() => handleRoleJump('student')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
-                activeDemoRole === 'student'
-                  ? 'bg-highlighter-yellow text-ink shadow-sm border border-ink/30'
-                  : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-white'
-              }`}
-            >
-              <GraduationCap className="w-4 h-4 shrink-0" />
-              <span>Student</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleJump('teacher')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
-                activeDemoRole === 'teacher'
-                  ? 'bg-highlighter-mint text-ink shadow-sm border border-ink/30'
-                  : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-white'
-              }`}
-            >
-              <BookOpenCheck className="w-4 h-4 shrink-0" />
-              <span>Teacher</span>
-            </button>
-          </div>
-
-          {/* Section Index Drawer Trigger for Tablet / Mobile (< 1024px) */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
-            aria-expanded={mobileMenuOpen}
-            aria-label="Toggle section index menu"
-            title="Notebook Section Index"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
 
-        {/* Mobile Menu & Dark Mode Trigger (< 768px) */}
+        {/* Mobile Header Controls (< 768px) */}
         <div className="flex items-center gap-2 md:hidden shrink-0">
           <Link
             to="/login"
@@ -161,7 +124,7 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
             className="p-2 rounded-lg border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk"
             aria-label={darkMode ? 'Switch to Paper Light Mode' : 'Switch to Chalkboard Night Study Mode'}
           >
-            {darkMode ? <Sun className="w-4 h-4 text-highlighter-yellow" /> : <Moon className="w-4 h-4" />}
+            {darkMode ? <Sun className="w-4 h-4 text-highlighter-yellow" /> : <Moon className="w-4 h-4 text-ink" />}
           </button>
           <button
             type="button"
@@ -175,58 +138,39 @@ export default function Navbar({ activeDemoRole, onSelectDemoRole, darkMode, onT
         </div>
       </nav>
 
-      {/* Responsive Dropdown Notebook Drawer (< 1024px) */}
+      {/* Responsive Mobile Drawer (< 768px) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="md:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
+          <div className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold text-ink dark:text-chalkboard-chalk border border-ink/15 dark:border-white/15 ${link.tabColor}`}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="px-3.5 py-2.5 rounded-lg text-sm font-semibold text-ink dark:text-chalkboard-chalk bg-transparent border-0 hover:bg-paper-hover active:bg-paper-pressed dark:hover:bg-chalkboard-hover dark:active:bg-chalkboard-pressed transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen focus-visible:ring-offset-paper dark:focus-visible:ring-offset-chalkboard"
               >
                 {link.label}
               </a>
             ))}
           </div>
 
-          <div className="pt-2 border-t border-ink/10 dark:border-white/10 flex flex-col gap-2">
-            <div className="flex gap-2">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-ink/20 dark:border-white/20 text-xs font-bold text-ink dark:text-white"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Log In</span>
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-redpen text-white text-xs font-bold shadow-sm"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Sign Up</span>
-              </Link>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleRoleJump('student')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-ink bg-highlighter-yellow text-ink font-bold text-sm shadow-notebook-sm"
+          <div className="pt-2 border-t border-ink/10 dark:border-white/10 flex gap-2">
+            <Link
+              to="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-ink/20 dark:border-white/20 text-xs font-bold text-ink dark:text-white"
             >
-              <GraduationCap className="w-4 h-4" />
-              <span>Student Notebook View</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleJump('teacher')}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-ink bg-highlighter-mint text-ink font-bold text-sm shadow-notebook-sm"
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Log In</span>
+            </Link>
+            <Link
+              to="/signup"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-redpen text-white text-xs font-bold shadow-sm"
             >
-              <BookOpenCheck className="w-4 h-4" />
-              <span>Teacher Gradebook View</span>
-            </button>
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Sign Up</span>
+            </Link>
           </div>
         </div>
       )}

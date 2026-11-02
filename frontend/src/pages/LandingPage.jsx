@@ -33,8 +33,6 @@ export default function LandingPage() {
 
       {/* Sticky Notebook Header with Login / Signup links */}
       <Navbar
-        activeDemoRole={activeDemoRole}
-        onSelectDemoRole={setActiveDemoRole}
         darkMode={darkMode}
         onToggleDarkMode={toggleDarkMode}
       />

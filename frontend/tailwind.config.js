@@ -12,6 +12,8 @@ export default {
           DEFAULT: '#FDFBF7',   // Primary warm cream notebook page
           warm: '#F6F1E6',      // Aged manila / secondary section paper
           card: '#FFFDF9',      // Crisp index card white-cream
+          hover: '#FFFFFF',     // Slightly lighter shade of paper for subtle button hover
+          pressed: '#FFFFFF',   // Pressed shade matching lighter paper hue
           rule: '#D8E3EC',      // Classic cyan-blue notebook ruling line
           grid: '#E3DEC8',      // Subtle graph-paper grid line
           edge: '#E5DEC9',      // Paper border / deckle edge
@@ -41,6 +43,8 @@ export default {
         chalkboard: {
           DEFAULT: '#161C19',   // Night study dark slate/chalkboard
           surface: '#1F2723',   // Elevated dark notebook card
+          hover: '#202723',     // Slightly lighter shade of chalkboard for subtle button hover
+          pressed: '#262F2A',   // Touch lighter than hover for pressed state
           card: '#26302B',      // Dark index card
           chalk: '#F3F4F0',     // Crisp chalk white text
           muted: '#A7B5AE',     // Dusted chalk secondary text

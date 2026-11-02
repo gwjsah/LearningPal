@@ -40,8 +40,25 @@ app.cors.allowed-origins=http://localhost:5173
 # On application startup, if no admin exists, this account will be created automatically.
 # -------------------------------------------------------------------
 # Email address for the initial seed administrator account
-app.admin.email=admin@example.com
+app.admin.email=${APP_ADMIN_EMAIL:admin@example.com}
 # Strong password for the initial seed administrator (minimum 8 characters, at least 1 letter and 1 number)
-app.admin.password=REPLACE_WITH_STRONG_PASSWORD
-app.admin.full-name=LearningPal System Admin
+app.admin.password=${APP_ADMIN_PASSWORD:REPLACE_WITH_STRONG_PASSWORD}
+app.admin.full-name=${APP_ADMIN_NAME:LearningPal System Admin}
+
+# -------------------------------------------------------------------
+# Pilot Learning Data Seeder
+# When true, automatically seeds the pilot subject, topics, questions, and resources if empty.
+# -------------------------------------------------------------------
+app.seed.enabled=true
+
+# -------------------------------------------------------------------
+# Diagnostic Gap Analysis Engine Configuration
+# -------------------------------------------------------------------
+# Minimum score percentage to be categorized as a STRENGTH (default 80.0)
+app.analysis.strength-threshold=80.0
+# Score percentage threshold below which is categorized as a GAP (default 60.0)
+app.analysis.gap-threshold=60.0
+# Minimum distinct questions evaluated per topic before categorizing beyond INSUFFICIENT_DATA
+app.analysis.min-questions=3
+
 

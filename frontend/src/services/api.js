@@ -44,6 +44,11 @@ export async function apiRequest(endpoint, options = {}) {
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // shortcut: client-side token wipe on 401; upgrade to refresh-token rotation in production.
+      localStorage.removeItem('learningpal_token');
+    }
+
     // Backend standardizes all error messages into { "message": "..." }
     const errorMessage = data?.message || `Request failed with status ${response.status}`;
     const error = new Error(errorMessage);

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun } from 'lucide-react';
 import { LearningPalLogo, SquigglyUnderline } from './Doodles';
-import { ThemeToggleButton } from '../context/ThemeContext';
+import { ThemeToggleButton, useTheme } from '../context/ThemeContext';
 
 const BUTTON_VARIANTS = {
   primary:
@@ -248,6 +248,8 @@ export function PortalShell({
   headerRight,
   children,
 }) {
+  const { darkMode, toggleDarkMode } = useTheme();
+
   return (
     <div className="min-h-screen bg-paper dark:bg-chalkboard flex flex-col text-ink dark:text-chalkboard-chalk font-sans transition-colors overflow-x-hidden">
       <a
@@ -257,50 +259,67 @@ export function PortalShell({
         {skipLabel}
       </a>
 
-      <header className="sticky top-0 z-40 bg-paper-card dark:bg-chalkboard-card border-b-2 border-ink dark:border-white/40 px-4 sm:px-8 py-3 shadow-sm">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-white/15 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors">
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
           <Link
-            to="/"
-            className="flex items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1"
+            to={user?.role === 'STUDENT' ? '/student' : (user?.role === 'TEACHER' ? '/teacher' : '/admin')}
+            className="group flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1 shrink-0"
+            title="Go to dashboard"
           >
-            <LearningPalLogo className="w-8 h-8 transition-transform group-hover:-rotate-6" />
+            <LearningPalLogo className="w-9 h-9 transition-transform duration-200 group-hover:-rotate-6 shrink-0" />
             <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight text-ink dark:text-chalkboard-chalk flex items-center">
-                Learning<span className="font-hand text-2xl text-redpen -mt-1">Pal</span>
+              <span className="font-bold text-xl tracking-tight text-ink dark:text-chalkboard-chalk flex items-center gap-1 leading-tight whitespace-nowrap">
+                Learning<span className="font-hand text-2xl text-redpen dark:text-red-400 -mt-0.5">Pal</span>
               </span>
-              <span className="text-[10px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted -mt-1">
-                {portalSubtitle}
+              <span className="text-[10px] font-mono uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted -mt-0.5 whitespace-nowrap">
+                {portalSubtitle || 'Study Smart Notebook'}
               </span>
             </div>
           </Link>
 
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-bold text-ink dark:text-chalkboard-chalk">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {user?.role && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs">
+                {user.role}
+              </span>
+            )}
+
+            <div className="hidden md:flex flex-col text-right">
+              <span className="text-xs font-bold text-ink dark:text-chalkboard-chalk truncate max-w-[160px]">
                 {user?.fullName || 'Notebook User'}
               </span>
-              <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
+              <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted truncate max-w-[160px]">
                 {user?.email}
               </span>
             </div>
 
-            <ThemeToggleButton />
+            <div className="hidden sm:block w-px h-6 bg-ink/15 dark:bg-white/15 my-auto" aria-hidden="true" />
 
-            <Button
-              variant="secondary"
-              size="sm"
+            {/* Chalkboard / Night Study Toggle matching Navbar */}
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              className="p-2 rounded-xl border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
+              aria-label={darkMode ? 'Switch to Paper Light Mode' : 'Switch to Chalkboard Night Study Mode'}
+              title={darkMode ? 'Paper Mode (Light)' : 'Chalkboard Mode (Night Study)'}
+            >
+              {darkMode ? <Sun className="w-4 h-4 text-highlighter-yellow" /> : <Moon className="w-4 h-4 text-ink" />}
+            </button>
+
+            <button
+              type="button"
               onClick={onLogout}
-              className="hover:bg-redpen hover:text-white dark:hover:bg-redpen"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-redpen hover:text-white hover:border-redpen dark:hover:bg-redpen shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
               title="Sign out of your notebook account"
             >
-              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Log Out</span>
-            </Button>
+              <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
           </div>
         </div>
       </header>
 
-      <main id="main-content" className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-8 py-8 space-y-6">
+      <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <NotebookCard ruled marginLine lifted>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>

@@ -32,6 +32,9 @@ class LearningPalApplicationTests {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private com.learningpal.repository.UserRepository userRepository;
+
     private static String studentToken;
     private static String adminToken;
     private static Long pendingTeacherId;
@@ -195,5 +198,45 @@ class LearningPalApplicationTests {
                         .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", is("You do not have permission to access this resource")));
+    }
+
+    @Test
+    @Order(8)
+    void scenario8_bruteForceLockoutAfter5FailedAttempts() throws Exception {
+        String brutePayload = """
+            {
+              "email": "lockout.target@learningpal.edu",
+              "password": "WrongPassword999"
+            }
+            """;
+
+        // 5 consecutive failed attempts
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(brutePayload))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        // 6th attempt is locked out
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(brutePayload))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", containsString("Too many failed login attempts")));
+    }
+
+    @Test
+    @Order(9)
+    void scenario9_inactiveUserTokenRejectedByFilter() throws Exception {
+        // Change student status to REJECTED in database
+        com.learningpal.entity.User student = userRepository.findByEmail("alex.student@learningpal.edu").orElseThrow();
+        student.setStatus(com.learningpal.entity.UserStatus.REJECTED);
+        userRepository.save(student);
+
+        // Attempt to call a protected endpoint with the previously valid student token
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isUnauthorized());
     }
 }
