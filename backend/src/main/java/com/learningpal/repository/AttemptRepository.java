@@ -18,5 +18,6 @@ public interface AttemptRepository extends JpaRepository<Attempt, Long> {
     List<Attempt> findByAssessment(Assessment assessment);
     List<Attempt> findByStudentAndAssessmentOrderByAttemptNumberDesc(User student, Assessment assessment);
     long countByStudentIdAndAssessmentId(Long studentId, Long assessmentId);
+    List<Attempt> findByClassId(Long classId);
 }
 

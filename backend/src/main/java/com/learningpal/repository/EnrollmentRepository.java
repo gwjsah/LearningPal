@@ -1,7 +1,9 @@
 package com.learningpal.repository;
 
 import com.learningpal.entity.ClassEntity;
+import com.learningpal.entity.ClassStatus;
 import com.learningpal.entity.Enrollment;
+import com.learningpal.entity.Institution;
 import com.learningpal.entity.Subject;
 import com.learningpal.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,32 +19,49 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     boolean existsByStudentAndClassEntity(User student, ClassEntity classEntity);
 
-    @Query("SELECT COUNT(e) > 0 FROM Enrollment e LEFT JOIN e.classEntity c WHERE e.student = :student AND (c.subject = :subject OR e.subject = :subject)")
-    boolean existsByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
+    Optional<Enrollment> findByStudentAndClassEntity(User student, ClassEntity classEntity);
 
-    @Query("SELECT COUNT(e) > 0 FROM Enrollment e LEFT JOIN e.classEntity c WHERE e.student.id = :studentId AND (c.subject.id = :subjectId OR e.subject.id = :subjectId)")
-    boolean existsByStudentIdAndSubjectId(@Param("studentId") Long studentId, @Param("subjectId") Long subjectId);
+    List<Enrollment> findByClassEntity(ClassEntity classEntity);
+
+    List<Enrollment> findByClassEntityOrderByEnrolledAtDesc(ClassEntity classEntity);
+
+    long countByClassEntity(ClassEntity classEntity);
 
     List<Enrollment> findByStudentOrderByEnrolledAtDesc(User student);
 
     List<Enrollment> findByStudentId(Long studentId);
 
-    List<Enrollment> findByClassEntity(ClassEntity classEntity);
+    @Query("SELECT COUNT(e) > 0 FROM Enrollment e WHERE e.student = :student AND e.classEntity.subject = :subject")
+    boolean existsByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
 
-    Optional<Enrollment> findByStudentAndClassEntity(User student, ClassEntity classEntity);
+    @Query("SELECT COUNT(e) > 0 FROM Enrollment e WHERE e.student.id = :studentId AND e.classEntity.subject.id = :subjectId")
+    boolean existsByStudentIdAndSubjectId(@Param("studentId") Long studentId, @Param("subjectId") Long subjectId);
 
-    @Query("SELECT e FROM Enrollment e LEFT JOIN e.classEntity c WHERE e.student = :student AND (c.subject = :subject OR e.subject = :subject)")
-    Optional<Enrollment> findByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
+    @Query("SELECT COUNT(e) > 0 FROM Enrollment e WHERE e.student = :student AND e.classEntity.subject = :subject AND e.classEntity.status = com.learningpal.entity.ClassStatus.ACTIVE")
+    boolean existsActiveEnrollmentByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
 
-    @Query("SELECT e FROM Enrollment e LEFT JOIN e.classEntity c WHERE e.student.id = :studentId AND (c.subject.id = :subjectId OR e.subject.id = :subjectId)")
-    Optional<Enrollment> findByStudentIdAndSubjectId(@Param("studentId") Long studentId, @Param("subjectId") Long subjectId);
+    @Query("SELECT e.classEntity FROM Enrollment e WHERE e.student = :student AND e.classEntity.subject = :subject AND e.classEntity.status = com.learningpal.entity.ClassStatus.ACTIVE")
+    Optional<ClassEntity> findActiveClassByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
 
-    @Query("SELECT c.id FROM Enrollment e LEFT JOIN e.classEntity c WHERE e.student = :student AND (c.subject = :subject OR e.subject = :subject)")
-    Optional<Long> findClassIdByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
+    @Query("SELECT e.classEntity.id FROM Enrollment e WHERE e.student = :student AND e.classEntity.subject = :subject ORDER BY CASE WHEN e.classEntity.status = com.learningpal.entity.ClassStatus.ACTIVE THEN 0 ELSE 1 END, e.enrolledAt DESC")
+    List<Long> findClassIdsByStudentAndSubject(@Param("student") User student, @Param("subject") Subject subject);
 
-    long countByClassEntity(ClassEntity classEntity);
+    default Optional<Long> findClassIdByStudentAndSubject(User student, Subject subject) {
+        List<Long> ids = findClassIdsByStudentAndSubject(student, subject);
+        return ids.isEmpty() ? Optional.empty() : Optional.of(ids.get(0));
+    }
 
-    @Query("SELECT COUNT(e) FROM Enrollment e LEFT JOIN e.classEntity c WHERE (c.subject.id = :subjectId OR e.subject.id = :subjectId)")
+    @Query("SELECT e FROM Enrollment e WHERE e.student = :student ORDER BY CASE WHEN e.classEntity.status = com.learningpal.entity.ClassStatus.ACTIVE THEN 0 ELSE 1 END, e.enrolledAt DESC")
+    List<Enrollment> findByStudentOrderedForDashboard(@Param("student") User student);
+
+    @Query("SELECT COUNT(e) > 0 FROM Enrollment e WHERE e.student = :student AND e.classEntity.teacher = :teacher AND e.classEntity.institution = :institution")
+    boolean existsByStudentAndTeacherAndInstitution(
+            @Param("student") User student,
+            @Param("teacher") User teacher,
+            @Param("institution") Institution institution
+    );
+
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.classEntity.subject.id = :subjectId")
     long countBySubjectId(@Param("subjectId") Long subjectId);
 
     List<Enrollment> findByClassEntityIsNull();

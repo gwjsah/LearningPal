@@ -77,6 +77,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles rate limit violations (e.g. 5 failed join code attempts per minute).
+     */
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(RateLimitException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
      * Handles client business rule violations.
      */
     @ExceptionHandler(BadRequestException.class)
@@ -111,6 +119,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("Endpoint not found: " + ex.getResourcePath()));
+    }
+
+    /**
+     * Handles Spring MVC unsupported HTTP methods (e.g. DELETE on endpoint without DELETE handler).
+     */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(new ErrorResponse("HTTP method " + ex.getMethod() + " is not supported for this endpoint"));
     }
 
     /**

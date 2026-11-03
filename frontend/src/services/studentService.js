@@ -1,26 +1,37 @@
 import { apiRequest } from './api';
 
 /**
- * Service client for student assessment operations.
+ * Service client for student classroom, assessment, and diagnostic operations.
  */
 export const studentService = {
   /**
-   * Fetches subjects the current student is enrolled in with diagnostic summaries.
+   * Fetches the current student's enrolled classes with diagnostic summaries.
+   */
+  getClasses: () => apiRequest('/student/classes'),
+
+  /**
+   * Joins a classroom section using a 6-character institution-scoped join code.
+   */
+  joinClass: (code) =>
+    apiRequest('/student/classes/join', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+
+  /**
+   * Fetches workspace header and attempt permission details for an enrolled class.
+   */
+  getClassWorkspace: (classId) => apiRequest(`/student/classes/${classId}`),
+
+  /**
+   * Resolves a student's classId for a given subjectId (for URL backwards compatibility).
+   */
+  resolveClassForSubject: (subjectId) => apiRequest(`/student/classes/resolve-by-subject/${subjectId}`),
+
+  /**
+   * Fetches enrolled subject summaries (backwards compatibility).
    */
   getEnrolledSubjects: () => apiRequest('/student/subjects'),
-
-  /**
-   * Fetches subjects available for self-enrollment.
-   */
-  getAvailableSubjects: () => apiRequest('/student/subjects/available'),
-
-  /**
-   * Self-enrolls the student in a subject (idempotent).
-   */
-  enrollSubject: (subjectId) =>
-    apiRequest(`/student/subjects/${subjectId}/enroll`, {
-      method: 'POST',
-    }),
 
   /**
    * Fetches published assessments scoped to a subject.
@@ -85,4 +96,3 @@ export const studentService = {
       method: 'DELETE',
     }),
 };
-

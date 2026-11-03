@@ -1,6 +1,5 @@
 package com.learningpal.controller;
 
-import com.learningpal.dto.AvailableSubjectDto;
 import com.learningpal.dto.StudentSubjectSummaryDto;
 import com.learningpal.service.StudentEnrollmentService;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +9,8 @@ import java.security.Principal;
 import java.util.List;
 
 /**
- * Controller exposing student subject enrollment and dashboard endpoints.
- * All routes are guarded under /api/student/** requiring ROLE_STUDENT.
+ * Controller exposing student enrolled subject summaries.
+ * Direct subject self-enrollment has been retired in favor of join-code classroom onboarding.
  */
 @RestController
 @RequestMapping("/api/student/subjects")
@@ -30,23 +29,4 @@ public class StudentSubjectController {
     public ResponseEntity<List<StudentSubjectSummaryDto>> getEnrolledSubjects(Principal principal) {
         return ResponseEntity.ok(studentEnrollmentService.getEnrolledSubjects(principal.getName()));
     }
-
-    /**
-     * Lists all subjects available for self-enrollment.
-     */
-    @GetMapping("/available")
-    public ResponseEntity<List<AvailableSubjectDto>> getAvailableSubjects(Principal principal) {
-        return ResponseEntity.ok(studentEnrollmentService.getAvailableSubjects(principal.getName()));
-    }
-
-    /**
-     * Self-enrolls the calling student into the specified subject.
-     */
-    @PostMapping("/{subjectId}/enroll")
-    public ResponseEntity<StudentSubjectSummaryDto> enroll(
-            @PathVariable Long subjectId,
-            Principal principal) {
-        return ResponseEntity.ok(studentEnrollmentService.enrollSubject(subjectId, principal.getName()));
-    }
 }
-

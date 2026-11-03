@@ -53,5 +53,60 @@ public class TenantAccess {
         }
         return caller.getInstitution();
     }
+
+    /**
+     * Enforces that the teacher owns the specified class in the same institution.
+     * Returns 404 if class does not exist, belongs to another institution, or is taught by another educator.
+     */
+    public com.learningpal.entity.ClassEntity requireOwnedClass(User teacher, Long classId, com.learningpal.repository.ClassEntityRepository repository) {
+        if (teacher == null || classId == null) {
+            throw new ResourceNotFoundException("Class not found: " + classId);
+        }
+        com.learningpal.entity.ClassEntity cls = repository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+        requireSameInstitution(teacher, cls.getInstitution());
+        if (cls.getTeacher() == null || !cls.getTeacher().getId().equals(teacher.getId())) {
+            throw new ResourceNotFoundException("Class not found: " + classId);
+        }
+        return cls;
+    }
+
+    /**
+     * Central authorization rule for whether a teacher may inspect a student's learning data.
+     * Evaluates to true ONLY IF:
+     * 1. Teacher and Student are non-null and belong to the same institution.
+     * 2. The student is enrolled (ACTIVE or ARCHIVED class) in a section OWNED by this teacher.
+     */
+    public boolean canTeacherAccessStudentData(
+            User teacher,
+            User student,
+            com.learningpal.repository.EnrollmentRepository enrollmentRepository) {
+        if (teacher == null || student == null) {
+            return false;
+        }
+        if (teacher.getRole() != Role.TEACHER || student.getRole() != Role.STUDENT) {
+            return false;
+        }
+        if (teacher.getInstitution() == null || student.getInstitution() == null) {
+            return false;
+        }
+        if (!teacher.getInstitution().getId().equals(student.getInstitution().getId())) {
+            return false;
+        }
+        return enrollmentRepository.existsByStudentAndTeacherAndInstitution(student, teacher, teacher.getInstitution());
+    }
+
+    /**
+     * Enforces that the teacher is authorized to access the student's learning data.
+     * Throws ResourceNotFoundException (HTTP 404) if unauthorized to prevent student discovery.
+     */
+    public void requireTeacherCanAccessStudentData(
+            User teacher,
+            User student,
+            com.learningpal.repository.EnrollmentRepository enrollmentRepository) {
+        if (!canTeacherAccessStudentData(teacher, student, enrollmentRepository)) {
+            throw new ResourceNotFoundException("Student learning data not found");
+        }
+    }
 }
 

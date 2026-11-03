@@ -76,6 +76,9 @@ public class FeedbackAndResourceTests {
     private com.learningpal.repository.ClassEntityRepository classEntityRepository;
 
     @Autowired
+    private com.learningpal.repository.InstitutionRepository institutionRepository;
+
+    @Autowired
     private AnswerRepository answerRepository;
 
     @Autowired
@@ -107,16 +110,40 @@ public class FeedbackAndResourceTests {
 
     @BeforeEach
     void setUp() {
-        studentA = userRepository.findByEmail("feedback.student.a@learningpal.edu").orElseGet(() ->
-                userRepository.save(new User("Feedback Student A", "feedback.student.a@learningpal.edu", passwordEncoder.encode("Password123!"), Role.STUDENT, UserStatus.ACTIVE)));
+        Institution pilot = institutionRepository.findByCode("PILOT-2026").orElseGet(() ->
+                institutionRepository.save(new Institution("Pilot University", "PILOT-2026", InstitutionStatus.ACTIVE)));
+
+        studentA = userRepository.findByEmail("feedback.student.a@learningpal.edu").orElseGet(() -> {
+            User u = new User("Feedback Student A", "feedback.student.a@learningpal.edu", passwordEncoder.encode("Password123!"), Role.STUDENT, UserStatus.ACTIVE);
+            u.setInstitution(pilot);
+            return userRepository.save(u);
+        });
+        if (studentA.getInstitution() == null) {
+            studentA.setInstitution(pilot);
+            studentA = userRepository.save(studentA);
+        }
         tokenA = jwtService.generateToken(studentA);
 
-        studentB = userRepository.findByEmail("feedback.student.b@learningpal.edu").orElseGet(() ->
-                userRepository.save(new User("Feedback Student B", "feedback.student.b@learningpal.edu", passwordEncoder.encode("Password123!"), Role.STUDENT, UserStatus.ACTIVE)));
+        studentB = userRepository.findByEmail("feedback.student.b@learningpal.edu").orElseGet(() -> {
+            User u = new User("Feedback Student B", "feedback.student.b@learningpal.edu", passwordEncoder.encode("Password123!"), Role.STUDENT, UserStatus.ACTIVE);
+            u.setInstitution(pilot);
+            return userRepository.save(u);
+        });
+        if (studentB.getInstitution() == null) {
+            studentB.setInstitution(pilot);
+            studentB = userRepository.save(studentB);
+        }
         tokenB = jwtService.generateToken(studentB);
 
-        teacher = userRepository.findByEmail("feedback.teacher@learningpal.edu").orElseGet(() ->
-                userRepository.save(new User("Feedback Teacher", "feedback.teacher@learningpal.edu", passwordEncoder.encode("Password123!"), Role.TEACHER, UserStatus.ACTIVE)));
+        teacher = userRepository.findByEmail("feedback.teacher@learningpal.edu").orElseGet(() -> {
+            User u = new User("Feedback Teacher", "feedback.teacher@learningpal.edu", passwordEncoder.encode("Password123!"), Role.TEACHER, UserStatus.ACTIVE);
+            u.setInstitution(pilot);
+            return userRepository.save(u);
+        });
+        if (teacher.getInstitution() == null) {
+            teacher.setInstitution(pilot);
+            teacher = userRepository.save(teacher);
+        }
         teacherToken = jwtService.generateToken(teacher);
 
         topic1 = topicRepository.findAllByOrderByDisplayOrderAsc().get(0);
@@ -126,11 +153,14 @@ public class FeedbackAndResourceTests {
                 .findFirst()
                 .orElseThrow();
 
+        ClassEntity defaultClass = classEntityRepository.findFirstByInstitutionAndSubject(pilot, topic1.getSubject())
+                .orElseGet(() -> classEntityRepository.save(new ClassEntity(pilot, topic1.getSubject(), teacher, "Section A", "FEED01")));
+
         if (!enrollmentRepository.existsByStudentAndSubject(studentA, topic1.getSubject())) {
-            enrollmentRepository.save(new Enrollment(studentA, topic1.getSubject()));
+            enrollmentRepository.save(new Enrollment(studentA, defaultClass));
         }
         if (!enrollmentRepository.existsByStudentAndSubject(studentB, topic1.getSubject())) {
-            enrollmentRepository.save(new Enrollment(studentB, topic1.getSubject()));
+            enrollmentRepository.save(new Enrollment(studentB, defaultClass));
         }
     }
 

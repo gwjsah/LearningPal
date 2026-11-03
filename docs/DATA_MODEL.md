@@ -113,3 +113,78 @@ By default, students can only attempt an assessment **once**.
 - When an assessment is started $\rightarrow$ `Attempt` #1 is generated (`attempt_number = 1`, `status = IN_PROGRESS`, stamped with `class_id`).
 - When submitted $\rightarrow$ `status = SUBMITTED`.
 - Any subsequent attempt is blocked unless a teacher explicitly grants permission via `AssessmentAccess`.
+
+---
+
+## 6. Classroom Loop & Join Flow Architecture
+
+### Class Creation and Join Code Distribution
+1. **Teacher Creates Section:**
+   - Active teachers create a section for a subject (`POST /api/teacher/classes`).
+   - The system generates an unambiguous 6-character uppercase alphanumeric join code (excluding confusing characters like `0`, `O`, `1`, `I`) that is guaranteed unique within that institution.
+2. **Student Joins via Code:**
+   - Students join using the 6-character code (`POST /api/student/classes/join`).
+   - The lookup is **strictly scoped** to the authenticated student's institution. Codes from other institutions return HTTP 400 (never leaking tenant existence).
+   - Rate limiting protects the join endpoint: exceeding 5 failed join attempts within 60 seconds returns HTTP 429 Too Many Requests with retry-after header.
+3. **One Active Class per Subject Rule:**
+   - A student may belong to at most **one ACTIVE class** for a given subject at any time.
+   - Attempting to join a second active class for the same subject returns HTTP 409 Conflict.
+   - Joining a class the student is already actively in is idempotent (returns HTTP 200 with the existing enrollment).
+   - An archived class does not block a student from joining a new active class for that subject.
+4. **Archiving & Attempt Integrity:**
+   - Classes with student attempts are never hard-deleted; teachers archive them (`PUT/POST /api/teacher/classes/{id}/archive`).
+   - Once a class is archived, new student joins are rejected (HTTP 400), and new attempts are refused (HTTP 400: *"This class is archived. New attempts cannot be started."*).
+   - Past assessment attempts, feedback, and student topic mastery remain completely viewable for students and teachers.
+
+---
+
+## 7. Teacher Class Roster, Overview & Class-Scoped Assessment Access
+
+### Plain-Language Analogy: The Gradebook vs. The Medical Chart
+Think of the difference between **Attempts** and **Topic Mastery** like a clinical exam vs. a patient's overall health chart:
+
+- **The Class Roster (`/api/teacher/classes/{id}/roster`) is the Section Gradebook:**
+  - Shows every student currently enrolled in *this specific teacher's classroom*.
+  - **Attempts are Class-Scoped:** The diagnostic scores, attempt counts, and latest test dates reflect *only what happened in this classroom section*. If a student took an exam in last semester's archived class with a different teacher, that past test paper belongs to that old room and won't inflate or distort this section's gradebook.
+  - **Mastery is Cumulative (Subject-Scoped):** A student's topic knowledge (`STRENGTH`, `DEVELOPING`, `GAP`) is their real-world mental competency. Just like a student's reading ability travels with them from homeroom to homeroom, their mastery reflects cumulative understanding across the subject.
+  - **The `needsAttention` Flag:** Computed dynamically as `gaps >= 2` (`NEEDS_ATTENTION_GAP_THRESHOLD`). It signals that a student has two or more foundational gaps and needs targeted intervention.
+
+- **The Class Overview (`/api/teacher/classes/{id}/overview`) is the Teacher's Lesson Planning Radar:**
+  - Aggregates all enrolled students across every curriculum topic into a single distribution: how many students are in `GAP`, `DEVELOPING`, and `STRENGTH`.
+  - **Ranked by Need:** Ranks topics by the highest count of students in `GAP`. This immediately tells the educator: *"Topic #1 (e.g. Operators) has 12 students in GAP—start tomorrow's lecture reteaching Operators."*
+
+- **Class-Scoped Assessment Settings (`class_assessment_settings`):**
+  - **The Classroom Timer & Lock:** Teachers decide when an assessment opens (`available_from`), when it closes (`available_until`), and whether retakes are permitted (`allow_retakes = false`).
+  - **Active Section Governance:** A student is governed exclusively by the settings configured by the teacher of their **active section**.
+  - **The One-Time Hall Pass (`assessment_access`):** When retakes are locked for the class, an educator can selectively grant a one-time unlock (`POST /unlock-student`) with an optional extended deadline for make-ups, consumed upon the student's next attempt.
+
+---
+
+## 8. Teacher's Student View: Learning Needs, Grade Overrides & Pedagogical Interventions
+
+### Plain-Language Analogy: The Clinic Visit & The Treatment Plan
+If the **Class Roster** is the hospital ward roster and the **Class Overview** is the public health trend report, the **Teacher's Student View** is the individual doctor-patient consultation room:
+
+1. **The Patient Chart (`/api/teacher/classes/{classId}/students/{studentId}`):**
+   - **Comprehensive Learning Needs:** Inspects the student's holistic topic masteries, trends, and diagnostic performance.
+   - **Most-Missed Diagnostic Questions:** Accurately surfaces up to 5 specific questions the student answered incorrectly on their baseline assessment for any topic marked `GAP` or `DEVELOPING`. This tells the teacher exactly which misconception tripped up the learner (e.g., confusing pointer dereferencing `*p` with address-of `&p`).
+   - **Section Attempts Only:** Lists attempts executed exclusively inside this classroom section, preserving historical separation across teachers.
+
+2. **The Second Opinion: Grade Override Workflow (`Answer.applyTeacherOverride`):**
+   - Automated grading checks objective answers, but nuanced human reasoning often warrants partial credit or correction (e.g., student wrote a correct recursive base case but missed a semicolon).
+   - A teacher can review any submitted attempt question (`GET .../attempts/{attemptId}`) and assign a manual override score with pedagogical feedback comments (`PUT .../attempts/{attemptId}/answers/{answerId}/grade`).
+   - **Unified Grading Rule:** `finalScore = (teacherScore != null) ? teacherScore : autoScore`.
+   - **Atomic Diagnostic Recalculation:** When a teacher overrides a score, the attempt's `totalScore` is updated and `GapAnalysisService.recalculateForStudent` runs in the **same database transaction**. The student's topic mastery percentage, strength/gap status, and diagnostic trend update immediately across the platform.
+   - **Student Transparency:** The student's result view highlights adjusted questions with an *"Adjusted by your teacher"* banner and displays the teacher's comment. Reverting the grade (`teacherScore: null`) cleanly restores the automated grade and re-runs gap analysis.
+
+3. **The Targeted Treatment Plan: Pedagogical Interventions (`interventions`):**
+   - When a student struggles with a topic, the educator logs a structured intervention (`POST .../students/{studentId}/interventions`): `ONE_ON_ONE` coaching, `EXTRA_PRACTICE`, `GROUP_SESSION`, or `OTHER`.
+   - **Baseline Snapshotting:** When the intervention is created, the system snapshots `masteryAtStart` directly from the student's current mastery percentage for that topic.
+   - **Resolution & Outcome Evaluation:**
+     - When the teacher marks the intervention `DONE` (`PUT .../interventions/{id}`), the system timestamps `completedAt` and snapshots `masteryAtCompletion` from the student's updated topic mastery.
+     - **The 10-Point Outcome Rule (`INTERVENTION_OUTCOME_THRESHOLD = 10.0`):**
+       - **`IMPROVED`**: $\ge$ 10.0 point increase ($masteryAtCompletion - masteryAtStart \ge 10.0$).
+       - **`DECLINED`**: $\ge$ 10.0 point decrease ($masteryAtStart - masteryAtCompletion \ge 10.0$).
+       - **`SAME`**: Score difference within $\pm 10.0$ points.
+       - **`NO_DATA`**: If baseline or completion mastery is unavailable.
+   - **Immutability & Soft-Cancellation:** Completed (`DONE`) or cancelled (`CANCELLED`) interventions can never be reopened or edited. No `DELETE` endpoint exists, preserving an indelible audit trail of educational interventions.

@@ -6,6 +6,8 @@ import com.learningpal.entity.Institution;
 import com.learningpal.entity.Subject;
 import com.learningpal.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,10 +28,11 @@ public interface ClassEntityRepository extends JpaRepository<ClassEntity, Long> 
 
     List<ClassEntity> findByTeacherOrderByCreatedAtDesc(User teacher);
 
+    boolean existsByTeacherAndSubjectAndNameIgnoreCase(User teacher, Subject subject, String name);
+
     Optional<ClassEntity> findFirstByInstitutionAndSubjectAndStatus(Institution institution, Subject subject, ClassStatus status);
 
     Optional<ClassEntity> findFirstByInstitutionAndSubject(Institution institution, Subject subject);
 
     long countByInstitution(Institution institution);
 }
-

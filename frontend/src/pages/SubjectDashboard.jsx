@@ -23,26 +23,46 @@ import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimiti
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 
 export default function SubjectDashboard() {
-  const { subjectId } = useParams();
+  const { subjectId, classId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const [workspace, setWorkspace] = useState(null);
   const [assessments, setAssessments] = useState([]);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadData = async () => {
-    if (!subjectId) {
-      navigate('/student', { replace: true });
-      return;
-    }
     setLoading(true);
     setError('');
     try {
+      let resolvedSubjectId = subjectId;
+      let classData = null;
+
+      if (classId) {
+        classData = await studentService.getClassWorkspace(classId);
+        setWorkspace(classData);
+        resolvedSubjectId = classData.subject.id;
+      } else if (subjectId) {
+        // Resolve subject to class workspace and redirect to clean class url
+        try {
+          const res = await studentService.resolveClassForSubject(subjectId);
+          if (res?.classId) {
+            navigate(`/student/classes/${res.classId}`, { replace: true });
+            return;
+          }
+        } catch {
+          // If resolving fails, fallback to direct subject data or report not enrolled
+        }
+      } else {
+        navigate('/student', { replace: true });
+        return;
+      }
+
       const [assessmentsData, progressData] = await Promise.all([
-        studentService.getSubjectAssessments(subjectId),
-        studentService.getSubjectProgress(subjectId).catch(() => null),
+        studentService.getSubjectAssessments(resolvedSubjectId),
+        studentService.getSubjectProgress(resolvedSubjectId).catch(() => null),
       ]);
       setAssessments(assessmentsData);
       setProgress(progressData);
@@ -53,10 +73,14 @@ export default function SubjectDashboard() {
         return;
       }
       if (err.status === 403 || err.message?.includes('not enrolled')) {
-        setError(err.message || 'You are not enrolled in this subject.');
+        setError(err.message || 'You are not enrolled in this class or subject.');
         return;
       }
-      setError(err.message || 'Unable to load subject data. Please try again.');
+      if (err.status === 404) {
+        setError('Class or subject not found. You may not be enrolled in this class.');
+        return;
+      }
+      setError(err.message || 'Unable to load class workspace. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -64,7 +88,7 @@ export default function SubjectDashboard() {
 
   useEffect(() => {
     loadData();
-  }, [subjectId]);
+  }, [subjectId, classId]);
 
   const diagnostic = assessments.find((a) =>
     a.title.toLowerCase().includes('diagnostic')
@@ -77,7 +101,9 @@ export default function SubjectDashboard() {
   const hasAnyAttempts =
     progress?.topics?.some((t) => t.status !== 'INSUFFICIENT_DATA' || t.questionsAnswered > 0) ?? false;
 
-  const subjectName = diagnostic?.subjectName || (assessments[0]?.subjectName) || 'Subject Workspace';
+  const subjectName = workspace?.subject?.name || diagnostic?.subjectName || (assessments[0]?.subjectName) || 'Class Workspace';
+  const effectiveSubjectId = workspace?.subject?.id || subjectId;
+  const isArchived = workspace ? !workspace.canAttempt : false;
 
   return (
     <PortalShell
@@ -85,10 +111,10 @@ export default function SubjectDashboard() {
       user={user}
       onLogout={logout}
       badgeIcon={GraduationCap}
-      badgeLabel="Subject Workspace"
-      badgeColorClass="bg-highlighter-mint text-ink"
-      title={subjectName}
-      subtitle="Complete diagnostic quizzes, analyze your strengths and learning gaps, and master topics."
+      badgeLabel={workspace ? `Class: ${workspace.name}` : "Class Workspace"}
+      badgeColorClass={isArchived ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200" : "bg-highlighter-mint text-ink"}
+      title={workspace ? `${workspace.subject.name} (${workspace.name})` : subjectName}
+      subtitle={workspace ? `Instructor: ${workspace.teacherName || 'Assigned Instructor'} • Status: ${workspace.status}` : "Complete diagnostic quizzes, analyze your strengths and learning gaps, and master topics."}
       headerRight={
         <div className="flex items-center gap-2">
           <Link
@@ -96,15 +122,17 @@ export default function SubjectDashboard() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>My Subjects</span>
+            <span>My Classes</span>
           </Link>
-          <Link
-            to={`/student/subjects/${subjectId}/progress`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
-          >
-            <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
-            <span>Gap Analysis</span>
-          </Link>
+          {effectiveSubjectId && (
+            <Link
+              to={`/student/subjects/${effectiveSubjectId}/progress`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
+            >
+              <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
+              <span>Gap Analysis</span>
+            </Link>
+          )}
         </div>
       }
     >
@@ -117,15 +145,30 @@ export default function SubjectDashboard() {
               className="hover:text-ink dark:hover:text-chalkboard-chalk underline underline-offset-2 flex items-center gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>My Subjects</span>
+              <span>My Classes</span>
             </Link>
             <span>/</span>
-            <span className="font-bold text-ink dark:text-chalkboard-chalk">{subjectName}</span>
+            <span className="font-bold text-ink dark:text-chalkboard-chalk">
+              {workspace ? `${workspace.subject.name} - ${workspace.name}` : subjectName}
+            </span>
           </div>
           <span className="text-ink-muted dark:text-chalkboard-muted hidden sm:inline">
-            Subject ID: #{subjectId}
+            {workspace ? `Class #${workspace.id} • ${workspace.status}` : `Subject #${subjectId}`}
           </span>
         </nav>
+
+        {/* Archived Banner if applicable */}
+        {isArchived && (
+          <div className="p-4 rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="text-sm font-bold">This class is archived</p>
+              <p className="text-xs mt-0.5">
+                This class has been archived by your instructor. Your past attempts and feedback remain viewable, but new attempts cannot be started.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Loading state */}
         {loading && (
@@ -362,31 +405,82 @@ export default function SubjectDashboard() {
                             size="md"
                             className="w-full md:w-44"
                             onClick={() =>
-                              navigate(`/student/subjects/${subjectId}/attempts/${diagnostic.latestAttemptId}/result`)
+                              navigate(`/student/subjects/${effectiveSubjectId}/attempts/${diagnostic.latestAttemptId}/result`)
                             }
                           >
                             <Award className="w-4 h-4 mr-1.5" />
                             View Result
                           </Button>
+                          {isArchived || !diagnostic.canStart ? (
+                            <div className="w-full md:w-44 flex flex-col items-center">
+                              <Button
+                                variant="secondary"
+                                size="md"
+                                disabled
+                                className="w-full opacity-50 cursor-not-allowed"
+                                title={diagnostic.lockReason || 'Retake unavailable'}
+                              >
+                                <RotateCcw className="w-4 h-4 mr-1.5" />
+                                {diagnostic.accessStatus === 'RETAKE_LOCKED'
+                                  ? 'Retake Locked'
+                                  : diagnostic.accessStatus === 'CLOSED'
+                                  ? 'Closed by Teacher'
+                                  : isArchived
+                                  ? 'Retake (Archived)'
+                                  : 'Retake Unavailable'}
+                              </Button>
+                              {diagnostic.lockReason && !isArchived && (
+                                <span className="text-[10px] font-mono text-redpen dark:text-redpen-soft text-center mt-1">
+                                  {diagnostic.lockReason}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              size="md"
+                              className="w-full md:w-44"
+                              onClick={() =>
+                                navigate(`/student/subjects/${effectiveSubjectId}/assessments/${diagnostic.id}/take`)
+                              }
+                            >
+                              <RotateCcw className="w-4 h-4 mr-1.5" />
+                              Retake Quiz
+                            </Button>
+                          )}
+                        </>
+                      ) : isArchived || !diagnostic.canStart ? (
+                        <div className="w-full md:w-48 flex flex-col items-center">
                           <Button
                             variant="secondary"
-                            size="md"
-                            className="w-full md:w-44"
-                            onClick={() =>
-                              navigate(`/student/subjects/${subjectId}/assessments/${diagnostic.id}/take`)
-                            }
+                            size="lg"
+                            disabled
+                            className="w-full opacity-50 cursor-not-allowed"
+                            title={diagnostic.lockReason || 'Quiz Unavailable'}
                           >
-                            <RotateCcw className="w-4 h-4 mr-1.5" />
-                            Retake Quiz
+                            <span>
+                              {diagnostic.accessStatus === 'NOT_OPEN_YET'
+                                ? 'Not Open Yet'
+                                : diagnostic.accessStatus === 'CLOSED'
+                                ? 'Closed by Teacher'
+                                : isArchived
+                                ? 'Quiz Unavailable (Archived)'
+                                : 'Quiz Unavailable'}
+                            </span>
                           </Button>
-                        </>
+                          {diagnostic.lockReason && !isArchived && (
+                            <span className="text-[10px] font-mono text-redpen dark:text-redpen-soft text-center mt-1">
+                              {diagnostic.lockReason}
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <Button
                           variant="primary"
                           size="lg"
                           className="w-full md:w-48 shadow-notebook"
                           onClick={() =>
-                            navigate(`/student/subjects/${subjectId}/assessments/${diagnostic.id}/take`)
+                            navigate(`/student/subjects/${effectiveSubjectId}/assessments/${diagnostic.id}/take`)
                           }
                         >
                           <span>
@@ -426,7 +520,7 @@ export default function SubjectDashboard() {
                     const isSubmitted = quiz.latestAttemptStatus === 'SUBMITTED';
                     const isInProgress = quiz.latestAttemptStatus === 'IN_PROGRESS';
                     const scorePercent =
-                      isSubmitted && quiz.latestAttemptMaxScore > 0
+                        isSubmitted && quiz.latestAttemptMaxScore > 0
                         ? Math.round((quiz.latestAttemptScore / quiz.latestAttemptMaxScore) * 100)
                         : null;
 
@@ -481,29 +575,68 @@ export default function SubjectDashboard() {
                                   size="sm"
                                   className="flex-1"
                                   onClick={() =>
-                                    navigate(`/student/subjects/${subjectId}/attempts/${quiz.latestAttemptId}/result`)
+                                    navigate(`/student/subjects/${effectiveSubjectId}/attempts/${quiz.latestAttemptId}/result`)
                                   }
                                 >
                                   Result
                                 </Button>
-                                <Button
-                                  variant="mint"
-                                  size="sm"
-                                  className="flex-1"
-                                  onClick={() =>
-                                    navigate(`/student/subjects/${subjectId}/assessments/${quiz.id}/take`)
-                                  }
-                                >
-                                  Retake
-                                </Button>
+                                {isArchived || !quiz.canStart ? (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled
+                                    className="flex-1 opacity-50 cursor-not-allowed"
+                                    title={quiz.lockReason || 'Retake unavailable'}
+                                  >
+                                    {quiz.accessStatus === 'RETAKE_LOCKED'
+                                      ? 'Locked'
+                                      : quiz.accessStatus === 'CLOSED'
+                                      ? 'Closed'
+                                      : 'Retake'}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="mint"
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() =>
+                                      navigate(`/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`)
+                                    }
+                                  >
+                                    Retake
+                                  </Button>
+                                )}
                               </>
+                            ) : isArchived || !quiz.canStart ? (
+                              <div className="w-full">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  disabled
+                                  className="w-full opacity-50 cursor-not-allowed"
+                                  title={quiz.lockReason || 'Quiz unavailable'}
+                                >
+                                  {quiz.accessStatus === 'NOT_OPEN_YET'
+                                    ? 'Not Open'
+                                    : quiz.accessStatus === 'CLOSED'
+                                    ? 'Closed'
+                                    : isArchived
+                                    ? 'Archived'
+                                    : 'Unavailable'}
+                                </Button>
+                                {quiz.lockReason && !isArchived && (
+                                  <p className="text-[10px] font-mono text-redpen dark:text-redpen-soft text-center mt-1">
+                                    {quiz.lockReason}
+                                  </p>
+                                )}
+                              </div>
                             ) : (
                               <Button
                                 variant={isInProgress ? 'yellow' : 'primary'}
                                 size="sm"
                                 className="w-full"
                                 onClick={() =>
-                                  navigate(`/student/subjects/${subjectId}/assessments/${quiz.id}/take`)
+                                  navigate(`/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`)
                                 }
                               >
                                 {isInProgress ? 'Resume Quiz' : 'Take Quiz'}

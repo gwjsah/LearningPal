@@ -61,6 +61,12 @@ public class StudentAssessmentApiTests {
     private EnrollmentRepository enrollmentRepository;
 
     @Autowired
+    private ClassEntityRepository classEntityRepository;
+
+    @Autowired
+    private InstitutionRepository institutionRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     @Autowired
@@ -76,22 +82,47 @@ public class StudentAssessmentApiTests {
     private String teacherToken;
 
     private Assessment topicQuiz1;
+    private ClassEntity defaultClass;
 
     @BeforeEach
     void setUp() {
+        Institution pilot = institutionRepository.findByCode("PILOT-2026").orElseGet(() ->
+                institutionRepository.save(new Institution("Pilot University", "PILOT-2026", InstitutionStatus.ACTIVE)));
+
         // Create student A
-        studentA = userRepository.findByEmail("student.a@learningpal.edu").orElseGet(() ->
-                userRepository.save(new User("Student A", "student.a@learningpal.edu", passwordEncoder.encode("Password123"), Role.STUDENT, UserStatus.ACTIVE)));
+        studentA = userRepository.findByEmail("student.a@learningpal.edu").orElseGet(() -> {
+            User u = new User("Student A", "student.a@learningpal.edu", passwordEncoder.encode("Password123"), Role.STUDENT, UserStatus.ACTIVE);
+            u.setInstitution(pilot);
+            return userRepository.save(u);
+        });
+        if (studentA.getInstitution() == null) {
+            studentA.setInstitution(pilot);
+            studentA = userRepository.save(studentA);
+        }
         tokenA = jwtService.generateToken(studentA);
 
         // Create student B
-        studentB = userRepository.findByEmail("student.b@learningpal.edu").orElseGet(() ->
-                userRepository.save(new User("Student B", "student.b@learningpal.edu", passwordEncoder.encode("Password123"), Role.STUDENT, UserStatus.ACTIVE)));
+        studentB = userRepository.findByEmail("student.b@learningpal.edu").orElseGet(() -> {
+            User u = new User("Student B", "student.b@learningpal.edu", passwordEncoder.encode("Password123"), Role.STUDENT, UserStatus.ACTIVE);
+            u.setInstitution(pilot);
+            return userRepository.save(u);
+        });
+        if (studentB.getInstitution() == null) {
+            studentB.setInstitution(pilot);
+            studentB = userRepository.save(studentB);
+        }
         tokenB = jwtService.generateToken(studentB);
 
         // Create teacher
-        teacher = userRepository.findByEmail("teacher.test@learningpal.edu").orElseGet(() ->
-                userRepository.save(new User("Teacher Test", "teacher.test@learningpal.edu", passwordEncoder.encode("Password123"), Role.TEACHER, UserStatus.ACTIVE)));
+        teacher = userRepository.findByEmail("teacher.test@learningpal.edu").orElseGet(() -> {
+            User u = new User("Teacher Test", "teacher.test@learningpal.edu", passwordEncoder.encode("Password123"), Role.TEACHER, UserStatus.ACTIVE);
+            u.setInstitution(pilot);
+            return userRepository.save(u);
+        });
+        if (teacher.getInstitution() == null) {
+            teacher.setInstitution(pilot);
+            teacher = userRepository.save(teacher);
+        }
         teacherToken = jwtService.generateToken(teacher);
 
         // Find pilot topic quiz
@@ -100,12 +131,15 @@ public class StudentAssessmentApiTests {
                 .findFirst()
                 .orElseThrow();
 
+        defaultClass = classEntityRepository.findFirstByInstitutionAndSubject(pilot, topicQuiz1.getSubject())
+                .orElseGet(() -> classEntityRepository.save(new ClassEntity(pilot, topicQuiz1.getSubject(), teacher, "Section A", "STU001")));
+
         // Enroll students in subject
         if (!enrollmentRepository.existsByStudentAndSubject(studentA, topicQuiz1.getSubject())) {
-            enrollmentRepository.save(new Enrollment(studentA, topicQuiz1.getSubject()));
+            enrollmentRepository.save(new Enrollment(studentA, defaultClass));
         }
         if (!enrollmentRepository.existsByStudentAndSubject(studentB, topicQuiz1.getSubject())) {
-            enrollmentRepository.save(new Enrollment(studentB, topicQuiz1.getSubject()));
+            enrollmentRepository.save(new Enrollment(studentB, defaultClass));
         }
     }
 
@@ -346,9 +380,11 @@ public class StudentAssessmentApiTests {
                 .andReturn();
         String student1Token = objectMapper.readTree(signup1Res.getResponse().getContentAsString()).get("token").asText();
 
-        // Enroll Student 1 in pilot subject
-        mockMvc.perform(post("/api/student/subjects/" + topicQuiz1.getSubject().getId() + "/enroll")
-                        .header("Authorization", "Bearer " + student1Token))
+        // Enroll Student 1 in pilot subject via classroom join code
+        mockMvc.perform(post("/api/student/classes/join")
+                        .header("Authorization", "Bearer " + student1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\": \"" + defaultClass.getJoinCode() + "\"}"))
                 .andExpect(status().isOk());
 
         // Step 2: List assessments and find Comprehensive Diagnostic

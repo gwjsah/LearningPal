@@ -6,7 +6,6 @@ import java.time.Instant;
 /**
  * Maps a student's enrollment in an academic class (section).
  * The subject is reached through the class (classEntity.getSubject()).
- * Also retains optional subject for seamless backward compatibility with legacy test fixtures.
  */
 @Entity
 @Table(
@@ -26,12 +25,8 @@ public class Enrollment {
     private User student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id")
+    @JoinColumn(name = "class_id", nullable = false)
     private ClassEntity classEntity;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subject_id")
-    private Subject subject;
 
     @Column(name = "enrolled_at", nullable = false, updatable = false)
     private Instant enrolledAt;
@@ -42,13 +37,6 @@ public class Enrollment {
     public Enrollment(User student, ClassEntity classEntity) {
         this.student = student;
         this.classEntity = classEntity;
-        this.subject = classEntity != null ? classEntity.getSubject() : null;
-        this.enrolledAt = Instant.now();
-    }
-
-    public Enrollment(User student, Subject subject) {
-        this.student = student;
-        this.subject = subject;
         this.enrolledAt = Instant.now();
     }
 
@@ -81,20 +69,6 @@ public class Enrollment {
 
     public void setClassEntity(ClassEntity classEntity) {
         this.classEntity = classEntity;
-        if (classEntity != null && this.subject == null) {
-            this.subject = classEntity.getSubject();
-        }
-    }
-
-    public Subject getSubject() {
-        if (classEntity != null) {
-            return classEntity.getSubject();
-        }
-        return subject;
-    }
-
-    public void setSubject(Subject subject) {
-        this.subject = subject;
     }
 
     public Instant getEnrolledAt() {

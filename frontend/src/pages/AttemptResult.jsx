@@ -341,8 +341,30 @@ export default function AttemptResult() {
                         {q.topicName}
                       </span>
                     </div>
-                    <div>{statusBadge}</div>
+                    <div className="flex items-center gap-2">
+                      {q.adjusted ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-bold border-2 border-amber-600 bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                          Adjusted by your teacher ({q.pointsEarned} / {q.pointsPossible} pt)
+                        </span>
+                      ) : (
+                        statusBadge
+                      )}
+                    </div>
                   </div>
+
+                  {/* Instructor Feedback on Adjusted Answer */}
+                  {q.teacherComment && (
+                    <div className="p-3.5 rounded-xl border-2 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 space-y-1">
+                      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-amber-900 dark:text-amber-200">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Teacher Comment:</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-ink dark:text-chalkboard-chalk font-mono whitespace-pre-wrap">
+                        {q.teacherComment}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Question Text */}
                   {renderFormattedText(q.questionText)}

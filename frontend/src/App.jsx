@@ -14,6 +14,9 @@ import AttemptResult from './pages/AttemptResult';
 import StudentProgress from './pages/StudentProgress';
 import TopicProgressDetail from './pages/TopicProgressDetail';
 import TeacherHome from './pages/TeacherHome';
+import TeacherClassDetail from './pages/TeacherClassDetail';
+import TeacherStudentDetail from './pages/TeacherStudentDetail';
+import TeacherAttemptReview from './pages/TeacherAttemptReview';
 import AdminHome from './pages/AdminHome';
 
 /**
@@ -36,7 +39,7 @@ export default function App() {
             <Route path="/signup" element={<Signup />} />
 
             {/* Protected Role-Based Portals */}
-            {/* Student "My Subjects" Dashboard */}
+            {/* Student "My Classes" Dashboard & Class Workspace */}
             <Route
               path="/student"
               element={
@@ -45,8 +48,16 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/student/classes/:classId"
+              element={
+                <ProtectedRoute allowedRole="STUDENT">
+                  <SubjectDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Subject-Scoped Student Routes */}
+            {/* Subject-Scoped Student Routes (Backward-Compatible) */}
             <Route
               path="/student/subjects/:subjectId"
               element={
@@ -127,6 +138,30 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRole="TEACHER">
                   <TeacherHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/classes/:id"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherClassDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/classes/:classId/students/:studentId"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherStudentDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/classes/:classId/students/:studentId/attempts/:attemptId"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherAttemptReview />
                 </ProtectedRoute>
               }
             />

@@ -402,7 +402,7 @@ public class GapAnalysisService {
     /**
      * Computes the number of distinct questions asked per topic across all submitted attempts.
      */
-    private Map<Long, Integer> countDistinctQuestionsEvaluatedPerTopic(Long studentId) {
+    public Map<Long, Integer> countDistinctQuestionsEvaluatedPerTopic(Long studentId) {
         List<Attempt> attempts =
                 attemptRepository.findByStudentIdAndStatusOrderBySubmittedAtAsc(studentId, AttemptStatus.SUBMITTED);
 

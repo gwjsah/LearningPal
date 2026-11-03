@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  BookOpen,
   GraduationCap,
   Sparkles,
   ArrowRight,
@@ -13,431 +12,467 @@ import {
   Layers,
   FileQuestion,
   Compass,
+  Archive,
+  UserCheck,
+  X,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
-import { StatusBadge } from '../components/MasteryPrimitives';
 
 export default function StudentSubjectsHome() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [enrolledSubjects, setEnrolledSubjects] = useState([]);
-  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [enrollModalOpen, setEnrollModalOpen] = useState(false);
-  const [enrollingId, setEnrollingId] = useState(null);
-  const [actionNotice, setActionNotice] = useState(null);
 
-  const loadData = async () => {
+  // Join Class Modal State
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
+  const [actionNotice, setActionNotice] = useState(null);
+  const [highlightedClassId, setHighlightedClassId] = useState(null);
+
+  // Accessibility refs for modal focus management
+  const modalInputRef = useRef(null);
+  const joinButtonRef = useRef(null);
+  const newlyJoinedCardRef = useRef(null);
+
+  const loadClasses = async () => {
     setLoading(true);
     setError('');
     try {
-      const [enrolled, available] = await Promise.all([
-        studentService.getEnrolledSubjects(),
-        studentService.getAvailableSubjects().catch(() => []),
-      ]);
-      setEnrolledSubjects(enrolled);
-      setAvailableSubjects(available);
+      const data = await studentService.getClasses();
+      setClasses(data);
     } catch (err) {
       if (err.status === 401 || err.message?.includes('authentication is required')) {
         logout();
         navigate('/login', { replace: true });
         return;
       }
-      setError(err.message || 'Unable to load subjects. Please try again.');
+      setError(err.message || 'Unable to load your enrolled classes. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadClasses();
   }, []);
 
-  const handleEnroll = async (subject) => {
-    setEnrollingId(subject.subjectId);
+  // Trap focus inside modal when opened
+  useEffect(() => {
+    if (joinModalOpen) {
+      setTimeout(() => modalInputRef.current?.focus(), 50);
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          handleCloseModal();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [joinModalOpen]);
+
+  // Focus newly joined card after modal closes
+  useEffect(() => {
+    if (highlightedClassId && newlyJoinedCardRef.current) {
+      newlyJoinedCardRef.current.focus();
+    }
+  }, [highlightedClassId]);
+
+  const handleOpenModal = () => {
+    setJoinCode('');
+    setJoinError('');
+    setJoinModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setJoinModalOpen(false);
+    setJoinError('');
+    joinButtonRef.current?.focus();
+  };
+
+  const handleJoinCodeChange = (e) => {
+    const cleanValue = e.target.value.toUpperCase().replace(/[^2-9A-HJ-NP-Z]/g, '').slice(0, 6);
+    setJoinCode(cleanValue);
+    if (joinError) setJoinError('');
+  };
+
+  const handleJoinSubmit = async (e) => {
+    e.preventDefault();
+    if (!joinCode || joinCode.length < 6) {
+      setJoinError('Please enter a complete 6-character join code.');
+      return;
+    }
+
+    setJoining(true);
+    setJoinError('');
     setActionNotice(null);
+
     try {
-      const newEnrollment = await studentService.enrollSubject(subject.subjectId);
-      // Update local state
-      setEnrolledSubjects((prev) => [newEnrollment, ...prev]);
-      setAvailableSubjects((prev) => prev.filter((s) => s.subjectId !== subject.subjectId));
+      const summary = await studentService.joinClass(joinCode);
+      setJoinModalOpen(false);
+
+      // Refresh classes list
+      const refreshedList = await studentService.getClasses();
+      setClasses(refreshedList);
+
+      setHighlightedClassId(summary.classId);
       setActionNotice({
         type: 'success',
-        text: `Successfully enrolled in ${subject.name} (${subject.code})!`,
+        text: `Successfully joined ${summary.sectionName} for ${summary.subject.name}!`,
       });
-      setEnrollModalOpen(false);
     } catch (err) {
-      setActionNotice({
-        type: 'error',
-        text: err.message || `Could not enroll in ${subject.name}. Please try again.`,
-      });
+      setJoinError(err.message || 'Could not join class. Please check your code and try again.');
     } finally {
-      setEnrollingId(null);
+      setJoining(false);
     }
   };
 
+  // Group into Active and Archived classes
+  const activeClasses = classes.filter((c) => c.status === 'ACTIVE');
+  const pastClasses = classes.filter((c) => c.status === 'ARCHIVED');
+
+  const institutionLabel = user?.institutionName
+    ? `${user.institutionName} (${user.institutionCode || 'PILOT-2026'})`
+    : 'Pilot University';
+
   return (
     <PortalShell
-      portalSubtitle="Student Learning Notebook"
+      portalSubtitle="Student Classroom Workspace"
+      skipLabel="Skip to enrolled class cards"
       user={user}
       onLogout={logout}
       badgeIcon={GraduationCap}
       badgeLabel="My Desk"
       badgeColorClass="bg-highlighter-mint text-ink"
-      title={`My Subjects, ${user?.fullName?.split(' ')[0] || 'Student'}`}
-      subtitle="Select a subject to take diagnostic tests, practice topic quizzes, and track your strengths and learning gaps."
+      title={`My Classes, ${user?.fullName?.split(' ')[0] || 'Student'}`}
+      subtitle={`Enrolled sections at ${institutionLabel}. Take quizzes, track topic mastery, and eliminate learning gaps.`}
       headerRight={
-        availableSubjects.length > 0 && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setEnrollModalOpen(true)}
-            className="self-start sm:self-center shrink-0"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            <span>Browse & Enroll</span>
-          </Button>
-        )
+        <Button
+          ref={joinButtonRef}
+          variant="primary"
+          size="sm"
+          onClick={handleOpenModal}
+          className="self-start sm:self-center shrink-0 font-bold"
+        >
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          <span>+ Join a Class</span>
+        </Button>
       }
     >
       <div className="w-full space-y-8">
-        {/* Action Notice Banner */}
+        {/* Action Notice Alert */}
         {actionNotice && (
           <div
-            className={`p-4 rounded-xl border-2 flex items-center justify-between gap-4 transition-all ${
+            role="status"
+            aria-live="polite"
+            className={`flex items-center gap-3 p-4 rounded-xl border-2 font-medium text-sm shadow-sm ${
               actionNotice.type === 'success'
-                ? 'border-highlighter-mint bg-highlighter-mintSoft text-ink'
+                ? 'border-ink bg-highlighter-mintSoft text-ink dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-500/40'
                 : 'border-redpen bg-redpen-soft text-redpen-dark'
             }`}
           >
-            <div className="flex items-center gap-3">
-              {actionNotice.type === 'success' ? (
-                <CheckCircle2 className="w-5 h-5 text-ink shrink-0" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-redpen-dark shrink-0" />
-              )}
-              <p className="text-sm font-semibold">{actionNotice.text}</p>
+            {actionNotice.type === 'success' ? (
+              <UserCheck className="w-5 h-5 text-ink-blue dark:text-highlighter-mint shrink-0" aria-hidden="true" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-redpen shrink-0" aria-hidden="true" />
+            )}
+            <span>{actionNotice.text}</span>
+          </div>
+        )}
+
+        {/* Global Error Banner */}
+        {error && (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-sm"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
+              <span>{error}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setActionNotice(null)}
-              className="text-xs font-bold underline cursor-pointer p-1"
-            >
-              Dismiss
-            </button>
+            <Button variant="secondary" size="sm" onClick={loadClasses}>
+              Retry
+            </Button>
           </div>
         )}
 
         {/* Loading State */}
         {loading && (
           <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Opening your notebook desk and loading enrolled subjects…
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-redpen" aria-hidden="true" />
+            <p className="font-hand text-2xl text-ink dark:text-chalkboard-chalk">
+              Loading your classroom notebooks and diagnostic results...
             </p>
           </div>
         )}
 
-        {/* Error State */}
-        {!loading && error && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <p className="text-sm font-semibold">{error}</p>
+        {/* Empty State: No classes enrolled */}
+        {!loading && !error && classes.length === 0 && (
+          <NotebookCard ruled marginLine className="text-center py-12 px-4 space-y-4 max-w-xl mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-highlighter-yellow/30 border-2 border-ink dark:border-white/40 flex items-center justify-center mx-auto">
+              <GraduationCap className="w-8 h-8 text-ink dark:text-chalkboard-chalk" aria-hidden="true" />
             </div>
-            <Button size="sm" variant="secondary" onClick={loadData}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1" />
-              Retry
+            <div className="space-y-1">
+              <h2 className="text-2xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight">
+                No Classes Enrolled Yet
+              </h2>
+              <p className="text-sm text-ink-muted dark:text-chalkboard-muted max-w-md mx-auto leading-relaxed">
+                Ask your instructor for your 6-character class join code to access diagnostic exams and topic study materials.
+              </p>
+            </div>
+            <Button variant="primary" size="md" onClick={handleOpenModal} className="mt-2">
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              <span>Join Your First Class</span>
             </Button>
-          </div>
+          </NotebookCard>
         )}
 
-        {/* Content Loaded */}
-        {!loading && !error && (
-          <>
-            {/* Empty State: Not enrolled in any subject */}
-            {enrolledSubjects.length === 0 ? (
-              <NotebookCard ruled marginLine lifted className="p-8 sm:p-12 text-center space-y-6">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-highlighter-yellowSoft border-2 border-ink dark:border-white/40 flex items-center justify-center shadow-notebook">
-                  <BookOpen className="w-8 h-8 text-ink" aria-hidden="true" />
-                </div>
-                <div className="space-y-2 max-w-lg mx-auto">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-ink dark:text-chalkboard-chalk">
-                    Your Study Desk is Ready
-                  </h2>
-                  <p className="text-sm sm:text-base text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                    You are not currently enrolled in any subjects. Self-enroll in a subject below to begin your diagnostic assessment and uncover your learning strengths and gaps.
-                  </p>
-                </div>
+        {/* Active Classes Grid */}
+        {!loading && activeClasses.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-ink/15 dark:border-white/15 pb-2">
+              <h2 className="text-lg font-bold font-sans text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+                <span>Active Classes</span>
+                <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-highlighter-mintSoft text-ink dark:bg-emerald-950 dark:text-emerald-300 font-bold">
+                  {activeClasses.length}
+                </span>
+              </h2>
+            </div>
 
-                {/* Available Subjects Directly in Empty State */}
-                {availableSubjects.length > 0 ? (
-                  <div className="pt-6 max-w-4xl mx-auto text-left">
-                    <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted mb-4 text-center">
-                      Available Subjects for Self-Enrollment
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {availableSubjects.map((s) => (
-                        <div
-                          key={s.subjectId}
-                          className="p-5 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink dark:border-white/30 shadow-notebook-sm hover:shadow-notebook transition-all flex flex-col justify-between space-y-4"
-                        >
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono text-xs font-bold uppercase px-2.5 py-1 rounded bg-highlighter-yellow text-ink border border-ink/20">
-                                {s.code}
-                              </span>
-                              <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                                {s.topicCount} topics • {s.assessmentCount} quizzes
-                              </span>
-                            </div>
-                            <h4 className="text-base font-bold text-ink dark:text-chalkboard-chalk">
-                              {s.name}
-                            </h4>
-                            <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed line-clamp-2">
-                              {s.description}
-                            </p>
-                          </div>
-
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            disabled={enrollingId === s.subjectId}
-                            onClick={() => handleEnroll(s)}
-                            className="w-full"
-                          >
-                            {enrollingId === s.subjectId ? (
-                              <>
-                                <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                                <span>Enrolling…</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                                <span>Enroll in {s.code}</span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                    No new subjects are currently available for self-enrollment. Check back soon!
-                  </p>
-                )}
-              </NotebookCard>
-            ) : (
-              /* Enrolled Subjects Cards Grid */
-              <div className="space-y-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight">
-                      Enrolled Subjects ({enrolledSubjects.length})
-                    </h2>
-                    <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted mt-0.5">
-                      Open any subject notebook to see your study queue and diagnostic progress.
-                    </p>
-                  </div>
-                  {availableSubjects.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEnrollModalOpen(true)}
-                      className="hidden sm:inline-flex"
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1" />
-                      <span>Enroll in Another Subject</span>
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {enrolledSubjects.map((subj) => (
-                    <div
-                      key={subj.subjectId}
-                      className="rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/35 shadow-notebook hover:shadow-lifted hover:-translate-y-1 transition-all flex flex-col justify-between overflow-hidden"
-                    >
-                      {/* Top Spiral Header strip */}
-                      <div className="px-5 py-3 border-b border-ink/10 dark:border-white/10 bg-paper-warm/75 dark:bg-chalkboard-surface flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-extrabold uppercase px-2.5 py-0.5 rounded bg-highlighter-yellow text-ink border border-ink/20">
-                          {subj.code}
-                        </span>
-                        <span className="font-mono text-[11px] text-ink-muted dark:text-chalkboard-muted flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {subj.enrolledAt ? new Date(subj.enrolledAt).toLocaleDateString() : 'Active'}
-                        </span>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="p-5 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk leading-snug">
-                            {subj.name}
-                          </h3>
-                          <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed line-clamp-2">
-                            {subj.description}
-                          </p>
-                        </div>
-
-                        {/* Status Summary & Study Next */}
-                        <div className="space-y-3 pt-3 border-t border-ink/10 dark:border-white/10">
-                          {/* Diagnostic One-line status */}
-                          <div className="flex items-center justify-between gap-2 text-xs">
-                            <span className="text-ink-muted dark:text-chalkboard-muted font-medium">Status:</span>
-                            <span
-                              className={`font-mono font-bold px-2 py-0.5 rounded text-xs ${
-                                subj.oneLineStatus === 'Not started yet'
-                                  ? 'bg-paper-warm text-ink-muted border border-ink/20'
-                                  : subj.oneLineStatus.includes('gap') && !subj.oneLineStatus.startsWith('0')
-                                  ? 'bg-redpen-soft text-redpen-dark font-semibold'
-                                  : 'bg-highlighter-mintSoft text-ink'
-                              }`}
-                            >
-                              {subj.oneLineStatus}
-                            </span>
-                          </div>
-
-                          {/* Study Next Pill */}
-                          {subj.studyNextTopic ? (
-                            <div className="p-2.5 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-white/15 space-y-1">
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span className="font-bold font-mono uppercase text-redpen dark:text-red-400 flex items-center gap-1">
-                                  <Sparkles className="w-3 h-3" /> Study Next
-                                </span>
-                                <StatusBadge status={subj.studyNextTopic.status} />
-                              </div>
-                              <p className="text-xs font-bold text-ink dark:text-chalkboard-chalk truncate">
-                                {subj.studyNextTopic.topicName}
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="p-2.5 rounded-xl bg-paper-warm/50 dark:bg-chalkboard-surface border border-dashed border-ink/20 dark:border-white/20 text-xs text-ink-muted dark:text-chalkboard-muted font-hand">
-                              Take your diagnostic quiz to unlock tailored recommendations.
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="pt-2 flex flex-col gap-2">
-                          <Link
-                            to={`/student/subjects/${subj.subjectId}`}
-                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-redpen hover:bg-redpen-dark text-white border-2 border-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
-                          >
-                            <span>Open Subject</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </Link>
-
-                          <Link
-                            to={`/student/subjects/${subj.subjectId}/progress`}
-                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs font-bold text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
-                          >
-                            <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
-                            <span>View Gap Analysis</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Self-Enrollment Modal / Drawer */}
-        {enrollModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 dark:bg-black/70 backdrop-blur-xs animate-in fade-in"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="enroll-modal-title"
-          >
-            <div className="w-full max-w-2xl rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink dark:border-white/50 shadow-lifted p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between gap-4 border-b border-ink/15 dark:border-white/15 pb-4">
-                <div className="space-y-1">
-                  <h3
-                    id="enroll-modal-title"
-                    className="text-xl sm:text-2xl font-extrabold text-ink dark:text-chalkboard-chalk"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeClasses.map((cls) => {
+                const isHighlighted = cls.classId === highlightedClassId;
+                return (
+                  <div
+                    key={cls.classId}
+                    ref={isHighlighted ? newlyJoinedCardRef : null}
+                    tabIndex={isHighlighted ? -1 : undefined}
+                    className={`rounded-2xl border-2 bg-paper-card dark:bg-chalkboard-card p-6 flex flex-col justify-between space-y-5 shadow-paper hover:shadow-lifted transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+                      isHighlighted
+                        ? 'border-ink-blue ring-2 ring-ink-blue/40'
+                        : 'border-ink dark:border-white/40'
+                    }`}
                   >
-                    Browse & Enroll in Subjects
-                  </h3>
-                  <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
-                    Choose an available course to add to your personal study desk.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEnrollModalOpen(false)}
-                  className="p-2 rounded-lg border border-ink/20 dark:border-white/20 text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-card font-bold text-xs"
-                >
-                  ✕ Close
-                </button>
-              </div>
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-mono text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-ink/20 dark:border-white/20 bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
+                          {cls.subject.code}
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase text-emerald-800 dark:text-emerald-300 bg-highlighter-mintSoft dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/30">
+                          Active
+                        </span>
+                      </div>
 
-              {availableSubjects.length === 0 ? (
-                <div className="py-8 text-center space-y-2">
-                  <p className="font-hand text-lg text-ink-muted dark:text-chalkboard-muted">
-                    You are already enrolled in all currently offered subjects!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {availableSubjects.map((s) => (
-                    <div
-                      key={s.subjectId}
-                      className="p-4 rounded-xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1.5 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold uppercase px-2 py-0.5 rounded bg-highlighter-yellow text-ink border border-ink/20">
-                            {s.code}
-                          </span>
-                          <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                            {s.topicCount} topics • {s.assessmentCount} published quizzes
-                          </span>
-                        </div>
-                        <h4 className="text-base font-bold text-ink dark:text-chalkboard-chalk">
-                          {s.name}
-                        </h4>
-                        <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                          {s.description}
+                      <div>
+                        <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight">
+                          {cls.sectionName}
+                        </h3>
+                        <p className="text-xs font-medium text-ink-muted dark:text-chalkboard-muted mt-0.5">
+                          {cls.subject.name}
                         </p>
                       </div>
 
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        disabled={enrollingId === s.subjectId}
-                        onClick={() => handleEnroll(s)}
-                        className="sm:self-center shrink-0"
-                      >
-                        {enrollingId === s.subjectId ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                            <span>Enrolling…</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3.5 h-3.5 mr-1.5" />
-                            <span>Enroll</span>
-                          </>
+                      <div className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted flex items-center gap-1">
+                        <span>Instructor:</span>
+                        <span className="font-bold text-ink dark:text-chalkboard-chalk">
+                          {cls.teacherName}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-white/15 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-ink-muted dark:text-chalkboard-muted">Diagnostic Status:</span>
+                          <span className="font-bold text-ink dark:text-chalkboard-chalk">{cls.oneLineStatus}</span>
+                        </div>
+
+                        {cls.studyNext && (
+                          <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-ink/10 dark:border-white/10">
+                            <span className="text-ink-muted dark:text-chalkboard-muted">Study Next:</span>
+                            <span className="font-bold text-redpen dark:text-highlighter-yellow truncate max-w-[150px]" title={cls.studyNext.topicName}>
+                              {cls.studyNext.topicName}
+                            </span>
+                          </div>
                         )}
-                      </Button>
+                      </div>
                     </div>
-                  ))}
+
+                    <Button
+                      to={`/student/classes/${cls.classId}`}
+                      variant="primary"
+                      size="sm"
+                      className="w-full justify-between mt-2"
+                    >
+                      <span>Open Class Workspace</span>
+                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Past Classes (Archived) Section */}
+        {!loading && pastClasses.length > 0 && (
+          <div className="space-y-4 pt-6 border-t-2 border-dashed border-ink/20 dark:border-white/20">
+            <div className="space-y-1">
+              <h2 className="text-lg font-bold font-sans text-ink-muted dark:text-chalkboard-muted flex items-center gap-2">
+                <Archive className="w-4 h-4" aria-hidden="true" />
+                <span>Past Classes</span>
+                <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted font-bold border border-ink/15 dark:border-white/15">
+                  {pastClasses.length}
+                </span>
+              </h2>
+              <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
+                These sections have concluded. All your historical quiz attempts, feedback, and progress remain accessible in read-only mode.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75 hover:opacity-100 transition-opacity">
+              {pastClasses.map((cls) => (
+                <div
+                  key={cls.classId}
+                  className="rounded-2xl border-2 border-dashed border-ink/30 dark:border-white/30 bg-paper-warm/50 dark:bg-chalkboard-surface/50 p-6 flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-ink/20 dark:border-white/20 bg-paper dark:bg-chalkboard text-ink-muted dark:text-chalkboard-muted">
+                        {cls.subject.code}
+                      </span>
+                      <span className="font-mono text-[10px] uppercase font-bold text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-white/20 px-2 py-0.5 rounded">
+                        Archived
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                        {cls.sectionName}
+                      </h3>
+                      <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
+                        {cls.subject.name} • {cls.teacherName}
+                      </p>
+                    </div>
+
+                    <div className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                      Result: <span className="font-bold text-ink dark:text-chalkboard-chalk">{cls.oneLineStatus}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    to={`/student/classes/${cls.classId}`}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full justify-between text-xs"
+                  >
+                    <span>View Past Results</span>
+                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </Button>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Accessible Join Class Modal */}
+      {joinModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="join-class-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 dark:bg-black/70 backdrop-blur-xs animate-fadeIn"
+        >
+          <div className="relative w-full max-w-md bg-paper dark:bg-chalkboard border-2 border-ink dark:border-white/50 rounded-2xl shadow-lifted p-6 space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-ink/15 dark:border-white/15">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-highlighter-mint flex items-center justify-center border border-ink text-ink font-bold">
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                </div>
+                <h2 id="join-class-modal-title" className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk">
+                  Join a Class Section
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                disabled={joining}
+                className="p-1 rounded-lg text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                aria-label="Close join class modal"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
+
+            <form onSubmit={handleJoinSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="join-code-input"
+                  className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk"
+                >
+                  6-Character Join Code <span className="text-redpen">*</span>
+                </label>
+                <input
+                  ref={modalInputRef}
+                  id="join-code-input"
+                  name="code"
+                  type="text"
+                  maxLength={6}
+                  required
+                  autoComplete="off"
+                  value={joinCode}
+                  onChange={handleJoinCodeChange}
+                  placeholder="e.g. 7K2M9X"
+                  className="w-full min-h-[46px] px-4 py-2 text-center font-mono text-2xl font-black tracking-widest uppercase rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                  aria-describedby={joinError ? 'join-code-error' : 'join-code-hint'}
+                />
+                <p id="join-code-hint" className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                  Ask your course teacher for this code. Letters and numbers only (excluding 0, 1, O, I).
+                </p>
+                {joinError && (
+                  <p id="join-code-error" role="alert" className="text-xs text-redpen font-bold flex items-center gap-1.5 pt-1">
+                    <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span>{joinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleCloseModal}
+                  disabled={joining}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  disabled={joining || joinCode.length < 6}
+                >
+                  {joining ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                      <span>Verifying Code…</span>
+                    </>
+                  ) : (
+                    <span>Join Class</span>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </PortalShell>
   );
 }
-
