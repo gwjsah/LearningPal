@@ -131,7 +131,11 @@ public class StudentAssessmentService {
 
         if (attempt == null) {
             int nextAttemptNumber = existingAttempts.size() + 1;
-            attempt = attemptRepository.save(new Attempt(student, assessment, nextAttemptNumber));
+            Long classId = enrollmentRepository.findClassIdByStudentAndSubject(student, assessment.getSubject())
+                    .orElse(null);
+            Attempt newAttempt = new Attempt(student, assessment, nextAttemptNumber);
+            newAttempt.setClassId(classId);
+            attempt = attemptRepository.save(newAttempt);
         }
 
         List<AssessmentQuestion> assessmentQuestions =

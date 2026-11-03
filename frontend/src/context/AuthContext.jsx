@@ -65,8 +65,8 @@ export function AuthProvider({ children }) {
    * Note: Students receive a token and are logged in immediately.
    * Teachers receive token=null and are NOT logged in (awaiting admin approval).
    */
-  const signup = useCallback(async ({ fullName, email, password, role }) => {
-    const response = await authService.signup({ fullName, email, password, role });
+  const signup = useCallback(async ({ fullName, email, institutionCode, password, role }) => {
+    const response = await authService.signup({ fullName, email, institutionCode, password, role });
     if (response.token) {
       localStorage.setItem(TOKEN_KEY, response.token);
       setToken(response.token);

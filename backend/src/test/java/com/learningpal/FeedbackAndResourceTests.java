@@ -73,6 +73,9 @@ public class FeedbackAndResourceTests {
     private EnrollmentRepository enrollmentRepository;
 
     @Autowired
+    private com.learningpal.repository.ClassEntityRepository classEntityRepository;
+
+    @Autowired
     private AnswerRepository answerRepository;
 
     @Autowired

@@ -6,13 +6,13 @@ import { apiRequest } from './api';
 export const authService = {
   /**
    * Registers a new Student or Teacher.
-   * @param {{ fullName: string, email: string, password: string, role: 'STUDENT' | 'TEACHER' }} credentials
+   * @param {{ fullName: string, email: string, institutionCode: string, password: string, role: 'STUDENT' | 'TEACHER' }} credentials
    * @returns {Promise<{ token?: string, user: object, message?: string }>}
    */
-  async signup({ fullName, email, password, role }) {
+  async signup({ fullName, email, institutionCode, password, role }) {
     return apiRequest('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ fullName, email, password, role }),
+      body: JSON.stringify({ fullName, email, institutionCode, password, role }),
     });
   },
 

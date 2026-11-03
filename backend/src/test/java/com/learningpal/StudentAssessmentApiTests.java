@@ -336,7 +336,7 @@ public class StudentAssessmentApiTests {
               "fullName": "Walkthrough Student One",
               "email": "wt.student1@learningpal.edu",
               "password": "Password123",
-              "role": "STUDENT"
+              "role": "STUDENT", "institutionCode": "PILOT-2026"
             }
             """;
         MvcResult signup1Res = mockMvc.perform(post("/api/auth/signup")
@@ -435,7 +435,7 @@ public class StudentAssessmentApiTests {
               "fullName": "Walkthrough Student Two",
               "email": "wt.student2@learningpal.edu",
               "password": "Password123",
-              "role": "STUDENT"
+              "role": "STUDENT", "institutionCode": "PILOT-2026"
             }
             """;
         MvcResult signup2Res = mockMvc.perform(post("/api/auth/signup")

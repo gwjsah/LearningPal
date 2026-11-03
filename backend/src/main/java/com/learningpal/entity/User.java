@@ -5,7 +5,7 @@ import java.time.Instant;
 
 /**
  * JPA Entity mapping the 'users' table in MySQL.
- * Represents all LearningPal users (students, teachers, admins).
+ * Represents all LearningPal users (students, teachers, institution admins, super admins).
  */
 @Entity
 @Table(name = "users")
@@ -32,6 +32,10 @@ public class User {
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institution_id")
+    private Institution institution; // Nullable ONLY for SUPER_ADMIN
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -45,6 +49,11 @@ public class User {
         this.role = role;
         this.status = status;
         this.createdAt = Instant.now();
+    }
+
+    public User(String fullName, String email, String passwordHash, Role role, UserStatus status, Institution institution) {
+        this(fullName, email, passwordHash, role, status);
+        this.institution = institution;
     }
 
     @PrePersist
@@ -104,6 +113,14 @@ public class User {
         this.status = status;
     }
 
+    public Institution getInstitution() {
+        return institution;
+    }
+
+    public void setInstitution(Institution institution) {
+        this.institution = institution;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -112,4 +129,3 @@ public class User {
         this.createdAt = createdAt;
     }
 }
-

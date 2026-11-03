@@ -4,15 +4,15 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 /**
- * Maps a student's enrollment in an academic subject.
- * Enforces server-side access control so students cannot access assessments
- * or progress data for subjects they are not enrolled in.
+ * Maps a student's enrollment in an academic class (section).
+ * The subject is reached through the class (classEntity.getSubject()).
+ * Also retains optional subject for seamless backward compatibility with legacy test fixtures.
  */
 @Entity
 @Table(
     name = "enrollments",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_student_subject_enrollment", columnNames = {"student_id", "subject_id"})
+        @UniqueConstraint(name = "uk_student_class_enrollment", columnNames = {"student_id", "class_id"})
     }
 )
 public class Enrollment {
@@ -26,13 +26,24 @@ public class Enrollment {
     private User student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subject_id", nullable = false)
+    @JoinColumn(name = "class_id")
+    private ClassEntity classEntity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
     private Subject subject;
 
     @Column(name = "enrolled_at", nullable = false, updatable = false)
     private Instant enrolledAt;
 
     public Enrollment() {
+    }
+
+    public Enrollment(User student, ClassEntity classEntity) {
+        this.student = student;
+        this.classEntity = classEntity;
+        this.subject = classEntity != null ? classEntity.getSubject() : null;
+        this.enrolledAt = Instant.now();
     }
 
     public Enrollment(User student, Subject subject) {
@@ -52,6 +63,10 @@ public class Enrollment {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public User getStudent() {
         return student;
     }
@@ -60,7 +75,21 @@ public class Enrollment {
         this.student = student;
     }
 
+    public ClassEntity getClassEntity() {
+        return classEntity;
+    }
+
+    public void setClassEntity(ClassEntity classEntity) {
+        this.classEntity = classEntity;
+        if (classEntity != null && this.subject == null) {
+            this.subject = classEntity.getSubject();
+        }
+    }
+
     public Subject getSubject() {
+        if (classEntity != null) {
+            return classEntity.getSubject();
+        }
         return subject;
     }
 
@@ -76,4 +105,3 @@ public class Enrollment {
         this.enrolledAt = enrolledAt;
     }
 }
-

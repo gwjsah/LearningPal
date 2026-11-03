@@ -8,6 +8,7 @@ import {
   Clock,
   ArrowRight,
   Home,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggleButton } from '../context/ThemeContext';
@@ -25,6 +26,7 @@ export default function Signup() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    institutionCode: '',
     password: '',
     confirmPassword: '',
   });
@@ -53,6 +55,10 @@ export default function Signup() {
       errors.email = 'Email address is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       errors.email = 'Please provide a valid email address';
+    }
+
+    if (!formData.institutionCode.trim()) {
+      errors.institutionCode = 'Institution code is required';
     }
 
     if (!formData.password) {
@@ -84,6 +90,7 @@ export default function Signup() {
       const response = await signup({
         fullName: formData.fullName.trim(),
         email: formData.email.trim(),
+        institutionCode: formData.institutionCode.trim().toUpperCase(),
         password: formData.password,
         role,
       });
@@ -109,51 +116,48 @@ export default function Signup() {
         </div>
         <main id="main-content" className="sm:mx-auto sm:w-full sm:max-w-md px-4">
           <NotebookCard
-            pageLabel="Teacher Verification Queue"
+            pageLabel="Page 02 • Registration Pending"
             ruled
             marginLine
             lifted
-            bodyClassName="text-center space-y-6"
+            bodyClassName="space-y-6 text-center"
           >
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-highlighter-yellowSoft border-2 border-ink flex items-center justify-center shadow-notebook">
-              <Clock className="w-8 h-8 text-ink" aria-hidden="true" />
+            <div className="w-16 h-16 mx-auto rounded-full bg-highlighter-yellow/30 border-2 border-dashed border-ink dark:border-white/40 flex items-center justify-center text-ink dark:text-chalkboard-chalk shadow-notebook-sm">
+              <Clock className="w-8 h-8 text-ink dark:text-chalkboard-chalk animate-pulse" aria-hidden="true" />
             </div>
 
             <div className="space-y-2">
-              <span className="font-mono text-xs font-bold uppercase tracking-wider text-redpen">
-                Teacher Account Request
-              </span>
-              <h1 className="text-2xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight font-sans">
-                Request Sent for Approval
+              <h1 className="text-xl font-bold font-sans text-ink dark:text-chalkboard-chalk">
+                Request Sent to Administrator
               </h1>
-              <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                An administrator needs to verify your educator account before you can open the Teacher Gradebook.
+              <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed font-sans">
+                Thank you for registering,{' '}
+                <strong className="text-ink dark:text-chalkboard-chalk">{formData.fullName}</strong>.
+              </p>
+              <div className="p-3 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-white/20 text-xs font-mono text-left space-y-1">
+                <div><span className="text-ink-muted dark:text-chalkboard-muted">Email:</span> {formData.email}</div>
+                <div><span className="text-ink-muted dark:text-chalkboard-muted">Institution:</span> {formData.institutionCode.toUpperCase()}</div>
+                <div><span className="text-ink-muted dark:text-chalkboard-muted">Status:</span> <span className="text-ink-blue dark:text-highlighter-mint font-bold uppercase">PENDING APPROVAL</span></div>
+              </div>
+              <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed pt-2">
+                An administrator for your institution must approve your instructor account before you can log in.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 text-xs text-ink-muted dark:text-chalkboard-muted text-left space-y-1.5">
-              <p className="font-bold text-ink dark:text-chalkboard-chalk">
-                Registered Email:{' '}
-                <span className="font-mono text-ink-blue dark:text-highlighter-yellow">{formData.email}</span>
-              </p>
-              <p>
-                Once an administrator approves your request, your login access will unlock automatically.
-              </p>
+            <div className="pt-2 flex flex-col gap-2">
+              <Link to="/login" className="w-full">
+                <Button variant="primary" size="md" className="w-full justify-center">
+                  <span>Back to Login</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              </Link>
+              <Link to="/" className="w-full">
+                <Button variant="ghost" size="sm" className="w-full justify-center font-mono text-xs">
+                  <Home className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                  <span>Return to Homepage</span>
+                </Button>
+              </Link>
             </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <Button to="/" variant="primary" size="md" className="flex-1">
-                <Home className="w-4 h-4" aria-hidden="true" />
-                <span>Back to Home</span>
-              </Button>
-              <Button to="/login" variant="secondary" size="md" className="flex-1">
-                <span>Go to Log In</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Button>
-            </div>
-            <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
-              Note: Logging in before approval will display a pending status reminder.
-            </p>
           </NotebookCard>
         </main>
       </div>
@@ -162,38 +166,37 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk flex flex-col justify-center py-10 sm:px-6 lg:px-8 transition-colors overflow-x-hidden">
+      {/* Skip to Main Content Link for accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-highlighter-yellow focus:text-ink focus:font-bold focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 px-4 py-2 bg-highlighter-yellow text-ink font-bold border-2 border-ink rounded-lg shadow-notebook"
       >
         Skip to registration form
       </a>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 mb-4 flex items-center justify-between">
+      {/* Top utility bar */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 mb-2 flex items-center justify-between">
         <Link
           to="/"
-          className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-redpen focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded px-1 py-0.5 transition-colors"
+          className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk flex items-center gap-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded px-1"
         >
-          ← Back to Cover Page
+          <span>← Back to home</span>
         </Link>
         <ThemeToggleButton />
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-5 px-4">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1"
-        >
-          <LearningPalLogo className="w-10 h-10 transition-transform group-hover:-rotate-6" />
-          <span className="font-bold text-2xl tracking-tight text-ink dark:text-chalkboard-chalk flex items-center">
-            Learning<span className="font-hand text-3xl text-redpen -mt-1">Pal</span>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 text-center mb-6">
+        <Link to="/" className="inline-flex items-center gap-2 group mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded">
+          <LearningPalLogo className="w-9 h-9 transition-transform group-hover:scale-105" />
+          <span className="font-heading text-2xl font-bold tracking-tight text-ink dark:text-chalkboard-chalk">
+            Learning<span className="text-redpen italic">Pal</span>
           </span>
         </Link>
         <h1 className="mt-2 text-2xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight font-sans">
           Create Your Notebook Account
         </h1>
         <p className="mt-1 text-sm text-ink-muted dark:text-chalkboard-muted">
-          Join LearningPal to master topics and track learning progress
+          Join your institution to master topics and track learning progress
         </p>
       </div>
 
@@ -290,6 +293,19 @@ export default function Signup() {
               onChange={handleChange}
               placeholder="e.g. student@school.edu"
               error={clientErrors.email}
+            />
+
+            <Field
+              id="institutionCode"
+              name="institutionCode"
+              type="text"
+              label="Institution Code"
+              required
+              value={formData.institutionCode}
+              onChange={handleChange}
+              placeholder="e.g. PILOT-2026"
+              hint="Ask your school for this code"
+              error={clientErrors.institutionCode}
             />
 
             <Field

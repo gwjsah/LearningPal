@@ -17,17 +17,28 @@ public class UserDto {
     private String email;
     private Role role;
     private UserStatus status;
+    private Long institutionId;
+    private String institutionName;
+    private String institutionCode;
     private Instant createdAt;
 
     public UserDto() {
     }
 
     public UserDto(Long id, String fullName, String email, Role role, UserStatus status, Instant createdAt) {
+        this(id, fullName, email, role, status, null, null, null, createdAt);
+    }
+
+    public UserDto(Long id, String fullName, String email, Role role, UserStatus status,
+                   Long institutionId, String institutionName, String institutionCode, Instant createdAt) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.role = role;
         this.status = status;
+        this.institutionId = institutionId;
+        this.institutionName = institutionName;
+        this.institutionCode = institutionCode;
         this.createdAt = createdAt;
     }
 
@@ -35,12 +46,19 @@ public class UserDto {
         if (user == null) {
             return null;
         }
+        Long instId = user.getInstitution() != null ? user.getInstitution().getId() : null;
+        String instName = user.getInstitution() != null ? user.getInstitution().getName() : null;
+        String instCode = user.getInstitution() != null ? user.getInstitution().getCode() : null;
+
         return new UserDto(
             user.getId(),
             user.getFullName(),
             user.getEmail(),
             user.getRole(),
             user.getStatus(),
+            instId,
+            instName,
+            instCode,
             user.getCreatedAt()
         );
     }
@@ -85,6 +103,30 @@ public class UserDto {
         this.status = status;
     }
 
+    public Long getInstitutionId() {
+        return institutionId;
+    }
+
+    public void setInstitutionId(Long institutionId) {
+        this.institutionId = institutionId;
+    }
+
+    public String getInstitutionName() {
+        return institutionName;
+    }
+
+    public void setInstitutionName(String institutionName) {
+        this.institutionName = institutionName;
+    }
+
+    public String getInstitutionCode() {
+        return institutionCode;
+    }
+
+    public void setInstitutionCode(String institutionCode) {
+        this.institutionCode = institutionCode;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
@@ -93,4 +135,3 @@ public class UserDto {
         this.createdAt = createdAt;
     }
 }
-

@@ -47,7 +47,7 @@ class LearningPalApplicationTests {
               "fullName": "Alex Rivera",
               "email": "alex.student@learningpal.edu",
               "password": "Password123",
-              "role": "STUDENT"
+              "role": "STUDENT", "institutionCode": "PILOT-2026"
             }
             """;
 
@@ -73,7 +73,7 @@ class LearningPalApplicationTests {
               "fullName": "Weak Password User",
               "email": "weak@learningpal.edu",
               "password": "passwordonly",
-              "role": "STUDENT"
+              "role": "STUDENT", "institutionCode": "PILOT-2026"
             }
             """;
 
@@ -92,7 +92,7 @@ class LearningPalApplicationTests {
               "fullName": "Maria Santos",
               "email": "maria.teacher@learningpal.edu",
               "password": "TeacherPass123",
-              "role": "TEACHER"
+              "role": "TEACHER", "institutionCode": "PILOT-2026"
             }
             """;
 

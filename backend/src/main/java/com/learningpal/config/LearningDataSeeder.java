@@ -31,6 +31,10 @@ public class LearningDataSeeder implements CommandLineRunner {
     private final AssessmentRepository assessmentRepository;
     private final AssessmentQuestionRepository assessmentQuestionRepository;
     private final ResourceRepository resourceRepository;
+    private final InstitutionRepository institutionRepository;
+    private final ClassEntityRepository classEntityRepository;
+    private final UserRepository userRepository;
+    private final com.learningpal.service.JoinCodeGenerator joinCodeGenerator;
     private final boolean seedEnabled;
 
     public LearningDataSeeder(
@@ -41,6 +45,10 @@ public class LearningDataSeeder implements CommandLineRunner {
             AssessmentRepository assessmentRepository,
             AssessmentQuestionRepository assessmentQuestionRepository,
             ResourceRepository resourceRepository,
+            InstitutionRepository institutionRepository,
+            ClassEntityRepository classEntityRepository,
+            UserRepository userRepository,
+            com.learningpal.service.JoinCodeGenerator joinCodeGenerator,
             @Value("${app.seed.enabled:true}") boolean seedEnabled) {
         this.subjectRepository = subjectRepository;
         this.topicRepository = topicRepository;
@@ -49,6 +57,10 @@ public class LearningDataSeeder implements CommandLineRunner {
         this.assessmentRepository = assessmentRepository;
         this.assessmentQuestionRepository = assessmentQuestionRepository;
         this.resourceRepository = resourceRepository;
+        this.institutionRepository = institutionRepository;
+        this.classEntityRepository = classEntityRepository;
+        this.userRepository = userRepository;
+        this.joinCodeGenerator = joinCodeGenerator;
         this.seedEnabled = seedEnabled;
     }
 
@@ -124,6 +136,17 @@ public class LearningDataSeeder implements CommandLineRunner {
 
         // 6. Resources (1 NOTE + 1 PRACTICE per topic = 12 total)
         seedResources(subject, topics);
+
+        // 7. Pilot Class (Section A under Pilot University)
+        Institution pilot = institutionRepository.findByCode("PILOT-2026")
+                .orElseGet(() -> institutionRepository.save(new Institution("Pilot University", "PILOT-2026", InstitutionStatus.ACTIVE)));
+
+        if (!classEntityRepository.findFirstByInstitutionAndSubject(pilot, subject).isPresent()) {
+            User teacher = userRepository.findFirstByInstitutionAndRoleAndStatus(pilot, Role.TEACHER, UserStatus.ACTIVE).orElse(null);
+            String joinCode = joinCodeGenerator.generateUniqueCode(pilot, classEntityRepository);
+            classEntityRepository.save(new ClassEntity(pilot, subject, teacher, "Section A", joinCode));
+            log.info("Pilot curriculum class seeded: Section A with join code '{}'.", joinCode);
+        }
 
         log.info("Pilot curriculum seeded successfully: 1 Subject, 6 Topics, {} Questions, {} Choices, 7 Assessments, {} Resources.",
                 questionRepository.count(), choiceRepository.count(), resourceRepository.count());

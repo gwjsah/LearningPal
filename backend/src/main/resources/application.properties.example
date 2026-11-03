@@ -46,6 +46,15 @@ app.admin.password=${APP_ADMIN_PASSWORD:REPLACE_WITH_STRONG_PASSWORD}
 app.admin.full-name=${APP_ADMIN_NAME:LearningPal System Admin}
 
 # -------------------------------------------------------------------
+# Platform Super Administrator Credentials
+# Platform-level owner who creates institutions and their first admins.
+# Leave blank or unset to skip super-admin seeding.
+# -------------------------------------------------------------------
+app.superadmin.email=${APP_SUPERADMIN_EMAIL:superadmin@learningpal.edu}
+app.superadmin.password=${APP_SUPERADMIN_PASSWORD:REPLACE_WITH_STRONG_PASSWORD}
+app.superadmin.full-name=${APP_SUPERADMIN_NAME:LearningPal Super Admin}
+
+# -------------------------------------------------------------------
 # Pilot Learning Data Seeder
 # When true, automatically seeds the pilot subject, topics, questions, and resources if empty.
 # -------------------------------------------------------------------

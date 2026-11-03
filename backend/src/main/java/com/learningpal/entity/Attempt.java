@@ -5,6 +5,7 @@ import java.time.Instant;
 
 /**
  * A student's test session on an assessment.
+ * Records attempt number, start/submit timestamps, scores, and the class it was taken in.
  */
 @Entity
 @Table(name = "attempts")
@@ -21,6 +22,9 @@ public class Attempt {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assessment_id", nullable = false)
     private Assessment assessment;
+
+    @Column(name = "class_id")
+    private Long classId; // Nullable for legacy rows; set for all new classroom attempts
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -56,6 +60,11 @@ public class Attempt {
         this.startedAt = Instant.now();
     }
 
+    public Attempt(User student, Assessment assessment, Integer attemptNumber, Long classId) {
+        this(student, assessment, attemptNumber);
+        this.classId = classId;
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.startedAt == null) {
@@ -64,10 +73,17 @@ public class Attempt {
         if (this.status == null) {
             this.status = AttemptStatus.IN_PROGRESS;
         }
+        if (this.attemptNumber == null) {
+            this.attemptNumber = 1;
+        }
     }
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public User getStudent() {
@@ -84,6 +100,14 @@ public class Attempt {
 
     public void setAssessment(Assessment assessment) {
         this.assessment = assessment;
+    }
+
+    public Long getClassId() {
+        return classId;
+    }
+
+    public void setClassId(Long classId) {
+        this.classId = classId;
     }
 
     public AttemptStatus getStatus() {
@@ -134,4 +158,3 @@ public class Attempt {
         this.maxScore = maxScore;
     }
 }
-

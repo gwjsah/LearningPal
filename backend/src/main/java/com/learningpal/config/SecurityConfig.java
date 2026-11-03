@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
                         .requestMatchers("/api/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/super/**").hasRole("SUPER_ADMIN")
                         // Everything else requires valid authentication
                         .anyRequest().authenticated()
                 )

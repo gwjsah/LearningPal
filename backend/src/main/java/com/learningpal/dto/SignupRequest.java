@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Pattern;
 
 /**
  * Incoming request payload for public user signup.
+ * Requires a valid institution code so every user is tied to an institution.
  */
 public class SignupRequest {
 
@@ -28,14 +29,22 @@ public class SignupRequest {
     @NotNull(message = "Role is required")
     private Role role;
 
+    @NotBlank(message = "Institution code is required")
+    private String institutionCode;
+
     public SignupRequest() {
     }
 
     public SignupRequest(String fullName, String email, String password, Role role) {
+        this(fullName, email, password, role, "PILOT-2026");
+    }
+
+    public SignupRequest(String fullName, String email, String password, Role role, String institutionCode) {
         this.fullName = fullName;
         this.email = email;
         this.password = password;
         this.role = role;
+        this.institutionCode = institutionCode;
     }
 
     public String getFullName() {
@@ -69,5 +78,12 @@ public class SignupRequest {
     public void setRole(Role role) {
         this.role = role;
     }
-}
 
+    public String getInstitutionCode() {
+        return institutionCode;
+    }
+
+    public void setInstitutionCode(String institutionCode) {
+        this.institutionCode = institutionCode;
+    }
+}

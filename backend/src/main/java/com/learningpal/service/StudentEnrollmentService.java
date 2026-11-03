@@ -25,6 +25,9 @@ public class StudentEnrollmentService {
     private final TopicRepository topicRepository;
     private final AssessmentRepository assessmentRepository;
     private final GapAnalysisService gapAnalysisService;
+    private final ClassEntityRepository classEntityRepository;
+    private final InstitutionRepository institutionRepository;
+    private final JoinCodeGenerator joinCodeGenerator;
 
     public StudentEnrollmentService(
             UserRepository userRepository,
@@ -32,13 +35,19 @@ public class StudentEnrollmentService {
             EnrollmentRepository enrollmentRepository,
             TopicRepository topicRepository,
             AssessmentRepository assessmentRepository,
-            GapAnalysisService gapAnalysisService) {
+            GapAnalysisService gapAnalysisService,
+            ClassEntityRepository classEntityRepository,
+            InstitutionRepository institutionRepository,
+            JoinCodeGenerator joinCodeGenerator) {
         this.userRepository = userRepository;
         this.subjectRepository = subjectRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.topicRepository = topicRepository;
         this.assessmentRepository = assessmentRepository;
         this.gapAnalysisService = gapAnalysisService;
+        this.classEntityRepository = classEntityRepository;
+        this.institutionRepository = institutionRepository;
+        this.joinCodeGenerator = joinCodeGenerator;
     }
 
     /**
@@ -54,7 +63,9 @@ public class StudentEnrollmentService {
 
         for (Enrollment enrollment : enrollments) {
             Subject subject = enrollment.getSubject();
-            summaries.add(buildSubjectSummary(student, subject, enrollment));
+            if (subject != null) {
+                summaries.add(buildSubjectSummary(student, subject, enrollment));
+            }
         }
 
         return summaries;
@@ -100,8 +111,22 @@ public class StudentEnrollmentService {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found: " + subjectId));
 
+        Institution inst = student.getInstitution();
+        if (inst == null) {
+            inst = institutionRepository.findByCode("PILOT-2026")
+                    .orElseGet(() -> institutionRepository.save(new Institution("Pilot University", "PILOT-2026", InstitutionStatus.ACTIVE)));
+            student.setInstitution(inst);
+        }
+
+        final Institution studentInst = inst;
+        ClassEntity defaultClass = classEntityRepository.findFirstByInstitutionAndSubject(studentInst, subject)
+                .orElseGet(() -> {
+                    String code = joinCodeGenerator.generateUniqueCode(studentInst, classEntityRepository);
+                    return classEntityRepository.save(new ClassEntity(studentInst, subject, null, "Section A", code));
+                });
+
         Enrollment enrollment = enrollmentRepository.findByStudentAndSubject(student, subject)
-                .orElseGet(() -> enrollmentRepository.save(new Enrollment(student, subject)));
+                .orElseGet(() -> enrollmentRepository.save(new Enrollment(student, defaultClass)));
 
         return buildSubjectSummary(student, subject, enrollment);
     }
@@ -142,4 +167,3 @@ public class StudentEnrollmentService {
         );
     }
 }
-

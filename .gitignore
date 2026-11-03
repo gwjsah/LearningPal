@@ -34,3 +34,8 @@ application.properties
 *.njsproj
 *.sln
 *.sw?
+
+# Agent tooling & local skills cache
+.agents/
+.claude/
+skills-lock.json
