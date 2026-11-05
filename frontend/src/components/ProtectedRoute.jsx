@@ -16,7 +16,7 @@ export default function ProtectedRoute({ allowedRole, children }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk transition-colors">
-        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-ink dark:border-white/50 bg-paper-card dark:bg-chalkboard-card shadow-lifted">
+        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card shadow-lifted">
           <div className="w-8 h-8 border-4 border-ink-blue dark:border-highlighter-yellow border-t-transparent rounded-full animate-spin" />
           <p className="font-hand text-xl font-bold text-ink dark:text-chalkboard-chalk">
             Checking student notebook index…

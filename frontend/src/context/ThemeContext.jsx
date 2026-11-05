@@ -52,7 +52,7 @@ export function ThemeToggleButton({ className = '' }) {
       onClick={toggleDarkMode}
       aria-label={darkMode ? 'Switch to Paper Mode' : 'Switch to Chalkboard Mode'}
       title={darkMode ? 'Switch to Paper Mode' : 'Switch to Chalkboard Mode'}
-      className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-ink dark:border-white/50 bg-paper dark:bg-chalkboard-surface text-xs font-bold text-ink dark:text-chalkboard-chalk shadow-notebook-sm hover:bg-highlighter-yellow/50 dark:hover:bg-white/10 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${className}`}
+      className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-ink dark:border-chalkboard-border bg-paper dark:bg-chalkboard-surface text-xs font-bold text-ink dark:text-chalkboard-chalk shadow-notebook-sm hover:bg-highlighter-yellow/50 dark:hover:bg-chalkboard-highlight transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${className}`}
     >
       {darkMode ? (
         <>

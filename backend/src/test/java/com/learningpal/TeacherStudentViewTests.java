@@ -431,7 +431,7 @@ public class TeacherStudentViewTests {
                 .andExpect(jsonPath("$.status").value("PLANNED"))
                 .andExpect(jsonPath("$.masteryAtStart").value(40.0))
                 .andExpect(jsonPath("$.masteryAtCompletion").doesNotExist())
-                .andExpect(jsonPath("$.outcome").doesNotExist())
+                .andExpect(jsonPath("$.outcome").value("NO_NEW_DATA"))
                 .andReturn().getResponse().getContentAsString();
 
         Long interventionId = objectMapper.readTree(responseStr).get("id").asLong();
@@ -441,9 +441,19 @@ public class TeacherStudentViewTests {
                         .header("Authorization", "Bearer " + teacherAToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(interventionId));
+                .andExpect(jsonPath("$[0].id").value(interventionId))
+                .andExpect(jsonPath("$[0].outcome").value("NO_NEW_DATA"));
 
-        // 3. Complete intervention when student mastery improved by +10.0% (boundary test for IMPROVED)
+        // 3. Complete intervention when student mastery improved by +10.0%
+        // First record a new attempt submitted after intervention creation so outcome evaluates
+        Attempt postInterventionAttempt = new Attempt(student1, quizAssessment, 1);
+        postInterventionAttempt.setClassId(classA.getId());
+        postInterventionAttempt.setStatus(AttemptStatus.SUBMITTED);
+        postInterventionAttempt.setTotalScore(5.0);
+        postInterventionAttempt.setMaxScore(5.0);
+        postInterventionAttempt.setSubmittedAt(java.time.Instant.now().plusSeconds(2));
+        attemptRepository.save(postInterventionAttempt);
+
         stm.setMasteryPercent(50.0); // 50.0 - 40.0 = +10.0 -> IMPROVED
         studentTopicMasteryRepository.save(stm);
 
@@ -460,6 +470,7 @@ public class TeacherStudentViewTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("DONE"))
                 .andExpect(jsonPath("$.masteryAtCompletion").value(50.0))
+                .andExpect(jsonPath("$.changeSinceCompletion").value(0.0))
                 .andExpect(jsonPath("$.outcome").value("IMPROVED"))
                 .andExpect(jsonPath("$.completedAt").isNotEmpty());
 

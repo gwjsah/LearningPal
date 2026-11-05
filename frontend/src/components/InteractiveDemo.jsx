@@ -142,7 +142,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
     <section
       id="demo"
       aria-labelledby="demo-heading"
-      className="relative py-20 lg:py-28 bg-graph-paper border-b-2 border-ink/15 dark:border-white/15"
+      className="relative py-20 lg:py-28 bg-graph-paper border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}
@@ -175,7 +175,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
               aria-selected={activeRole === 'student'}
               aria-controls="panel-student"
               onClick={() => onChangeRole('student')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-2 border-b-0 border-ink dark:border-white/35 font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-2 border-b-0 border-ink dark:border-chalkboard-border font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 activeRole === 'student'
                   ? 'bg-highlighter-yellow text-ink translate-y-[2px] pb-4 shadow-[0_-3px_10px_rgba(0,0,0,0.06)] z-20'
                   : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:bg-highlighter-yellowSoft/60'
@@ -195,7 +195,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
               aria-selected={activeRole === 'teacher'}
               aria-controls="panel-teacher"
               onClick={() => onChangeRole('teacher')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-2 border-b-0 border-ink dark:border-white/35 font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-3.5 rounded-t-2xl border-2 border-b-0 border-ink dark:border-chalkboard-border font-bold text-sm sm:text-base transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 activeRole === 'teacher'
                   ? 'bg-highlighter-mint text-ink translate-y-[2px] pb-4 shadow-[0_-3px_10px_rgba(0,0,0,0.06)] z-20'
                   : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:bg-highlighter-mintSoft/60'
@@ -221,7 +221,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
         </div>
 
         {/* Main Open Notebook Spread Container */}
-        <div className="relative max-w-6xl mx-auto rounded-2xl rounded-tl-none bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/35 shadow-lifted overflow-hidden">
+        <div className="relative max-w-6xl mx-auto rounded-2xl rounded-tl-none bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-lifted overflow-hidden">
           <div className="pt-2">
             <WashiTape
               colorClass={
@@ -255,7 +255,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                     className="space-y-7"
                   >
                     {/* Top Student Notebook Bar: Subject Switcher + Overall Mastery Stamp */}
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b-2 border-ink/10 dark:border-white/10">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b-2 border-ink/10 dark:border-chalkboard-borderSubtle">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="px-2.5 py-0.5 rounded bg-highlighter-yellow text-ink font-mono text-xs font-bold">
@@ -279,7 +279,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                               className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition-all ${
                                 selectedSubjectKey === subj.id
                                   ? 'bg-ink text-paper dark:bg-highlighter-yellow dark:text-ink border-ink shadow-sm'
-                                  : 'bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border-ink/20 dark:border-white/20 hover:border-ink'
+                                  : 'bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border-ink/20 dark:border-chalkboard-borderSubtle hover:border-ink'
                               }`}
                             >
                               {subj.name}
@@ -289,7 +289,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                       </div>
 
                       {/* Live Calculated Subject Mastery Score Stamp */}
-                      <div className="flex items-center gap-4 self-start lg:self-center bg-paper-warm/80 dark:bg-chalkboard-surface px-4 py-3 rounded-2xl border border-ink/20 dark:border-white/15">
+                      <div className="flex items-center gap-4 self-start lg:self-center bg-paper-warm/80 dark:bg-chalkboard-surface px-4 py-3 rounded-2xl border border-ink/20 dark:border-chalkboard-borderSubtle">
                         <div>
                           <span className="text-[11px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted block">
                             Current Subject Mastery
@@ -308,7 +308,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                           type="button"
                           onClick={resetDemoProgress}
                           title="Reset demo checkboxes"
-                          className="p-1.5 rounded-lg text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-white border border-transparent hover:border-ink/20"
+                          className="p-1.5 rounded-lg text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-chalkboard-chalk border border-transparent hover:border-ink/20"
                           aria-label="Reset interactive demo checkboxes"
                         >
                           <RotateCcw className="w-4 h-4" />
@@ -337,8 +337,8 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                           </p>
                         </div>
 
-                        <div className="mt-5 pt-4 border-t border-ink/15 dark:border-white/15 grid grid-cols-2 gap-3">
-                          <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/15">
+                        <div className="mt-5 pt-4 border-t border-ink/15 dark:border-chalkboard-borderSubtle grid grid-cols-2 gap-3">
+                          <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/15 dark:border-chalkboard-borderSubtle">
                             <span className="text-[11px] font-mono uppercase text-emerald-700 dark:text-emerald-400 font-bold block">
                               Top Strength
                             </span>
@@ -369,7 +369,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                       </div>
 
                       {/* Right 7 Cols: Recharts Topic Mastery Bar Chart */}
-                      <div className="lg:col-span-7 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-white/20 p-4 sm:p-5">
+                      <div className="lg:col-span-7 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-chalkboard-borderSubtle p-4 sm:p-5">
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                           <div>
                             <h3 className="text-sm sm:text-base font-extrabold text-ink dark:text-chalkboard-chalk">
@@ -471,7 +471,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                               className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all ${
                                 topicFilter === tab.id
                                   ? 'bg-ink text-paper dark:bg-highlighter-yellow dark:text-ink border-ink'
-                                  : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/15 dark:border-white/15'
+                                  : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/15 dark:border-chalkboard-borderSubtle'
                               }`}
                             >
                               {tab.label}
@@ -496,7 +496,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                               className={`rounded-2xl p-5 border-2 transition-all flex flex-col justify-between ${
                                 isGap
                                   ? 'bg-redpen-soft/35 dark:bg-red-950/25 border-redpen/45'
-                                  : 'bg-paper dark:bg-chalkboard-surface border-ink/20 dark:border-white/15'
+                                  : 'bg-paper dark:bg-chalkboard-surface border-ink/20 dark:border-chalkboard-borderSubtle'
                               }`}
                             >
                               <div>
@@ -548,14 +548,14 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                                 </div>
 
                                 {/* Personalized Feedback */}
-                                <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted mb-3 bg-paper-card/80 dark:bg-chalkboard/60 p-2.5 rounded-xl border border-ink/10 dark:border-white/10">
-                                  <strong className="text-ink dark:text-white">Diagnostic Feedback: </strong>
+                                <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted mb-3 bg-paper-card/80 dark:bg-chalkboard/60 p-2.5 rounded-xl border border-ink/10 dark:border-chalkboard-borderSubtle">
+                                  <strong className="text-ink dark:text-chalkboard-chalk">Diagnostic Feedback: </strong>
                                   {topic.feedback}
                                 </p>
                               </div>
 
                               {/* Recommended Resources Checklist */}
-                              <div className="space-y-2 pt-2 border-t border-ink/10 dark:border-white/10">
+                              <div className="space-y-2 pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted">
                                     {isStrength
@@ -585,7 +585,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                                       className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs transition-all ${
                                         res.isDone
                                           ? 'bg-highlighter-mintSoft/60 dark:bg-emerald-950/40 border-emerald-600/30 text-ink dark:text-emerald-200'
-                                          : 'bg-paper-card dark:bg-chalkboard-card border-ink/20 dark:border-white/15 text-ink dark:text-chalkboard-chalk'
+                                          : 'bg-paper-card dark:bg-chalkboard-card border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk'
                                       }`}
                                     >
                                       <label className="flex items-start gap-2.5 cursor-pointer flex-1">
@@ -660,7 +660,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                     className="space-y-7"
                   >
                     {/* Top Teacher Header */}
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b-2 border-ink/10 dark:border-white/10">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b-2 border-ink/10 dark:border-chalkboard-borderSubtle">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="px-2.5 py-0.5 rounded bg-highlighter-mint text-ink font-mono text-xs font-bold">
@@ -680,7 +680,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         {teacherView.classMetrics.map((m) => (
                           <div
                             key={m.label}
-                            className="p-2.5 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-white/15"
+                            className="p-2.5 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle"
                           >
                             <span className="text-[10px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted block">
                               {m.label}
@@ -699,7 +699,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                     {/* Class Gap Chart + Priority Student Roster */}
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                       {/* Left 6 Cols: Class-Wide Topic Gap Chart */}
-                      <div className="lg:col-span-6 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-white/20 p-5 flex flex-col justify-between">
+                      <div className="lg:col-span-6 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-chalkboard-borderSubtle p-5 flex flex-col justify-between">
                         <div>
                           <div className="flex items-center justify-between gap-2 mb-2">
                             <h4 className="text-base font-extrabold text-ink dark:text-chalkboard-chalk">
@@ -756,7 +756,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         </div>
 
                         {/* Heatmap Summary Strip */}
-                        <div className="mt-3 pt-3 border-t border-ink/10 dark:border-white/10 grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
+                        <div className="mt-3 pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
                           {teacherView.classTopicData.map((t) => (
                             <div
                               key={t.topic}
@@ -774,7 +774,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                       </div>
 
                       {/* Right 6 Cols: Students Needing Targeted Support */}
-                      <div className="lg:col-span-6 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-white/20 p-5 flex flex-col justify-between">
+                      <div className="lg:col-span-6 rounded-2xl bg-paper dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-chalkboard-borderSubtle p-5 flex flex-col justify-between">
                         <div>
                           <div className="flex items-center justify-between gap-2 mb-3">
                             <h4 className="text-base font-extrabold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -801,7 +801,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                                   className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
                                     isSelected
                                       ? 'bg-highlighter-mintSoft/70 dark:bg-emerald-950/40 border-ink dark:border-emerald-400 shadow-sm'
-                                      : 'bg-paper-card dark:bg-chalkboard-card border-ink/15 dark:border-white/10 hover:border-ink/40'
+                                      : 'bg-paper-card dark:bg-chalkboard-card border-ink/15 dark:border-chalkboard-borderSubtle hover:border-ink/40'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between gap-2">
@@ -846,7 +846,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                     </div>
 
                     {/* Teacher Intervention Log & Live Form */}
-                    <div className="rounded-2xl bg-paper-warm/70 dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-white/20 p-5 sm:p-6 space-y-5">
+                    <div className="rounded-2xl bg-paper-warm/70 dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-chalkboard-borderSubtle p-5 sm:p-6 space-y-5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <h4 className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -865,7 +865,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                       {/* Interactive Form to Log a New Intervention */}
                       <form
                         onSubmit={handleAddIntervention}
-                        className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-paper-card dark:bg-chalkboard-card p-3.5 rounded-xl border border-ink/20 dark:border-white/15"
+                        className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-paper-card dark:bg-chalkboard-card p-3.5 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle"
                       >
                         <div className="sm:col-span-3">
                           <label
@@ -878,7 +878,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                             id="intervention-student-select"
                             value={newLogStudent}
                             onChange={(e) => setNewLogStudent(e.target.value)}
-                            className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
+                            className="w-full rounded-lg border border-ink/25 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
                           >
                             <option value="Liam O’Connor">Liam O’Connor</option>
                             <option value="Maya Lin">Maya Lin</option>
@@ -899,7 +899,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                             id="intervention-topic-select"
                             value={newLogTopic}
                             onChange={(e) => setNewLogTopic(e.target.value)}
-                            className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
+                            className="w-full rounded-lg border border-ink/25 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
                           >
                             <option value="Meiosis & Chromosome Crossing">Meiosis &amp; Chromosome Crossing</option>
                             <option value="Enzyme Kinetics & pH Curves">Enzyme Kinetics &amp; pH Curves</option>
@@ -918,7 +918,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                             id="intervention-type-select"
                             value={newLogType}
                             onChange={(e) => setNewLogType(e.target.value)}
-                            className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
+                            className="w-full rounded-lg border border-ink/25 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard px-2.5 py-2 text-xs font-semibold text-ink dark:text-chalkboard-chalk"
                           >
                             <option value="1-on-1 Mini-Lesson (10m)">1-on-1 Mini-Lesson (10m)</option>
                             <option value="Small-Group Lab Walkthrough">Small-Group Lab Walkthrough</option>
@@ -950,7 +950,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                             value={newLogNote}
                             onChange={(e) => setNewLogNote(e.target.value)}
                             placeholder="e.g. Reviewed homologous chromosome pairing diagram; student completed 3 practice items."
-                            className="w-full rounded-lg border border-ink/25 dark:border-white/20 bg-paper dark:bg-chalkboard px-3 py-1.5 text-xs text-ink dark:text-chalkboard-chalk placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/60"
+                            className="w-full rounded-lg border border-ink/25 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard px-3 py-1.5 text-xs text-ink dark:text-chalkboard-chalk placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/60"
                           />
                         </div>
                       </form>
@@ -960,7 +960,7 @@ export default function InteractiveDemo({ activeRole, onChangeRole }) {
                         {interventions.map((entry) => (
                           <div
                             key={entry.id}
-                            className="p-3.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/15 dark:border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                            className="p-3.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/15 dark:border-chalkboard-borderSubtle flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                           >
                             <div className="space-y-0.5">
                               <div className="flex flex-wrap items-center gap-2">

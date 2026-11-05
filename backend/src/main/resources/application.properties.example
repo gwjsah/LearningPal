@@ -70,4 +70,20 @@ app.analysis.gap-threshold=60.0
 # Minimum distinct questions evaluated per topic before categorizing beyond INSUFFICIENT_DATA
 app.analysis.min-questions=3
 
+# -------------------------------------------------------------------
+# Realistic Demo Data Populator (Opt-in)
+# Deterministically seeds realistic demo accounts, classes, attempts,
+# overrides, interventions, and synthetic validation labels.
+# Safe: isolated to *@demo.learningpal.local and DEMO-2026.
+# -------------------------------------------------------------------
+# Set to true to populate realistic demo data on startup (default: false)
+app.seed.demo.enabled=false
+# When true, cleans up any existing demo data before re-populating (default: false)
+app.seed.demo.reset=false
+# Shared password for all demo accounts (minimum 8 characters, at least 1 letter and 1 number)
+app.seed.demo.password=REPLACE_WITH_STRONG_PASSWORD
+# Safety guard: refuse to run on remote/production databases unless explicitly permitted (default: false)
+app.seed.demo.allow-remote=false
+
+
 

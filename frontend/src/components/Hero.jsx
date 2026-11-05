@@ -59,7 +59,7 @@ export default function Hero({ onSelectDemoRole }) {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden bg-ruled-paper notebook-margin-line border-b-2 border-ink/15 dark:border-white/15 pt-10 pb-20 lg:pt-16 lg:pb-24"
+      className="relative overflow-hidden bg-ruled-paper notebook-margin-line border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle pt-10 pb-20 lg:pt-16 lg:pb-24"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-10 sm:pl-14 lg:pl-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
@@ -104,7 +104,7 @@ export default function Hero({ onSelectDemoRole }) {
               <button
                 type="button"
                 onClick={() => handleOpenDemo('student')}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen cursor-pointer"
               >
                 <BookOpen className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
                 <span>{heroContent.secondaryCta}</span>
@@ -131,7 +131,7 @@ export default function Hero({ onSelectDemoRole }) {
             </div>
 
             {/* Quick Trust Pills */}
-            <dl className="grid grid-cols-3 gap-3 pt-3 border-t border-ink/10 dark:border-white/10 max-w-lg">
+            <dl className="grid grid-cols-3 gap-3 pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle max-w-lg">
               <div>
                 <dt className="text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
                   Granularity
@@ -163,7 +163,7 @@ export default function Hero({ onSelectDemoRole }) {
           <div className="lg:col-span-6 relative">
             {/* Decorative background graph sheet tilted behind */}
             <div
-              className="hidden sm:block absolute inset-0 translate-x-3 translate-y-3 rotate-2 rounded-2xl bg-graph-paper border-2 border-ink/25 dark:border-white/20 shadow-paper pointer-events-none"
+              className="hidden sm:block absolute inset-0 translate-x-3 translate-y-3 rotate-2 rounded-2xl bg-graph-paper border-2 border-ink/25 dark:border-chalkboard-borderSubtle shadow-paper pointer-events-none"
               aria-hidden="true"
             />
 
@@ -173,7 +173,7 @@ export default function Hero({ onSelectDemoRole }) {
               animate={{ opacity: 1, y: 0, rotate: -0.75 }}
               transition={{ duration: 0.55, ease: 'easeOut' }}
               whileHover={{ rotate: 0, y: -3 }}
-              className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/35 shadow-lifted overflow-hidden"
+              className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-lifted overflow-hidden"
             >
               {/* Washi tape on top */}
               <div className="pt-2">
@@ -187,7 +187,7 @@ export default function Hero({ onSelectDemoRole }) {
                 {/* Notebook Sheet Inner Content */}
                 <div className="flex-1 p-4 sm:p-6 border-l-2 border-redpen/35">
                   {/* Top Notebook Page Header */}
-                  <div className="flex flex-wrap items-start justify-between gap-2 pb-4 border-b border-ink/15 dark:border-white/15">
+                  <div className="flex flex-wrap items-start justify-between gap-2 pb-4 border-b border-ink/15 dark:border-chalkboard-borderSubtle">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 text-[11px] font-mono font-bold uppercase rounded bg-highlighter-yellow text-ink">
@@ -201,7 +201,7 @@ export default function Hero({ onSelectDemoRole }) {
                         {heroCard.subject}
                       </h2>
                       <p className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                        Learner: <strong className="text-ink dark:text-white">{heroCard.studentName}</strong>
+                        Learner: <strong className="text-ink dark:text-chalkboard-chalk">{heroCard.studentName}</strong>
                       </p>
                     </div>
 
@@ -219,7 +219,7 @@ export default function Hero({ onSelectDemoRole }) {
                   </div>
 
                   {/* SVG Hand-Drawn Mastery Curve that "gets drawn" on load */}
-                  <div className="mt-4 p-3 rounded-xl bg-graph-paper border border-ink/15 dark:border-white/15">
+                  <div className="mt-4 p-3 rounded-xl bg-graph-paper border border-ink/15 dark:border-chalkboard-borderSubtle">
                     <div className="flex items-center justify-between text-xs font-mono mb-1.5">
                       <span className="font-semibold text-ink dark:text-chalkboard-chalk flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-redpen" />
@@ -362,8 +362,8 @@ export default function Hero({ onSelectDemoRole }) {
                           onClick={() => setSelectedTopicId(topic.id)}
                           className={`w-full text-left p-2.5 rounded-xl border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                             isSelected
-                              ? 'bg-highlighter-yellowSoft/80 dark:bg-chalkboard-surface border-ink dark:border-white/40 shadow-sm'
-                              : 'bg-paper/60 dark:bg-chalkboard/40 border-ink/15 dark:border-white/10 hover:border-ink/40'
+                              ? 'bg-highlighter-yellowSoft/80 dark:bg-chalkboard-surface border-ink dark:border-chalkboard-borderStrong shadow-sm'
+                              : 'bg-paper/60 dark:bg-chalkboard/40 border-ink/15 dark:border-chalkboard-borderSubtle hover:border-ink/40'
                           }`}
                         >
                           <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-ink dark:text-chalkboard-chalk mb-1.5">
@@ -390,7 +390,7 @@ export default function Hero({ onSelectDemoRole }) {
                           </div>
 
                           {/* Pen-stroke style progress bar */}
-                          <div className="h-2.5 w-full rounded-full bg-paper-warm dark:bg-chalkboard overflow-hidden border border-ink/15 dark:border-white/10 p-0.5">
+                          <div className="h-2.5 w-full rounded-full bg-paper-warm dark:bg-chalkboard overflow-hidden border border-ink/15 dark:border-chalkboard-borderSubtle p-0.5">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${topic.score}%` }}

@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --chalkboard-border: #38463F;
+    --chalkboard-border-subtle: #2A352F;
+    --chalkboard-border-strong: #4F6157;
+    --chalkboard-highlight: rgba(243, 244, 240, 0.06);
+  }
+
   html {
     scroll-behavior: smooth;
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
@@ -117,6 +124,29 @@
   .notebook-margin-line::before {
     left: 1rem;
   }
+}
+
+.dark .notebook-margin-line::before {
+  background-color: rgba(232, 139, 132, 0.28);
+}
+
+/* ==========================================================================
+   DARK MODE NOTEBOOK SHADOWS (Tactile slate depth instead of bright glows)
+   ========================================================================== */
+.dark .shadow-notebook-sm {
+  box-shadow: 2px 2px 0 #0D1210;
+}
+.dark .shadow-notebook {
+  box-shadow: 3px 3px 0 #0D1210;
+}
+.dark .shadow-notebook-lg {
+  box-shadow: 4px 4px 0 #0D1210;
+}
+.dark .shadow-paper {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 1px 1px 0 #0D1210;
+}
+.dark .shadow-lifted {
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.55), 2px 3px 0 #0D1210;
 }
 
 /* Translucent Washi Tape Strip */

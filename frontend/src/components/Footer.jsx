@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer
       aria-label="Notebook Back Cover Footer"
-      className="border-t-4 border-ink dark:border-white/25 bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk"
+      className="border-t-4 border-ink dark:border-chalkboard-border bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
@@ -24,7 +24,7 @@ export default function Footer() {
               {siteMetadata.tagline} Connecting everyday assessments to topic-level progress and targeted study activities.
             </p>
 
-            <div className="inline-block p-2.5 rounded-lg border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card font-mono text-[11px] text-ink-muted dark:text-chalkboard-muted">
+            <div className="inline-block p-2.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card font-mono text-[11px] text-ink-muted dark:text-chalkboard-muted">
               {footerContent.backCoverNote}
             </div>
           </div>
@@ -42,14 +42,14 @@ export default function Footer() {
                       {link.href.startsWith('/') ? (
                         <Link
                           to={link.href}
-                          className="text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-white font-medium underline-offset-4 hover:underline"
+                          className="text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk font-medium underline-offset-4 hover:underline"
                         >
                           {link.label}
                         </Link>
                       ) : (
                         <a
                           href={link.href}
-                          className="text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-white font-medium underline-offset-4 hover:underline"
+                          className="text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk font-medium underline-offset-4 hover:underline"
                         >
                           {link.label}
                         </a>
@@ -62,7 +62,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-ink/15 dark:border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+        <div className="mt-8 pt-6 border-t border-ink/15 dark:border-chalkboard-borderSubtle flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
           <p>{footerContent.copyright}</p>
           <p>Accessible • Lightweight • Responsive</p>
         </div>

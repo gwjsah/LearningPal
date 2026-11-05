@@ -184,11 +184,10 @@ class LearningPalApplicationTests {
         JsonNode jsonNode = objectMapper.readTree(result.getResponse().getContentAsString());
         String teacherToken = jsonNode.get("token").asText();
 
-        // Verify teacher can hit teacher ping
-        mockMvc.perform(get("/api/teacher/ping")
+        // Verify approved teacher can access teacher endpoints
+        mockMvc.perform(get("/api/teacher/classes")
                         .header("Authorization", "Bearer " + teacherToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message", containsString("Teacher role authorization confirmed")));
+                .andExpect(status().isOk());
     }
 
     @Test

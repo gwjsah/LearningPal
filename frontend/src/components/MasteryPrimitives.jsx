@@ -34,8 +34,8 @@ export const MASTERY_CONFIG = {
   INSUFFICIENT_DATA: {
     label: 'Insufficient Data',
     icon: HelpCircle,
-    badgeClass: 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-white/20',
-    barClass: 'bg-ink/30 dark:bg-white/30',
+    badgeClass: 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle',
+    barClass: 'bg-ink/30 dark:bg-chalkboard-muted/30',
     desc: 'Fewer than 3 questions answered',
   },
 };
@@ -119,7 +119,7 @@ export function MasteryBar({ percent, status, showLabel = true }) {
         </div>
       )}
       <div
-        className="w-full h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 overflow-hidden"
+        className="w-full h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle overflow-hidden"
         role="progressbar"
         aria-valuenow={isInsufficient ? 0 : clampedPercent}
         aria-valuemin="0"

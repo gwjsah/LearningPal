@@ -216,7 +216,7 @@ export default function StudentSubjectsHome() {
         {/* Empty State: No classes enrolled */}
         {!loading && !error && classes.length === 0 && (
           <NotebookCard ruled marginLine className="text-center py-12 px-4 space-y-4 max-w-xl mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-highlighter-yellow/30 border-2 border-ink dark:border-white/40 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-highlighter-yellow/30 border-2 border-ink dark:border-chalkboard-border flex items-center justify-center mx-auto">
               <GraduationCap className="w-8 h-8 text-ink dark:text-chalkboard-chalk" aria-hidden="true" />
             </div>
             <div className="space-y-1">
@@ -237,7 +237,7 @@ export default function StudentSubjectsHome() {
         {/* Active Classes Grid */}
         {!loading && activeClasses.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-ink/15 dark:border-white/15 pb-2">
+            <div className="flex items-center justify-between border-b border-ink/15 dark:border-chalkboard-borderSubtle pb-2">
               <h2 className="text-lg font-bold font-sans text-ink dark:text-chalkboard-chalk flex items-center gap-2">
                 <span>Active Classes</span>
                 <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-highlighter-mintSoft text-ink dark:bg-emerald-950 dark:text-emerald-300 font-bold">
@@ -257,12 +257,12 @@ export default function StudentSubjectsHome() {
                     className={`rounded-2xl border-2 bg-paper-card dark:bg-chalkboard-card p-6 flex flex-col justify-between space-y-5 shadow-paper hover:shadow-lifted transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                       isHighlighted
                         ? 'border-ink-blue ring-2 ring-ink-blue/40'
-                        : 'border-ink dark:border-white/40'
+                        : 'border-ink dark:border-chalkboard-border'
                     }`}
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-mono text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-ink/20 dark:border-white/20 bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
+                        <span className="font-mono text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
                           {cls.subject.code}
                         </span>
                         <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase text-emerald-800 dark:text-emerald-300 bg-highlighter-mintSoft dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/30">
@@ -286,14 +286,14 @@ export default function StudentSubjectsHome() {
                         </span>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-white/15 space-y-1.5">
+                      <div className="p-3 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle space-y-1.5">
                         <div className="flex items-center justify-between text-xs font-mono">
                           <span className="text-ink-muted dark:text-chalkboard-muted">Diagnostic Status:</span>
                           <span className="font-bold text-ink dark:text-chalkboard-chalk">{cls.oneLineStatus}</span>
                         </div>
 
                         {cls.studyNext && (
-                          <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-ink/10 dark:border-white/10">
+                          <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                             <span className="text-ink-muted dark:text-chalkboard-muted">Study Next:</span>
                             <span className="font-bold text-redpen dark:text-highlighter-yellow truncate max-w-[150px]" title={cls.studyNext.topicName}>
                               {cls.studyNext.topicName}
@@ -321,12 +321,12 @@ export default function StudentSubjectsHome() {
 
         {/* Past Classes (Archived) Section */}
         {!loading && pastClasses.length > 0 && (
-          <div className="space-y-4 pt-6 border-t-2 border-dashed border-ink/20 dark:border-white/20">
+          <div className="space-y-4 pt-6 border-t-2 border-dashed border-ink/20 dark:border-chalkboard-borderSubtle">
             <div className="space-y-1">
               <h2 className="text-lg font-bold font-sans text-ink-muted dark:text-chalkboard-muted flex items-center gap-2">
                 <Archive className="w-4 h-4" aria-hidden="true" />
                 <span>Past Classes</span>
-                <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted font-bold border border-ink/15 dark:border-white/15">
+                <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted font-bold border border-ink/15 dark:border-chalkboard-borderSubtle">
                   {pastClasses.length}
                 </span>
               </h2>
@@ -339,14 +339,14 @@ export default function StudentSubjectsHome() {
               {pastClasses.map((cls) => (
                 <div
                   key={cls.classId}
-                  className="rounded-2xl border-2 border-dashed border-ink/30 dark:border-white/30 bg-paper-warm/50 dark:bg-chalkboard-surface/50 p-6 flex flex-col justify-between space-y-4"
+                  className="rounded-2xl border-2 border-dashed border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50 p-6 flex flex-col justify-between space-y-4"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-ink/20 dark:border-white/20 bg-paper dark:bg-chalkboard text-ink-muted dark:text-chalkboard-muted">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard text-ink-muted dark:text-chalkboard-muted">
                         {cls.subject.code}
                       </span>
-                      <span className="font-mono text-[10px] uppercase font-bold text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-white/20 px-2 py-0.5 rounded">
+                      <span className="font-mono text-[10px] uppercase font-bold text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-chalkboard-borderSubtle px-2 py-0.5 rounded">
                         Archived
                       </span>
                     </div>
@@ -389,8 +389,8 @@ export default function StudentSubjectsHome() {
           aria-labelledby="join-class-modal-title"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 dark:bg-black/70 backdrop-blur-xs animate-fadeIn"
         >
-          <div className="relative w-full max-w-md bg-paper dark:bg-chalkboard border-2 border-ink dark:border-white/50 rounded-2xl shadow-lifted p-6 space-y-5 animate-scaleUp">
-            <div className="flex items-center justify-between pb-3 border-b border-ink/15 dark:border-white/15">
+          <div className="relative w-full max-w-md bg-paper dark:bg-chalkboard border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted p-6 space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-highlighter-mint flex items-center justify-center border border-ink text-ink font-bold">
                   <Plus className="w-4 h-4" aria-hidden="true" />
@@ -429,7 +429,7 @@ export default function StudentSubjectsHome() {
                   value={joinCode}
                   onChange={handleJoinCodeChange}
                   placeholder="e.g. 7K2M9X"
-                  className="w-full min-h-[46px] px-4 py-2 text-center font-mono text-2xl font-black tracking-widest uppercase rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                  className="w-full min-h-[46px] px-4 py-2 text-center font-mono text-2xl font-black tracking-widest uppercase rounded-xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                   aria-describedby={joinError ? 'join-code-error' : 'join-code-hint'}
                 />
                 <p id="join-code-hint" className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">

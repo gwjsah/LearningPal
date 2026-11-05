@@ -157,7 +157,7 @@ export default function Login() {
             </div>
           </form>
 
-          <div className="pt-4 border-t border-ink/10 dark:border-white/15 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted gap-2">
+          <div className="pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted gap-2">
             <span>Don't have an account yet?</span>
             <Link
               to="/signup"

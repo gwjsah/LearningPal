@@ -9,6 +9,7 @@ import java.util.List;
  */
 public record TopicProgressDetailDto(
         Long topicId,
+        Long subjectId,
         String topicName,
         String topicDescription,
         Double masteryPercent,
@@ -24,6 +25,7 @@ public record TopicProgressDetailDto(
 ) {
     public TopicProgressDetailDto(
             Long topicId,
+            Long subjectId,
             String topicName,
             String topicDescription,
             Double masteryPercent,
@@ -32,6 +34,6 @@ public record TopicProgressDetailDto(
             int questionsAnswered,
             Instant lastUpdated,
             List<StudentAnswerHistoryDto> history) {
-        this(topicId, topicName, topicDescription, masteryPercent, status, trend, questionsAnswered, lastUpdated, history, null, List.of(), 0, 0);
+        this(topicId, subjectId, topicName, topicDescription, masteryPercent, status, trend, questionsAnswered, lastUpdated, history, null, List.of(), 0, 0);
     }
 }

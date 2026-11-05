@@ -250,8 +250,8 @@ export default function TeacherAttemptReview() {
         {review && !loading && (
           <>
             {/* Attempt Overview Card */}
-            <NotebookCard className="p-6 border-3 border-ink/20 dark:border-white/20 shadow-notebook space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-ink/10 dark:border-white/10 pb-4">
+            <NotebookCard className="p-6 border-3 border-ink/20 dark:border-chalkboard-border shadow-notebook space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
                     {review.assessmentTitle}
@@ -274,28 +274,28 @@ export default function TeacherAttemptReview() {
 
               {/* Score summary tiles */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-white/15 bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
                   <span className="text-[10px] font-mono uppercase text-ink-muted block">Total Score</span>
                   <span className="text-xl sm:text-2xl font-bold font-mono text-ink dark:text-chalkboard-chalk">
                     {review.totalScore} / {review.maxScore}
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-white/15 bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
                   <span className="text-[10px] font-mono uppercase text-ink-muted block">Score Percent</span>
                   <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
                     {review.percentage}%
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-white/15 bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
                   <span className="text-[10px] font-mono uppercase text-ink-muted block">Attempt Status</span>
                   <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk mt-1 block">
                     {review.status}
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-white/15 bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
                   <span className="text-[10px] font-mono uppercase text-ink-muted block">Submitted Date</span>
                   <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted mt-1 block">
                     {formatDate(review.submittedAt)}
@@ -324,10 +324,10 @@ export default function TeacherAttemptReview() {
                     key={ans.answerId}
                     pattern="ruled"
                     borderStyle="margin"
-                    className="p-6 space-y-5 border-2 border-ink/15 dark:border-white/15 shadow-notebook-sm"
+                    className="p-6 space-y-5 border-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-notebook-sm"
                   >
                     {/* Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-white/10 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted">
                           Item #{idx + 1}
@@ -378,7 +378,7 @@ export default function TeacherAttemptReview() {
                           const isStudentChoice = c.id === ans.studentChoiceId;
                           const isCorrectChoice = c.id === ans.correctChoiceId;
 
-                          let choiceStyle = 'border border-ink/10 dark:border-white/10 bg-paper-warm/30 dark:bg-chalkboard-surface/30';
+                          let choiceStyle = 'border border-ink/10 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30';
                           if (isCorrectChoice) {
                             choiceStyle = 'border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 font-semibold';
                           } else if (isStudentChoice && !isCorrectChoice) {
@@ -396,7 +396,7 @@ export default function TeacherAttemptReview() {
                               </div>
                               <div className="flex items-center gap-1.5 flex-shrink-0 text-[10px] font-mono font-bold">
                                 {isStudentChoice && (
-                                  <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-white/20 text-ink dark:text-chalkboard-chalk">
+                                  <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk">
                                     Student Choice
                                   </span>
                                 )}
@@ -415,7 +415,7 @@ export default function TeacherAttemptReview() {
 
                     {/* Explanation */}
                     {ans.explanation && (
-                      <div className="p-3.5 rounded-xl border border-dashed border-ink/20 dark:border-white/20 bg-paper-warm/60 dark:bg-chalkboard-surface/60 space-y-1">
+                      <div className="p-3.5 rounded-xl border border-dashed border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/60 dark:bg-chalkboard-surface/60 space-y-1">
                         <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-redpen">
                           <Lightbulb className="w-3.5 h-3.5" />
                           <span>Pedagogical Explanation:</span>
@@ -427,7 +427,7 @@ export default function TeacherAttemptReview() {
                     )}
 
                     {/* Teacher Manual Grade Override Form */}
-                    <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card space-y-3">
+                    <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card space-y-3">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                           <label
@@ -464,7 +464,7 @@ export default function TeacherAttemptReview() {
                             placeholder={`e.g. ${ans.pointsPossible}`}
                             value={form.teacherScore}
                             onChange={(e) => handleScoreChange(ans.answerId, e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                            className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                           />
                         </div>
 
@@ -475,7 +475,7 @@ export default function TeacherAttemptReview() {
                             placeholder="Optional instructor comment to the student (max 500 chars)"
                             value={form.comment}
                             onChange={(e) => handleCommentChange(ans.answerId, e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                            className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                           />
                         </div>
                       </div>

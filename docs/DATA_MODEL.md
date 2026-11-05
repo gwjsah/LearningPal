@@ -18,6 +18,7 @@ erDiagram
     users ||--o{ student_topic_mastery : "achieves"
     users ||--o{ resource_progress : "completes"
     users ||--o{ interventions : "student / teacher"
+    users ||--o{ gap_validation_labels : "labeled student / teacher"
     users ||--o{ assessment_access : "student / reopenedBy"
     users ||--o{ classes : "teaches"
     users ||--o{ enrollments : "student joins"
@@ -180,11 +181,34 @@ If the **Class Roster** is the hospital ward roster and the **Class Overview** i
 3. **The Targeted Treatment Plan: Pedagogical Interventions (`interventions`):**
    - When a student struggles with a topic, the educator logs a structured intervention (`POST .../students/{studentId}/interventions`): `ONE_ON_ONE` coaching, `EXTRA_PRACTICE`, `GROUP_SESSION`, or `OTHER`.
    - **Baseline Snapshotting:** When the intervention is created, the system snapshots `masteryAtStart` directly from the student's current mastery percentage for that topic.
-   - **Resolution & Outcome Evaluation:**
-     - When the teacher marks the intervention `DONE` (`PUT .../interventions/{id}`), the system timestamps `completedAt` and snapshots `masteryAtCompletion` from the student's updated topic mastery.
+   - **Dynamic Outcome Evaluation (The Fitness Coach vs. The Weigh-In):**
+     - Just like an athletic coach evaluates an intervention's true success by whether the athlete sustains strength gains in future competitions (rather than just their weight on the final day of bootcamp), educational impact is measured by how the student actually performs on quizzes submitted *after* the intervention began.
+     - **Comparison Baseline:** Evaluates the student's **CURRENT** mastery against `masteryAtStart`.
      - **The 10-Point Outcome Rule (`INTERVENTION_OUTCOME_THRESHOLD = 10.0`):**
-       - **`IMPROVED`**: $\ge$ 10.0 point increase ($masteryAtCompletion - masteryAtStart \ge 10.0$).
-       - **`DECLINED`**: $\ge$ 10.0 point decrease ($masteryAtStart - masteryAtCompletion \ge 10.0$).
-       - **`SAME`**: Score difference within $\pm 10.0$ points.
-       - **`NO_DATA`**: If baseline or completion mastery is unavailable.
+       - **`IMPROVED`**: $\ge$ 10.0 percentage point increase ($currentMastery - masteryAtStart \ge 10.0$).
+       - **`DECLINED`**: $\le$ -10.0 percentage point decrease ($currentMastery - masteryAtStart \le -10.0$).
+       - **`SAME`**: Score difference within $\pm 10.0$ percentage points.
+       - **`NO_NEW_DATA`**: The student has not submitted any attempt in this class after the intervention's `createdAt` timestamp, or baseline/current mastery is unavailable. In the user interface, this is rendered in plain language: *"Waiting for the student's next quiz"* with a subtle clock badge.
+     - **Enduring vs. Immediate Effect:** For `DONE` interventions, the DTO exposes both `masteryAtCompletion` (the point-in-time snapshot when marked done) and `changeSinceCompletion` ($currentMastery - masteryAtCompletion$) so teachers can track retention or decay over time.
    - **Immutability & Soft-Cancellation:** Completed (`DONE`) or cancelled (`CANCELLED`) interventions can never be reopened or edited. No `DELETE` endpoint exists, preserving an indelible audit trail of educational interventions.
+
+---
+
+## 9. Gap Validation Ground Truth (`gap_validation_labels`)
+
+### Plain-Language Analogy: The Diagnostic Screen vs. The Laboratory Biopsy
+In medical science, a rapid diagnostic screening tool (like our algorithmic gap classifier) is continuously validated against high-confidence ground truth (a laboratory biopsy). Similarly, `gap_validation_labels` stores binary ground-truth labels indicating whether a student genuinely has a learning gap in a given topic:
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `student_id` | `BIGINT NOT NULL` | FK to `users` (student) |
+| `topic_id` | `BIGINT NOT NULL` | FK to `topics` |
+| `label` | `VARCHAR(20) NOT NULL` | `WEAK` (learning gap present) or `NOT_WEAK` (competent/strength) |
+| `source` | `VARCHAR(20) NOT NULL` | `SYNTHETIC` (known simulation true-skill parameter) or `TEACHER` (manual inspection) |
+| `labeled_by` | `BIGINT NULL` | FK to `users` (teacher reviewer if source is `TEACHER`, null if `SYNTHETIC`) |
+| `labeled_at` | `DATETIME NOT NULL` | Timestamp when the ground-truth label was recorded |
+
+- **Unique Constraint:** `(student_id, topic_id, source)` ensures each student-topic pair has exactly one ground truth label per evaluation source.
+- **Validation Utility:** Allows researchers and engineers to measure classifier accuracy, precision, recall, and false discovery rate without relying on circular self-evaluation.
+

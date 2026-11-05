@@ -68,6 +68,12 @@ public class IsolationMatrixTests {
     @Autowired
     private AttemptRepository attemptRepository;
 
+    @Autowired
+    private AnswerRepository answerRepository;
+
+    @Autowired
+    private InterventionRepository interventionRepository;
+
     private Institution instA;
     private Institution instB;
 
@@ -98,6 +104,8 @@ public class IsolationMatrixTests {
 
     @BeforeEach
     void setUp() {
+        interventionRepository.deleteAll();
+        answerRepository.deleteAll();
         attemptRepository.deleteAll();
         enrollmentRepository.deleteAll();
         classEntityRepository.deleteAll();

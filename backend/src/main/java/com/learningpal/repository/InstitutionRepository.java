@@ -12,6 +12,8 @@ public interface InstitutionRepository extends JpaRepository<Institution, Long> 
 
     Optional<Institution> findByCode(String code);
 
+    Optional<Institution> findByCodeIgnoreCase(String code);
+
     Optional<Institution> findByCodeAndStatus(String code, InstitutionStatus status);
 
     boolean existsByCode(String code);

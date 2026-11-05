@@ -23,6 +23,11 @@ export default function StudentProgress() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const validSubjectId =
+    subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
+      ? subjectId
+      : null;
+
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,8 +36,8 @@ export default function StudentProgress() {
     setLoading(true);
     setError('');
     try {
-      const data = subjectId
-        ? await studentService.getSubjectProgress(subjectId)
+      const data = validSubjectId
+        ? await studentService.getSubjectProgress(validSubjectId)
         : await studentService.getProgress();
       setProgress(data);
     } catch (err) {
@@ -69,18 +74,18 @@ export default function StudentProgress() {
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between text-xs font-mono">
           <Link
-            to={subjectId ? `/student/subjects/${subjectId}` : '/student'}
+            to={validSubjectId ? `/student/subjects/${validSubjectId}` : '/student'}
             className="inline-flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{subjectId ? 'Back to Subject Dashboard' : 'Back to My Desk'}</span>
+            <span>{validSubjectId ? 'Back to Subject Dashboard' : 'Back to My Desk'}</span>
           </Link>
           <div className="flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted">
-            <Link to="/student" className="hover:underline">My Subjects</Link>
-            {subjectId && (
+            <Link to="/student" className="hover:underline">My Classes</Link>
+            {validSubjectId && (
               <>
                 <span>/</span>
-                <Link to={`/student/subjects/${subjectId}`} className="hover:underline">Subject #{subjectId}</Link>
+                <Link to={`/student/subjects/${validSubjectId}`} className="hover:underline">Subject #{validSubjectId}</Link>
               </>
             )}
             <span>/</span>
@@ -100,15 +105,20 @@ export default function StudentProgress() {
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-4">
+          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <p className="text-sm font-semibold">{error}</p>
             </div>
-            <Button size="sm" variant="secondary" onClick={loadProgress}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1" />
-              Retry
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => navigate('/student')}>
+                Back to My Classes
+              </Button>
+              <Button size="sm" variant="primary" onClick={loadProgress}>
+                <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                Retry
+              </Button>
+            </div>
           </div>
         )}
 
@@ -118,7 +128,7 @@ export default function StudentProgress() {
             {/* If no attempts yet: Empty state */}
             {!hasAnyAttempts ? (
               <NotebookCard pattern="ruled" borderStyle="sketch" className="p-8 sm:p-12 text-center space-y-6">
-                <div className="w-16 h-16 rounded-2xl bg-highlighter-yellow/40 border-2 border-ink dark:border-white/40 flex items-center justify-center mx-auto shadow-notebook-sm">
+                <div className="w-16 h-16 rounded-2xl bg-highlighter-yellow/40 border-2 border-ink dark:border-chalkboard-border flex items-center justify-center mx-auto shadow-notebook-sm">
                   <BookOpen className="w-8 h-8 text-ink dark:text-chalkboard-chalk" />
                 </div>
                 <div className="max-w-md mx-auto space-y-2">
@@ -144,7 +154,7 @@ export default function StudentProgress() {
                     <NotebookCard
                       pattern="grid"
                       borderStyle="sketch"
-                      className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/50 h-full flex flex-col justify-between"
+                      className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border h-full flex flex-col justify-between"
                     >
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
@@ -181,14 +191,14 @@ export default function StudentProgress() {
                       </div>
 
                       {progress.studyNext && (
-                        <div className="pt-4 mt-4 border-t border-ink/10 dark:border-white/10 flex items-center gap-3">
+                        <div className="pt-4 mt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center gap-3">
                           <Button
                             variant="primary"
                             size="sm"
                             onClick={() =>
                               navigate(
-                                subjectId
-                                  ? `/student/subjects/${subjectId}/progress/topics/${progress.studyNext.topicId}`
+                                validSubjectId
+                                  ? `/student/subjects/${validSubjectId}/progress/topics/${progress.studyNext.topicId}`
                                   : `/student/progress/topics/${progress.studyNext.topicId}`
                               )
                             }
@@ -203,7 +213,7 @@ export default function StudentProgress() {
 
                   {/* Summary Metric Counters */}
                   <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
-                    <NotebookCard className="p-5 flex flex-col justify-center space-y-1 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20">
+                    <NotebookCard className="p-5 flex flex-col justify-center space-y-1 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
                           Strengths
@@ -218,7 +228,7 @@ export default function StudentProgress() {
                       </p>
                     </NotebookCard>
 
-                    <NotebookCard className="p-5 flex flex-col justify-center space-y-1 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20">
+                    <NotebookCard className="p-5 flex flex-col justify-center space-y-1 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
                           Learning Gaps
@@ -248,8 +258,8 @@ export default function StudentProgress() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {progress.topics?.map((topic, idx) => {
-                      const topicDetailUrl = subjectId
-                        ? `/student/subjects/${subjectId}/progress/topics/${topic.topicId}`
+                      const topicDetailUrl = validSubjectId
+                        ? `/student/subjects/${validSubjectId}/progress/topics/${topic.topicId}`
                         : `/student/progress/topics/${topic.topicId}`;
                       return (
                         <div
@@ -306,7 +316,7 @@ export default function StudentProgress() {
                               </div>
                             )}
 
-                            <div className="pt-2 border-t border-ink/10 dark:border-white/10 flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                            <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                               <span>
                                 {topic.status === 'INSUFFICIENT_DATA'
                                   ? 'Take topic quiz to assess'

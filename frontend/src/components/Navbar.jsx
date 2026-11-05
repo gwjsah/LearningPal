@@ -22,17 +22,17 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
   return (
     <header
       id="top"
-      className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-white/15 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors"
+      className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors"
     >
       {/* Top spiral-punch strip */}
       <div
-        className="hidden sm:flex items-center justify-between w-full px-6 sm:px-10 lg:px-16 py-1 bg-paper-warm/90 dark:bg-chalkboard-surface border-b border-ink/10 dark:border-white/10 text-xs font-mono text-ink-muted dark:text-chalkboard-muted"
+        className="hidden sm:flex items-center justify-between w-full px-6 sm:px-10 lg:px-16 py-1 bg-paper-warm/90 dark:bg-chalkboard-surface border-b border-ink/10 dark:border-chalkboard-borderSubtle text-xs font-mono text-ink-muted dark:text-chalkboard-muted"
         aria-hidden="true"
       >
         <div className="flex items-center gap-3">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-paper dark:bg-chalkboard border border-ink/30 dark:border-white/30" />
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-paper dark:bg-chalkboard border border-ink/30 dark:border-white/30" />
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-paper dark:bg-chalkboard border border-ink/30 dark:border-white/30" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-paper dark:bg-chalkboard border border-ink/30 dark:border-chalkboard-borderSubtle" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-paper dark:bg-chalkboard border border-ink/30 dark:border-chalkboard-borderSubtle" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-paper dark:bg-chalkboard border border-ink/30 dark:border-chalkboard-borderSubtle" />
           <span className="ml-1 tracking-tight">{siteMetadata.pilotBadge}</span>
         </div>
         <div className="flex items-center gap-6">
@@ -79,12 +79,12 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
           </div>
 
           {/* Subtle Vertical Divider */}
-          <div className="w-px h-6 bg-ink/15 dark:bg-white/15 my-auto" aria-hidden="true" />
+          <div className="w-px h-6 bg-ink/15 dark:bg-chalkboard-borderSubtle my-auto" aria-hidden="true" />
 
           {/* Direct Auth Links */}
           <Link
             to="/login"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <LogIn className="w-4 h-4 text-ink-blue dark:text-chalkboard-chalk shrink-0" />
             <span>Log In</span>
@@ -92,7 +92,7 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
 
           <Link
             to="/signup"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-redpen hover:bg-redpen-dark text-white border border-ink shadow-notebook-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-redpen hover:bg-redpen-dark text-white border border-ink dark:border-chalkboard-borderStrong shadow-notebook-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <UserPlus className="w-4 h-4 shrink-0" />
             <span>Sign Up</span>
@@ -102,7 +102,7 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
           <button
             type="button"
             onClick={onToggleDarkMode}
-            className="p-2 rounded-xl border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
+            className="p-2 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
             aria-label={darkMode ? 'Switch to Paper Light Mode' : 'Switch to Chalkboard Night Study Mode'}
             title={darkMode ? 'Paper Mode (Light)' : 'Chalkboard Mode (Night Study)'}
           >
@@ -114,14 +114,14 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
         <div className="flex items-center gap-2 md:hidden shrink-0">
           <Link
             to="/login"
-            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-ink/20 dark:border-white/20 text-ink dark:text-white whitespace-nowrap"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk whitespace-nowrap"
           >
             Log In
           </Link>
           <button
             type="button"
             onClick={onToggleDarkMode}
-            className="p-2 rounded-lg border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk"
+            className="p-2 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk"
             aria-label={darkMode ? 'Switch to Paper Light Mode' : 'Switch to Chalkboard Night Study Mode'}
           >
             {darkMode ? <Sun className="w-4 h-4 text-highlighter-yellow" /> : <Moon className="w-4 h-4 text-ink" />}
@@ -129,7 +129,7 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+            className="p-2 rounded-lg border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle navigation menu"
           >
@@ -140,7 +140,7 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
 
       {/* Responsive Mobile Drawer (< 768px) */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t-2 border-ink/15 dark:border-white/15 bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
+        <div className="md:hidden border-t-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard-surface px-4 pt-3 pb-5 space-y-3 shadow-lg">
           <div className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <a
@@ -154,11 +154,11 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
             ))}
           </div>
 
-          <div className="pt-2 border-t border-ink/10 dark:border-white/10 flex gap-2">
+          <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex gap-2">
             <Link
               to="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-ink/20 dark:border-white/20 text-xs font-bold text-ink dark:text-white"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-xs font-bold text-ink dark:text-chalkboard-chalk"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Log In</span>

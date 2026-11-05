@@ -23,6 +23,11 @@ export default function AttemptResult() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const validSubjectId =
+    subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
+      ? subjectId
+      : null;
+
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,7 +99,7 @@ export default function AttemptResult() {
             return (
               <pre
                 key={idx}
-                className="p-3.5 rounded-lg font-mono text-xs sm:text-sm bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk"
+                className="p-3.5 rounded-lg font-mono text-xs sm:text-sm bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk"
               >
                 <code>{part}</code>
               </pre>
@@ -143,18 +148,18 @@ export default function AttemptResult() {
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between text-xs font-mono">
           <Link
-            to={subjectId ? `/student/subjects/${subjectId}` : '/student'}
+            to={validSubjectId ? `/student/subjects/${validSubjectId}` : '/student'}
             className="inline-flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{subjectId ? 'Back to Subject Dashboard' : 'Back to My Desk'}</span>
+            <span>{validSubjectId ? 'Back to Subject Dashboard' : 'Back to My Desk'}</span>
           </Link>
           <div className="flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted">
-            <Link to="/student" className="hover:underline">My Subjects</Link>
-            {subjectId && (
+            <Link to="/student" className="hover:underline">My Classes</Link>
+            {validSubjectId && (
               <>
                 <span>/</span>
-                <Link to={`/student/subjects/${subjectId}`} className="hover:underline">Subject #{subjectId}</Link>
+                <Link to={`/student/subjects/${validSubjectId}`} className="hover:underline">Subject #{validSubjectId}</Link>
               </>
             )}
             <span>/</span>
@@ -193,18 +198,18 @@ export default function AttemptResult() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => navigate(subjectId ? `/student/subjects/${subjectId}` : '/student')}
+                  onClick={() => navigate(validSubjectId ? `/student/subjects/${validSubjectId}` : '/student')}
                 >
                   <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                  {subjectId ? 'Subject' : 'Dashboard'}
+                  {validSubjectId ? 'Subject' : 'Dashboard'}
                 </Button>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={() =>
                     navigate(
-                      subjectId
-                        ? `/student/subjects/${subjectId}/assessments/${result.assessmentId}/take`
+                      validSubjectId
+                        ? `/student/subjects/${validSubjectId}/assessments/${result.assessmentId}/take`
                         : `/student/assessments/${result.assessmentId}/take`
                     )
                   }
@@ -226,8 +231,8 @@ export default function AttemptResult() {
             </span>
           </div>
           <Link
-            to={subjectId ? `/student/subjects/${subjectId}/progress` : '/student/progress'}
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-mono font-bold text-emerald-800 dark:text-emerald-300 hover:text-ink dark:hover:text-white underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
+            to={validSubjectId ? `/student/subjects/${validSubjectId}/progress` : '/student/progress'}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-mono font-bold text-emerald-800 dark:text-emerald-300 hover:text-ink dark:hover:text-chalkboard-chalk underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
           >
             <span>View Progress Breakdown</span>
             <ArrowRight className="w-4 h-4" />
@@ -237,7 +242,7 @@ export default function AttemptResult() {
         {/* 2. Topic Breakdown Section */}
         {result.topicBreakdowns?.length > 0 && (
           <NotebookCard pattern="ruled" className="p-6 sm:p-8 space-y-5">
-            <div className="border-b border-ink/10 dark:border-white/10 pb-3">
+            <div className="border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
               <h2 className="text-xl font-bold text-ink dark:text-chalkboard-chalk">
                 Topic Breakdown
               </h2>
@@ -286,7 +291,7 @@ export default function AttemptResult() {
 
         {/* 3. Question-by-Question Review List */}
         <div className="space-y-6">
-          <div className="border-b-2 border-ink dark:border-white/30 pb-2">
+          <div className="border-b-2 border-ink dark:border-chalkboard-borderSubtle pb-2">
             <h2 className="text-2xl font-bold text-ink dark:text-chalkboard-chalk">
               Question-by-Question Review
             </h2>
@@ -331,7 +336,7 @@ export default function AttemptResult() {
                   className="p-6 sm:p-7 space-y-5"
                 >
                   {/* Question header */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-white/10 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted">
                         Question {idx + 1}
@@ -381,7 +386,7 @@ export default function AttemptResult() {
                         const isCorrectChoice = choice.id === q.correctChoiceId;
 
                         let rowStyle =
-                          'border border-ink/15 dark:border-white/15 bg-paper-warm/50 dark:bg-chalkboard-surface/50 opacity-80';
+                          'border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50 opacity-80';
 
                         if (isCorrectChoice) {
                           rowStyle =
@@ -405,7 +410,7 @@ export default function AttemptResult() {
 
                             <div className="flex items-center gap-1.5 flex-shrink-0 font-mono text-xs font-bold">
                               {isStudentChoice && (
-                                <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-white/20 text-ink dark:text-chalkboard-chalk">
+                                <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk">
                                   Your Choice
                                 </span>
                               )}
@@ -424,7 +429,7 @@ export default function AttemptResult() {
 
                   {/* Explanation Callout */}
                   {q.explanation && (
-                    <div className="p-4 rounded-xl border-2 border-dashed border-ink/30 dark:border-white/30 bg-paper-warm dark:bg-chalkboard-surface space-y-1.5">
+                    <div className="p-4 rounded-xl border-2 border-dashed border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface space-y-1.5">
                       <div className="flex items-center gap-2 font-mono text-xs font-bold text-redpen">
                         <Lightbulb className="w-4 h-4" />
                         <span>Explanation & Concepts:</span>
@@ -441,17 +446,21 @@ export default function AttemptResult() {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="flex items-center justify-between pt-6 border-t-2 border-ink dark:border-white/30">
-          <Button variant="secondary" size="md" onClick={() => navigate('/student')}>
+        <div className="flex items-center justify-between pt-6 border-t-2 border-ink dark:border-chalkboard-borderSubtle">
+          <Button variant="secondary" size="md" onClick={() => navigate(validSubjectId ? `/student/subjects/${validSubjectId}` : '/student')}>
             <ArrowLeft className="w-4 h-4 mr-1.5" />
-            Back to Dashboard
+            {validSubjectId ? 'Back to Dashboard' : 'Back to My Classes'}
           </Button>
 
           <Button
             variant="mint"
             size="md"
             onClick={() =>
-              navigate(`/student/assessments/${result.assessmentId}/take`)
+              navigate(
+                validSubjectId
+                  ? `/student/subjects/${validSubjectId}/assessments/${result.assessmentId}/take`
+                  : `/student/assessments/${result.assessmentId}/take`
+              )
             }
           >
             <RotateCcw className="w-4 h-4 mr-1.5" />

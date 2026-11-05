@@ -263,7 +263,7 @@ export default function TeacherStudentDetail() {
         {data && !loading && (
           <>
             {/* Student Header Card */}
-            <NotebookCard className="p-6 border-3 border-ink/20 dark:border-white/20 shadow-notebook space-y-4">
+            <NotebookCard className="p-6 border-3 border-ink/20 dark:border-chalkboard-borderSubtle shadow-notebook space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3">
@@ -362,7 +362,7 @@ export default function TeacherStudentDetail() {
                   return (
                     <NotebookCard
                       key={tm.topicId}
-                      className="p-4 sm:p-5 border-2 border-ink/15 dark:border-white/15 shadow-notebook-sm space-y-3"
+                      className="p-4 sm:p-5 border-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-notebook-sm space-y-3"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="space-y-1">
@@ -400,7 +400,7 @@ export default function TeacherStudentDetail() {
 
                         {/* Mastery Bar */}
                         <div className="w-full sm:w-56 flex items-center gap-3">
-                          <div className="flex-1 h-3 rounded-full bg-ink/10 dark:bg-white/10 overflow-hidden">
+                          <div className="flex-1 h-3 rounded-full bg-ink/10 dark:bg-chalkboard-highlight overflow-hidden">
                             <div
                               className={`h-full ${barColor} transition-all duration-500`}
                               style={{ width: `${Math.min(100, tm.masteryPercent ?? 0)}%` }}
@@ -414,7 +414,7 @@ export default function TeacherStudentDetail() {
 
                       {/* Most-missed questions trigger for GAP / DEVELOPING */}
                       {hasGapOrDev && misses.length > 0 && (
-                        <div className="pt-2 border-t border-ink/10 dark:border-white/10">
+                        <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                           <button
                             type="button"
                             onClick={() => toggleTopicExpand(tm.topicId)}
@@ -431,7 +431,7 @@ export default function TeacherStudentDetail() {
                               {misses.map((m, mIdx) => (
                                 <div
                                   key={m.questionId || mIdx}
-                                  className="p-3 rounded-xl border border-ink/15 dark:border-white/15 bg-paper-warm/40 dark:bg-chalkboard-surface/40 text-xs space-y-1.5"
+                                  className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/40 dark:bg-chalkboard-surface/40 text-xs space-y-1.5"
                                 >
                                   <p className="font-medium text-ink dark:text-chalkboard-chalk">
                                     <strong className="text-ink-muted">Q{mIdx + 1}:</strong> {m.questionText}
@@ -464,7 +464,7 @@ export default function TeacherStudentDetail() {
             </div>
 
             {/* PART 2: ATTEMPTS & DIAGNOSTIC TREND */}
-            <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-white/15">
+            <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -486,7 +486,7 @@ export default function TeacherStudentDetail() {
                   <div className="flex items-center gap-3 overflow-x-auto py-2">
                     {data.diagnosticTrend.map((pt, pIdx) => (
                       <div key={pt.attemptId} className="flex items-center gap-3">
-                        <div className="flex flex-col items-center p-2.5 rounded-xl border border-ink/20 dark:border-white/20 bg-paper-warm/40 dark:bg-chalkboard-surface/40 min-w-[90px]">
+                        <div className="flex flex-col items-center p-2.5 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/40 dark:bg-chalkboard-surface/40 min-w-[90px]">
                           <span className="text-[10px] font-mono text-ink-muted">Attempt #{pIdx + 1}</span>
                           <span className="text-base font-extrabold font-mono text-emerald-700 dark:text-emerald-400">
                             {pt.percent}%
@@ -531,10 +531,10 @@ export default function TeacherStudentDetail() {
                   No attempts recorded in this class section yet.
                 </NotebookCard>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border-2 border-ink/20 dark:border-white/20 shadow-notebook">
+                <div className="overflow-x-auto rounded-2xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle shadow-notebook">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b-2 border-ink/20 bg-paper-warm dark:bg-chalkboard-surface font-mono uppercase text-ink-muted">
+                      <tr className="border-b-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface font-mono uppercase text-ink-muted">
                         <th className="py-3 px-3">Assessment</th>
                         <th className="py-3 px-3">Date Submitted</th>
                         <th className="py-3 px-3">Score</th>
@@ -542,11 +542,11 @@ export default function TeacherStudentDetail() {
                         <th className="py-3 px-3 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-ink/10 font-mono">
+                    <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle font-mono">
                       {data.attempts.map((att) => (
                         <tr
                           key={att.attemptId}
-                          className="hover:bg-highlighter-yellow/10 dark:hover:bg-white/5 transition-colors"
+                          className="hover:bg-highlighter-yellow/10 dark:hover:bg-chalkboard-highlight transition-colors"
                         >
                           <td className="py-3 px-3 font-bold text-ink dark:text-chalkboard-chalk">
                             {att.assessmentTitle}
@@ -583,7 +583,7 @@ export default function TeacherStudentDetail() {
             </div>
 
             {/* PART 3: PEDAGOGICAL INTERVENTIONS */}
-            <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-white/15">
+            <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -615,6 +615,11 @@ export default function TeacherStudentDetail() {
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {data.interventions.map((item) => {
+                    const diffFromStart =
+                      item.currentMastery != null && item.masteryAtStart != null
+                        ? item.currentMastery - item.masteryAtStart
+                        : null;
+
                     let outcomeBadge = (
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-ink/10 text-ink-muted border border-ink/20">
                         {item.outcome}
@@ -623,19 +628,29 @@ export default function TeacherStudentDetail() {
                     if (item.outcome === 'IMPROVED') {
                       outcomeBadge = (
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                          IMPROVED (+10 pts)
+                          Improved {diffFromStart != null ? `(+${diffFromStart}%)` : ''}
                         </span>
                       );
                     } else if (item.outcome === 'DECLINED') {
                       outcomeBadge = (
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-redpen-soft text-redpen-dark border border-redpen/30">
-                          DECLINED (-10 pts)
+                          Declined {diffFromStart != null ? `(${diffFromStart}%)` : ''}
                         </span>
                       );
                     } else if (item.outcome === 'SAME') {
                       outcomeBadge = (
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                          STABLE
+                          Stable {diffFromStart != null ? `(${diffFromStart >= 0 ? '+' : ''}${diffFromStart}%)` : ''}
+                        </span>
+                      );
+                    } else if (item.outcome === 'NO_NEW_DATA') {
+                      outcomeBadge = (
+                        <span
+                          title="Waiting for the student's next quiz"
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-ink/10 text-ink-muted border border-ink/20 inline-flex items-center gap-1"
+                        >
+                          <Clock className="w-3 h-3 text-ink-muted" />
+                          Waiting for next quiz
                         </span>
                       );
                     }
@@ -643,7 +658,7 @@ export default function TeacherStudentDetail() {
                     return (
                       <NotebookCard
                         key={item.id}
-                        className="p-5 border-2 border-ink/15 dark:border-white/15 space-y-3 shadow-notebook-sm"
+                        className="p-5 border-2 border-ink/15 dark:border-chalkboard-borderSubtle space-y-3 shadow-notebook-sm"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 pb-2.5">
                           <div className="flex items-center gap-2">
@@ -681,13 +696,26 @@ export default function TeacherStudentDetail() {
                             <span>
                               Mastery: {item.masteryAtStart != null ? `${item.masteryAtStart}%` : '—'} →{' '}
                               <strong>
-                                {item.status === 'DONE' && item.masteryAtCompletion != null
-                                  ? `${item.masteryAtCompletion}%`
-                                  : item.currentMastery != null
-                                  ? `${item.currentMastery}%`
-                                  : '—'}
+                                {item.currentMastery != null ? `${item.currentMastery}%` : '—'}
                               </strong>
                             </span>
+                            {item.status === 'DONE' && item.masteryAtCompletion != null && (
+                              <span className="text-[11px] text-ink-muted">
+                                (at completion: {item.masteryAtCompletion}%
+                                {item.changeSinceCompletion != null && (
+                                  <span
+                                    className={
+                                      item.changeSinceCompletion >= 0
+                                        ? ' text-emerald-600 font-semibold'
+                                        : ' text-redpen font-semibold'
+                                    }
+                                  >
+                                    {` • since: ${item.changeSinceCompletion >= 0 ? '+' : ''}${item.changeSinceCompletion}%`}
+                                  </span>
+                                )}
+                                )
+                              </span>
+                            )}
                             {item.followUpDate && (
                               <span>• Follow-up: {formatDate(item.followUpDate)}</span>
                             )}
@@ -754,7 +782,7 @@ export default function TeacherStudentDetail() {
             aria-labelledby="log-intervention-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-2 text-ink dark:text-chalkboard-chalk">
                 <Sparkles className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
                 <h3 id="log-intervention-title" className="text-lg font-bold">
@@ -778,7 +806,7 @@ export default function TeacherStudentDetail() {
                     onChange={(e) =>
                       setIntervForm((prev) => ({ ...prev, topicId: e.target.value }))
                     }
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     required
                   >
                     {data?.topicMasteries?.map((t) => (
@@ -799,7 +827,7 @@ export default function TeacherStudentDetail() {
                       onChange={(e) =>
                         setIntervForm((prev) => ({ ...prev, type: e.target.value }))
                       }
-                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     >
                       <option value="ONE_ON_ONE">One-on-One Tutoring</option>
                       <option value="EXTRA_PRACTICE">Extra Practice Challenge</option>
@@ -819,7 +847,7 @@ export default function TeacherStudentDetail() {
                       onChange={(e) =>
                         setIntervForm((prev) => ({ ...prev, followUpDate: e.target.value }))
                       }
-                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     />
                   </div>
                 </div>
@@ -841,7 +869,7 @@ export default function TeacherStudentDetail() {
                       setIntervForm((prev) => ({ ...prev, note: e.target.value }))
                     }
                     placeholder="Describe specific learning gaps identified, targeted exercises assigned, or tutoring action points…"
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     required
                   />
                 </div>
@@ -878,7 +906,7 @@ export default function TeacherStudentDetail() {
             aria-labelledby="edit-intervention-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <h3 id="edit-intervention-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                 Edit Intervention: {editingIntervention.topicName}
               </h3>
@@ -901,7 +929,7 @@ export default function TeacherStudentDetail() {
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, followUpDate: e.target.value }))
                     }
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                   />
                 </div>
 
@@ -921,7 +949,7 @@ export default function TeacherStudentDetail() {
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, note: e.target.value }))
                     }
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     required
                   />
                 </div>
@@ -958,7 +986,7 @@ export default function TeacherStudentDetail() {
             aria-labelledby="confirm-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <h3 id="confirm-modal-title" className="text-base font-bold text-ink dark:text-chalkboard-chalk">
                 {confirmModal.title}
               </h3>

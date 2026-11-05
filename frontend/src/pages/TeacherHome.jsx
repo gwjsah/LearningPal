@@ -282,7 +282,7 @@ export default function TeacherHome() {
                               </div>
 
                               {/* Prominent Monospace Join Code Box */}
-                              <div className="p-3 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border-2 border-ink dark:border-white/30 space-y-1.5">
+                              <div className="p-3 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border-2 border-ink dark:border-chalkboard-border space-y-1.5">
                                 <span className="block text-[10px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
                                   Student Join Code
                                 </span>
@@ -294,7 +294,7 @@ export default function TeacherHome() {
                                     type="button"
                                     onClick={() => handleCopyCode(cls.joinCode, cls.id)}
                                     aria-label={`Copy join code for ${cls.name}`}
-                                    className="p-1.5 rounded-lg border border-ink/30 dark:border-white/30 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 text-ink dark:text-chalkboard-chalk transition-colors cursor-pointer"
+                                    className="p-1.5 rounded-lg border border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 text-ink dark:text-chalkboard-chalk transition-colors cursor-pointer"
                                     title="Copy code"
                                   >
                                     {isCopied ? (
@@ -307,7 +307,7 @@ export default function TeacherHome() {
                               </div>
                             </div>
 
-                            <div className="pt-3 border-t border-ink/10 dark:border-white/10 flex items-center justify-between">
+                            <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between">
                               <Link
                                 to={`/teacher/classes/${cls.id}`}
                                 className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk"
@@ -333,7 +333,7 @@ export default function TeacherHome() {
 
                 {/* Archived Classes Section */}
                 {archivedClasses.length > 0 && (
-                  <div className="pt-6 border-t border-ink/15 dark:border-white/15 space-y-4">
+                  <div className="pt-6 border-t border-ink/15 dark:border-chalkboard-borderSubtle space-y-4">
                     <div>
                       <h2 className="text-lg font-bold text-ink-muted dark:text-chalkboard-muted flex items-center gap-2">
                         <span>Past / Archived Classes</span>
@@ -369,7 +369,7 @@ export default function TeacherHome() {
                             </p>
                           </div>
 
-                          <div className="pt-3 border-t border-ink/10 dark:border-white/10 flex items-center justify-between text-xs font-mono">
+                          <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between text-xs font-mono">
                             <span className="text-ink-muted dark:text-chalkboard-muted">
                               {cls.studentCount} Students
                             </span>
@@ -398,8 +398,8 @@ export default function TeacherHome() {
             aria-labelledby="create-class-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 sm:p-7 shadow-notebook space-y-5">
-              <div className="flex items-center justify-between border-b border-ink/15 dark:border-white/15 pb-3">
+            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 sm:p-7 shadow-notebook space-y-5">
+              <div className="flex items-center justify-between border-b border-ink/15 dark:border-chalkboard-borderSubtle pb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
                   <h3
@@ -439,7 +439,7 @@ export default function TeacherHome() {
                     value={subjectId}
                     onChange={(e) => setSubjectId(e.target.value)}
                     required
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-white/30 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk font-mono text-sm focus:outline-none focus:border-redpen"
+                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk font-mono text-sm focus:outline-none focus:border-redpen"
                   >
                     {subjects.map((sub) => (
                       <option key={sub.id} value={sub.id}>
@@ -464,7 +464,7 @@ export default function TeacherHome() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Section A, Period 3, Morning Cohort"
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-white/30 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen"
+                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen"
                   />
                   <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1">
                     <span>Must be unique for this subject in your classes.</span>
@@ -472,7 +472,7 @@ export default function TeacherHome() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-ink/10 dark:border-white/10 flex items-center justify-end gap-3">
+                <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-end gap-3">
                   <Button
                     type="button"
                     variant="secondary"

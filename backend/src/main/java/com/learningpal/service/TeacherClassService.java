@@ -1109,22 +1109,34 @@ public class TeacherClassService {
 
     private TeacherInterventionDto toInterventionDtoWithCurrent(Intervention i, Double currentMastery) {
         Double baseline = i.getMasteryAtStart();
-        InterventionOutcome outcome = null;
+        Long classId = i.getClassEntity() != null ? i.getClassEntity().getId() : null;
 
-        if (i.getStatus() == InterventionStatus.DONE) {
-            Double completion = i.getMasteryAtCompletion() != null ? i.getMasteryAtCompletion() : currentMastery;
-            if (baseline == null || completion == null) {
-                outcome = InterventionOutcome.NO_DATA;
+        boolean hasSubmittedAttemptAfter = false;
+        if (classId != null && i.getCreatedAt() != null) {
+            hasSubmittedAttemptAfter = attemptRepository.existsByStudentIdAndClassIdAndStatusAndSubmittedAtAfter(
+                    i.getStudent().getId(), classId, AttemptStatus.SUBMITTED, i.getCreatedAt()
+            );
+        }
+
+        InterventionOutcome outcome;
+        if (i.getStatus() == InterventionStatus.CANCELLED) {
+            outcome = null;
+        } else if (baseline == null || currentMastery == null || !hasSubmittedAttemptAfter) {
+            outcome = InterventionOutcome.NO_NEW_DATA;
+        } else {
+            double diff = currentMastery - baseline;
+            if (diff >= INTERVENTION_OUTCOME_THRESHOLD) {
+                outcome = InterventionOutcome.IMPROVED;
+            } else if (diff <= -INTERVENTION_OUTCOME_THRESHOLD) {
+                outcome = InterventionOutcome.DECLINED;
             } else {
-                double diff = completion - baseline;
-                if (diff >= INTERVENTION_OUTCOME_THRESHOLD) {
-                    outcome = InterventionOutcome.IMPROVED;
-                } else if (diff <= -INTERVENTION_OUTCOME_THRESHOLD) {
-                    outcome = InterventionOutcome.DECLINED;
-                } else {
-                    outcome = InterventionOutcome.SAME;
-                }
+                outcome = InterventionOutcome.SAME;
             }
+        }
+
+        Double changeSinceCompletion = null;
+        if (i.getStatus() == InterventionStatus.DONE && i.getMasteryAtCompletion() != null && currentMastery != null) {
+            changeSinceCompletion = Math.round((currentMastery - i.getMasteryAtCompletion()) * 10.0) / 10.0;
         }
 
         return new TeacherInterventionDto(
@@ -1147,7 +1159,8 @@ public class TeacherClassService {
                 i.getMasteryAtStart(),
                 i.getMasteryAtCompletion(),
                 currentMastery,
-                outcome
+                outcome,
+                changeSinceCompletion
         );
     }
 

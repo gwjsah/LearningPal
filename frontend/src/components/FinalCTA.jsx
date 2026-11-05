@@ -20,11 +20,11 @@ export default function FinalCTA({ onSelectDemoRole }) {
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Torn Notebook Page Container */}
-        <div className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/35 shadow-lifted torn-edge-bottom pb-10 overflow-hidden">
+        <div className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-lifted torn-edge-bottom pb-10 overflow-hidden">
           <PushPin color="#D93829" />
 
           {/* Top Horizontal Binder Holes Strip */}
-          <div className="border-b border-ink/15 dark:border-white/15 bg-paper-warm/70 dark:bg-chalkboard-surface">
+          <div className="border-b border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/70 dark:bg-chalkboard-surface">
             <BinderHoles vertical={false} />
           </div>
 
@@ -61,7 +61,7 @@ export default function FinalCTA({ onSelectDemoRole }) {
 
               <Link
                 to="/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
               >
                 <LogIn className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
                 <span>Log In</span>

@@ -11,7 +11,7 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       aria-labelledby="how-heading"
-      className="relative py-16 lg:py-24 bg-ruled-paper notebook-margin-line border-b-2 border-ink/15 dark:border-white/15 overflow-hidden"
+      className="relative py-16 lg:py-24 bg-ruled-paper notebook-margin-line border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-10 sm:pl-14 lg:pl-16">
         <SectionHeading
@@ -67,7 +67,7 @@ export default function HowItWorks() {
               return (
                 <li
                   key={step.number}
-                  className={`rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/30 p-6 sm:p-7 shadow-paper flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 ${
+                  className={`rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 sm:p-7 shadow-paper flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 ${
                     idx === 1 ? 'lg:-translate-y-2' : ''
                   }`}
                 >
@@ -90,13 +90,13 @@ export default function HowItWorks() {
                         </div>
                       </div>
 
-                      <div className="w-10 h-10 rounded-xl bg-highlighter-yellowSoft dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-highlighter-yellowSoft dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle flex items-center justify-center">
                         <Icon className="w-5 h-5 text-ink dark:text-highlighter-yellow" />
                       </div>
                     </div>
 
                     <div className="mb-2">
-                      <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-mono font-semibold bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15 dark:border-white/15 mb-2">
+                      <span className="inline-block px-2.5 py-0.5 rounded text-[11px] font-mono font-semibold bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15 dark:border-chalkboard-borderSubtle mb-2">
                         {step.badge}
                       </span>
                       <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
@@ -109,7 +109,7 @@ export default function HowItWorks() {
                     </p>
                   </div>
 
-                  <div className="pt-5 mt-5 border-t border-ink/10 dark:border-white/10 flex items-center justify-between">
+                  <div className="pt-5 mt-5 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between">
                     <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">Key benefit</span>
                     <span className="font-hand text-base font-bold text-redpen dark:text-red-400">
                       ↳ {step.handNote}

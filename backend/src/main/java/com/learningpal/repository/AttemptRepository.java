@@ -7,6 +7,7 @@ import com.learningpal.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -19,5 +20,6 @@ public interface AttemptRepository extends JpaRepository<Attempt, Long> {
     List<Attempt> findByStudentAndAssessmentOrderByAttemptNumberDesc(User student, Assessment assessment);
     long countByStudentIdAndAssessmentId(Long studentId, Long assessmentId);
     List<Attempt> findByClassId(Long classId);
+    boolean existsByStudentIdAndClassIdAndStatusAndSubmittedAtAfter(Long studentId, Long classId, AttemptStatus status, Instant submittedAt);
 }
 

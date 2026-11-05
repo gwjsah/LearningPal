@@ -82,7 +82,7 @@ export default function TeacherClassDetail() {
         teacherService.getClassRoster(id),
         teacherService.getClassOverview(id),
         teacherService.getClassAssessments(id),
-        teacherService.getClassInterventions(id, { status: 'PLANNED' }),
+        teacherService.getClassInterventions(id),
       ]);
       setClassDetail(detailData);
       setRoster(rosterData);
@@ -312,7 +312,7 @@ export default function TeacherClassDetail() {
       headerRight={
         <Link
           to="/teacher"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to My Classes</span>
@@ -406,7 +406,7 @@ export default function TeacherClassDetail() {
               <NotebookCard
                 pattern="grid"
                 borderStyle="sketch"
-                className="md:col-span-2 p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/50 space-y-4"
+                className="md:col-span-2 p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -434,7 +434,7 @@ export default function TeacherClassDetail() {
                   </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-paper-warm dark:bg-chalkboard-surface p-4 rounded-xl border-2 border-ink dark:border-white/30">
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-paper-warm dark:bg-chalkboard-surface p-4 rounded-xl border-2 border-ink dark:border-chalkboard-border">
                   <div className="flex-1 text-center sm:text-left">
                     <p className="text-xs text-ink-muted dark:text-chalkboard-muted font-mono mb-1">
                       Give this code to students to let them join:
@@ -488,7 +488,7 @@ export default function TeacherClassDetail() {
               <NotebookCard
                 pattern="ruled"
                 borderStyle="sketch"
-                className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/50 flex flex-col justify-between space-y-4"
+                className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border flex flex-col justify-between space-y-4"
               >
                 <div>
                   <h3 className="font-bold text-lg text-ink dark:text-chalkboard-chalk mb-2">
@@ -534,7 +534,7 @@ export default function TeacherClassDetail() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-ink/10 dark:border-white/10 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                <div className="pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                   <span>Enrolled: </span>
                   <span className="font-bold text-ink dark:text-chalkboard-chalk">
                     {roster.length} students
@@ -545,7 +545,7 @@ export default function TeacherClassDetail() {
 
             {/* PART 2: CLASS OVERVIEW SECTION */}
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-ink/10 dark:border-white/10 pb-3">
+              <div className="flex items-center justify-between border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
                     <BarChart3 className="w-6 h-6 text-redpen dark:text-highlighter-yellow" />
@@ -560,7 +560,7 @@ export default function TeacherClassDetail() {
               {/* Class Aggregate Metric Tiles */}
               {overview?.totals && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
+                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
                     <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
                       Enrolled Students
                     </span>
@@ -569,7 +569,7 @@ export default function TeacherClassDetail() {
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
+                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
                     <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
                       Active Learners
                     </span>
@@ -581,7 +581,7 @@ export default function TeacherClassDetail() {
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
+                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
                     <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
                       Avg Diagnostic
                     </span>
@@ -595,7 +595,7 @@ export default function TeacherClassDetail() {
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
+                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
                     <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
                       Needs Attention
                     </span>
@@ -607,7 +607,7 @@ export default function TeacherClassDetail() {
                     </span>
                   </div>
 
-                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm col-span-2 sm:col-span-1">
+                  <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm col-span-2 sm:col-span-1">
                     <span className="text-[11px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
                       Open Interventions
                     </span>
@@ -690,7 +690,7 @@ export default function TeacherClassDetail() {
 
                           {/* Accessible CSS Stacked Bar */}
                           <div
-                            className="w-full h-5 rounded-lg overflow-hidden flex border border-ink/30 dark:border-white/30 bg-paper-warm dark:bg-chalkboard-surface"
+                            className="w-full h-5 rounded-lg overflow-hidden flex border border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface"
                             role="progressbar"
                             aria-label={`Student distribution for ${t.topicName}: ${t.gapCount} gap, ${t.developingCount} developing, ${t.strengthCount} strength, ${t.noDataCount + t.insufficientDataCount} no data`}
                           >
@@ -718,7 +718,7 @@ export default function TeacherClassDetail() {
                             {noDataPct > 0 && (
                               <div
                                 style={{ width: `${noDataPct}%` }}
-                                className="bg-ink/10 dark:bg-white/10 h-full"
+                                className="bg-ink/10 dark:bg-chalkboard-highlight h-full"
                                 title={`No Data: ${t.noDataCount + t.insufficientDataCount} students (${noDataPct}%)`}
                               />
                             )}
@@ -765,10 +765,10 @@ export default function TeacherClassDetail() {
                     <summary className="font-bold underline hover:text-ink dark:hover:text-chalkboard-chalk">
                       View Raw Topic Breakdown Data Table (Accessible Format)
                     </summary>
-                    <div className="mt-3 overflow-x-auto rounded-xl border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card p-2">
+                    <div className="mt-3 overflow-x-auto rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card p-2">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-ink/10 dark:border-white/10 uppercase">
+                          <tr className="border-b border-ink/10 dark:border-chalkboard-borderSubtle uppercase">
                             <th className="p-2">Rank</th>
                             <th className="p-2">Topic</th>
                             <th className="p-2">Gap Count</th>
@@ -780,7 +780,7 @@ export default function TeacherClassDetail() {
                         </thead>
                         <tbody>
                           {overview.topics.map((t) => (
-                            <tr key={t.topicId} className="border-b border-ink/5 dark:border-white/5">
+                            <tr key={t.topicId} className="border-b border-ink/5 dark:border-chalkboard-borderSubtle">
                               <td className="p-2 font-bold">{t.rank}</td>
                               <td className="p-2 font-bold">{t.topicName}</td>
                               <td className="p-2 text-redpen font-bold">{t.gapCount}</td>
@@ -803,7 +803,7 @@ export default function TeacherClassDetail() {
             </div>
 
             {/* PART 4: CLASS ASSESSMENTS & SCHEDULE SECTION */}
-            <div className="space-y-6 pt-6 border-t border-ink/15 dark:border-white/15">
+            <div className="space-y-6 pt-6 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -885,7 +885,7 @@ export default function TeacherClassDetail() {
                             <span
                               className={`px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
                                 asm.allowRetakes
-                                  ? 'bg-ink/5 dark:bg-white/5 text-ink dark:text-white border-ink/20'
+                                  ? 'bg-ink/5 dark:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk border-ink/20 dark:border-chalkboard-borderSubtle'
                                   : 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
                               }`}
                             >
@@ -896,7 +896,7 @@ export default function TeacherClassDetail() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="pt-3 border-t border-ink/10 dark:border-white/10 flex items-center justify-end gap-2">
+                        <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-end gap-2">
                           <Button
                             variant="secondary"
                             size="sm"
@@ -924,7 +924,7 @@ export default function TeacherClassDetail() {
             </div>
 
             {/* PART 2: STUDENT ROSTER SECTION */}
-            <div className="space-y-6 pt-6 border-t border-ink/15 dark:border-white/15">
+            <div className="space-y-6 pt-6 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -948,11 +948,11 @@ export default function TeacherClassDetail() {
                       placeholder="Search student or email…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-paper-card dark:bg-chalkboard-card px-3 py-1.5 rounded-xl border-2 border-ink/20 dark:border-white/20 text-xs font-mono">
+                  <div className="flex items-center gap-1.5 bg-paper-card dark:bg-chalkboard-card px-3 py-1.5 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle text-xs font-mono">
                     <ArrowUpDown className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted" />
                     <select
                       value={sortBy}
@@ -990,10 +990,10 @@ export default function TeacherClassDetail() {
               ) : (
                 <>
                   {/* Desktop / Tablet Table View */}
-                  <div className="hidden md:block overflow-x-auto rounded-xl border-2 border-ink dark:border-white/30 bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
+                  <div className="hidden md:block overflow-x-auto rounded-xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b-2 border-ink dark:border-white/20 bg-paper-warm dark:bg-chalkboard-surface font-mono uppercase text-ink dark:text-chalkboard-chalk">
+                        <tr className="border-b-2 border-ink dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface font-mono uppercase text-ink dark:text-chalkboard-chalk">
                           <th className="py-3 px-3">#</th>
                           <th className="py-3 px-3">Student</th>
                           <th className="py-3 px-3">Status</th>
@@ -1004,11 +1004,11 @@ export default function TeacherClassDetail() {
                           <th className="py-3 px-3">Joined</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-ink/10 dark:divide-white/10 font-mono">
+                      <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle font-mono">
                         {filteredAndSortedRoster.map((student, idx) => (
                           <tr
                             key={student.studentId}
-                            className="hover:bg-highlighter-yellow/10 dark:hover:bg-white/5 transition-colors"
+                            className="hover:bg-highlighter-yellow/10 dark:hover:bg-chalkboard-highlight transition-colors"
                           >
                             <td className="py-3 px-3 text-ink-muted dark:text-chalkboard-muted font-bold">
                               {idx + 1}
@@ -1157,7 +1157,7 @@ export default function TeacherClassDetail() {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 text-xs font-mono pt-2 border-t border-ink/10 dark:border-white/10">
+                        <div className="grid grid-cols-3 gap-2 text-xs font-mono pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                           <div>
                             <span className="text-ink-muted block text-[10px] uppercase">Diagnostic</span>
                             <span className="font-bold text-ink dark:text-chalkboard-chalk">
@@ -1187,7 +1187,7 @@ export default function TeacherClassDetail() {
                         </div>
 
                         {/* Mobile Topic Chips */}
-                        <div className="pt-2 border-t border-ink/10 dark:border-white/10 space-y-1.5">
+                        <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle space-y-1.5">
                           <span className="text-[10px] font-mono uppercase text-ink-muted block">
                             Topic Mastery:
                           </span>
@@ -1224,7 +1224,7 @@ export default function TeacherClassDetail() {
             </div>
 
             {/* PART 3: PEDAGOGICAL INTERVENTIONS SECTION */}
-            <div className="space-y-4 pt-6 border-t border-ink/15 dark:border-white/15">
+            <div className="space-y-4 pt-6 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -1302,25 +1302,40 @@ export default function TeacherClassDetail() {
                           </div>
 
                           {itv.note && (
-                            <p className="text-xs text-ink/80 dark:text-chalkboard-chalk/80 font-sans italic line-clamp-2 pt-1 border-t border-ink/10 dark:border-white/10">
+                            <p className="text-xs text-ink/80 dark:text-chalkboard-chalk/80 font-sans italic line-clamp-2 pt-1 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                               "{itv.note}"
                             </p>
                           )}
                         </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t border-ink/10 dark:border-white/10 text-[10px]">
+                        <div className="flex items-center justify-between pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle text-[10px]">
                           <div className="flex items-center gap-2">
                             {itv.outcome && (
                               <span
-                                className={`px-2 py-0.5 rounded font-bold border ${
+                                className={`px-2 py-0.5 rounded font-bold border flex items-center gap-1 ${
                                   itv.outcome === 'IMPROVED'
                                     ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
                                     : itv.outcome === 'DECLINED'
                                     ? 'bg-redpen-soft text-redpen-dark border-redpen/40'
+                                    : itv.outcome === 'SAME'
+                                    ? 'bg-amber-100 text-amber-900 border-amber-300'
                                     : 'bg-ink/10 text-ink-muted border-ink/20'
                                 }`}
                               >
-                                Outcome: {itv.outcome}
+                                {itv.outcome === 'NO_NEW_DATA' ? (
+                                  <>
+                                    <Clock className="w-3 h-3" />
+                                    <span>Waiting for next quiz</span>
+                                  </>
+                                ) : itv.outcome === 'IMPROVED' ? (
+                                  <span>Improved</span>
+                                ) : itv.outcome === 'DECLINED' ? (
+                                  <span>Declined</span>
+                                ) : itv.outcome === 'SAME' ? (
+                                  <span>Stable</span>
+                                ) : (
+                                  <span>Outcome: {itv.outcome}</span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -1348,7 +1363,7 @@ export default function TeacherClassDetail() {
             aria-labelledby="regen-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-3 text-redpen">
                 <RotateCcw className="w-6 h-6" />
                 <h3 id="regen-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
@@ -1388,7 +1403,7 @@ export default function TeacherClassDetail() {
             aria-labelledby="archive-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-3 text-redpen">
                 <ShieldAlert className="w-6 h-6" />
                 <h3 id="archive-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
@@ -1428,7 +1443,7 @@ export default function TeacherClassDetail() {
             aria-labelledby="schedule-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-5">
+            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-5">
               <div className="flex items-center gap-3 text-ink dark:text-chalkboard-chalk">
                 <Clock className="w-6 h-6 text-redpen dark:text-highlighter-yellow" />
                 <div>
@@ -1459,7 +1474,7 @@ export default function TeacherClassDetail() {
                       onChange={(e) =>
                         setScheduleForm((prev) => ({ ...prev, availableFrom: e.target.value }))
                       }
-                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     />
                     <span className="text-[10px] text-ink-muted block mt-1">Leave empty to open immediately</span>
                   </div>
@@ -1474,13 +1489,13 @@ export default function TeacherClassDetail() {
                       onChange={(e) =>
                         setScheduleForm((prev) => ({ ...prev, availableUntil: e.target.value }))
                       }
-                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                      className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     />
                     <span className="text-[10px] text-ink-muted block mt-1">Leave empty for no deadline</span>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-ink/10 dark:border-white/10 flex items-start gap-3">
+                <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-start gap-3">
                   <input
                     type="checkbox"
                     id="allowRetakesCheck"
@@ -1530,7 +1545,7 @@ export default function TeacherClassDetail() {
             aria-labelledby="unlock-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-white rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-3 text-ink dark:text-chalkboard-chalk">
                 <Unlock className="w-6 h-6 text-emerald-600" />
                 <div>
@@ -1559,7 +1574,7 @@ export default function TeacherClassDetail() {
                     onChange={(e) =>
                       setUnlockModal((prev) => ({ ...prev, studentId: e.target.value }))
                     }
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     required
                   >
                     {roster.map((s) => (
@@ -1581,7 +1596,7 @@ export default function TeacherClassDetail() {
                       setUnlockModal((prev) => ({ ...prev, reason: e.target.value }))
                     }
                     placeholder="e.g. Approved makeup quiz, Technical issue"
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     required
                   />
                 </div>
@@ -1596,7 +1611,7 @@ export default function TeacherClassDetail() {
                     onChange={(e) =>
                       setUnlockModal((prev) => ({ ...prev, extendedUntil: e.target.value }))
                     }
-                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                    className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                   />
                   <span className="text-[10px] text-ink-muted block mt-1">Leave blank if no extension is needed</span>
                 </div>

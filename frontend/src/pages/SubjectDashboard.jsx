@@ -13,14 +13,17 @@ import {
   RefreshCw,
   Compass,
   AlertTriangle,
-  TrendingUp,
-  HelpCircle,
   BookOpen,
+  Check,
+  Target,
+  FileQuestion,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
+import { WashiTape } from '../components/Doodles';
 
 export default function SubjectDashboard() {
   const { subjectId, classId } = useParams();
@@ -32,6 +35,9 @@ export default function SubjectDashboard() {
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Tab filter for quizzes: 'active' | 'completed'
+  const [quizFilter, setQuizFilter] = useState('active');
 
   const loadData = async () => {
     setLoading(true);
@@ -53,7 +59,7 @@ export default function SubjectDashboard() {
             return;
           }
         } catch {
-          // If resolving fails, fallback to direct subject data or report not enrolled
+          // Fallback if resolving fails
         }
       } else {
         navigate('/student', { replace: true });
@@ -90,6 +96,7 @@ export default function SubjectDashboard() {
     loadData();
   }, [subjectId, classId]);
 
+  // Derived classification & data
   const diagnostic = assessments.find((a) =>
     a.title.toLowerCase().includes('diagnostic')
   );
@@ -98,12 +105,35 @@ export default function SubjectDashboard() {
     (a) => !a.title.toLowerCase().includes('diagnostic')
   );
 
+  const isDiagnosticSubmitted = diagnostic?.latestAttemptStatus === 'SUBMITTED';
+
   const hasAnyAttempts =
     progress?.topics?.some((t) => t.status !== 'INSUFFICIENT_DATA' || t.questionsAnswered > 0) ?? false;
 
-  const subjectName = workspace?.subject?.name || diagnostic?.subjectName || (assessments[0]?.subjectName) || 'Class Workspace';
-  const effectiveSubjectId = workspace?.subject?.id || subjectId;
+  const subjectName =
+    workspace?.subject?.name ||
+    diagnostic?.subjectName ||
+    assessments[0]?.subjectName ||
+    'Class Workspace';
+
+  const effectiveSubjectId =
+    workspace?.subject?.id ||
+    (subjectId && subjectId !== 'undefined' && !isNaN(subjectId) ? subjectId : null);
+
   const isArchived = workspace ? !workspace.canAttempt : false;
+
+  // Breakdown of topics by mastery status
+  const priorityGaps = progress?.topics?.filter((t) => t.status === 'GAP') || [];
+  const masteredTopics = progress?.topics?.filter((t) => t.status === 'STRENGTH') || [];
+  const developingTopics = progress?.topics?.filter((t) => t.status === 'DEVELOPING') || [];
+
+  // Group assessments into Active and Completed
+  const inProgressQuiz = assessments.find((a) => a.latestAttemptStatus === 'IN_PROGRESS');
+  const activeQuizzes = topicQuizzes.filter((q) => q.latestAttemptStatus !== 'SUBMITTED');
+  const completedQuizzes = [
+    ...(diagnostic && isDiagnosticSubmitted ? [diagnostic] : []),
+    ...topicQuizzes.filter((q) => q.latestAttemptStatus === 'SUBMITTED'),
+  ];
 
   return (
     <PortalShell
@@ -111,15 +141,23 @@ export default function SubjectDashboard() {
       user={user}
       onLogout={logout}
       badgeIcon={GraduationCap}
-      badgeLabel={workspace ? `Class: ${workspace.name}` : "Class Workspace"}
-      badgeColorClass={isArchived ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200" : "bg-highlighter-mint text-ink"}
+      badgeLabel={workspace ? `Class: ${workspace.name}` : 'Class Workspace'}
+      badgeColorClass={
+        isArchived
+          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200'
+          : 'bg-highlighter-mint text-ink'
+      }
       title={workspace ? `${workspace.subject.name} (${workspace.name})` : subjectName}
-      subtitle={workspace ? `Instructor: ${workspace.teacherName || 'Assigned Instructor'} • Status: ${workspace.status}` : "Complete diagnostic quizzes, analyze your strengths and learning gaps, and master topics."}
+      subtitle={
+        workspace
+          ? `Instructor: ${workspace.teacherName || 'Assigned Instructor'} • Status: ${workspace.status}`
+          : 'Complete diagnostic quizzes, analyze your strengths and learning gaps, and master topics.'
+      }
       headerRight={
         <div className="flex items-center gap-2">
           <Link
             to="/student"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>My Classes</span>
@@ -127,7 +165,7 @@ export default function SubjectDashboard() {
           {effectiveSubjectId && (
             <Link
               to={`/student/subjects/${effectiveSubjectId}/progress`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
             >
               <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
               <span>Gap Analysis</span>
@@ -153,7 +191,7 @@ export default function SubjectDashboard() {
             </span>
           </div>
           <span className="text-ink-muted dark:text-chalkboard-muted hidden sm:inline">
-            {workspace ? `Class #${workspace.id} • ${workspace.status}` : `Subject #${subjectId}`}
+            {workspace ? `Class #${workspace.id} • ${workspace.status}` : `Subject #${effectiveSubjectId || subjectId}`}
           </span>
         </nav>
 
@@ -164,7 +202,7 @@ export default function SubjectDashboard() {
             <div>
               <p className="text-sm font-bold">This class is archived</p>
               <p className="text-xs mt-0.5">
-                This class has been archived by your instructor. Your past attempts and feedback remain viewable, but new attempts cannot be started.
+                This class has been archived by your instructor. Past attempts and feedback remain viewable, but new attempts cannot be started.
               </p>
             </div>
           </div>
@@ -175,7 +213,7 @@ export default function SubjectDashboard() {
           <div className="py-20 text-center space-y-4">
             <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" />
             <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Opening subject notebook and loading your quizzes…
+              Opening subject notebook and loading your workspace…
             </p>
           </div>
         )}
@@ -206,455 +244,612 @@ export default function SubjectDashboard() {
           </div>
         )}
 
-        {/* Content loaded */}
+        {/* Loaded Content */}
         {!loading && !error && (
-          <>
-            {/* 1. Study Next Card (if recommended topic exists) */}
-            {progress?.studyNext && (
-              <NotebookCard
-                pattern="grid"
-                borderStyle="sketch"
-                className="p-5 sm:p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/50"
-              >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="space-y-2 max-w-xl">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold font-mono uppercase bg-highlighter-yellow text-ink border border-ink/30 shadow-notebook-sm">
-                        <Sparkles className="w-3.5 h-3.5 text-redpen" />
-                        Study Next
-                      </span>
-                      <StatusBadge status={progress.studyNext.status} />
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-ink dark:text-chalkboard-chalk">
-                      Focus on: {progress.studyNext.topicName}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
-                      {progress.studyNext.status === 'GAP'
-                        ? 'Diagnostic analysis flagged this topic as a learning gap. Reinforce this concept to stay on track.'
-                        : 'Strengthen this topic next to boost your overall subject mastery.'}
-                    </p>
-                    {progress.studyNext.resourcesRecommended > 0 && (
-                      <div className="flex items-center gap-2 text-xs font-mono pt-1 text-ink-muted dark:text-chalkboard-muted">
-                        <span>{progress.studyNext.resourcesRecommended} Recommended Resources</span>
-                        <span>•</span>
-                        <span className="font-bold text-ink dark:text-chalkboard-chalk">
-                          {progress.studyNext.resourcesCompleted} of {progress.studyNext.resourcesRecommended} completed
-                        </span>
-                      </div>
-                    )}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* =========================================================================
+                LEFT / MAIN COLUMN (8 cols desktop): Hero Action + Filterable Quizzes
+            ========================================================================= */}
+            <div className="lg:col-span-8 space-y-8">
+              {/* ---------------------------------------------------------------------
+                  HERO BLOCK: Dynamic State-Aware Action Card (Taped Index Card Motif)
+              --------------------------------------------------------------------- */}
+              {!isDiagnosticSubmitted && diagnostic ? (
+                /* STATE 1 HERO: Diagnostic Required / First Step */
+                <div className="relative pt-3">
+                  <div className="absolute -top-1 left-8 z-10">
+                    <WashiTape
+                      colorClass="bg-highlighter-yellow/90 dark:bg-yellow-500/50"
+                      rotate="-rotate-2"
+                    />
                   </div>
-
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <Button
-                      variant="primary"
-                      size="md"
-                      className="w-full sm:w-auto"
-                      onClick={() => navigate(`/student/subjects/${subjectId}/progress/topics/${progress.studyNext.topicId}`)}
-                    >
-                      <span>Review Topic</span>
-                      <ArrowRight className="w-4 h-4 ml-1.5" />
-                    </Button>
-                  </div>
-                </div>
-              </NotebookCard>
-            )}
-
-            {/* 2. Your Strengths and Gaps Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
-                    Your Strengths & Learning Gaps
-                  </h3>
-                  <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
-                    Automated topic mastery calculated from your most recent assessment responses.
-                  </p>
-                </div>
-                {hasAnyAttempts && (
-                  <Link
-                    to={`/student/subjects/${subjectId}/progress`}
-                    className="inline-flex items-center gap-1 text-xs sm:text-sm font-mono font-bold text-ink dark:text-chalkboard-chalk hover:text-redpen dark:hover:text-redpen transition-colors"
+                  <NotebookCard
+                    pattern="grid"
+                    borderStyle="sketch"
+                    className="p-6 sm:p-8 bg-paper-warm dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5 shadow-notebook-sm"
                   >
-                    <span>View All Details</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                )}
-              </div>
-
-              {!hasAnyAttempts ? (
-                <NotebookCard pattern="ruled" borderStyle="sketch" className="p-6 text-center space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-highlighter-yellow/40 border border-ink/30 flex items-center justify-center mx-auto">
-                    <Compass className="w-5 h-5 text-ink dark:text-chalkboard-chalk" />
-                  </div>
-                  <h4 className="text-base font-bold text-ink dark:text-chalkboard-chalk">
-                    Take your first assessment to see your strengths and gaps
-                  </h4>
-                  <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-md mx-auto">
-                    Complete the Comprehensive Diagnostic below or take any topic quiz. As soon as you submit, your topic breakdown and mastery status will be calculated automatically.
-                  </p>
-                </NotebookCard>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {progress?.topics?.map((topic) => (
-                    <div
-                      key={topic.topicId}
-                      onClick={() => navigate(`/student/subjects/${subjectId}/progress/topics/${topic.topicId}`)}
-                      className="group cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
-                      tabIndex={0}
-                      role="link"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          navigate(`/student/subjects/${subjectId}/progress/topics/${topic.topicId}`);
-                        }
-                      }}
-                    >
-                      <NotebookCard
-                        pattern="ruled"
-                        borderStyle="sketch"
-                        className="p-4 space-y-3 hover:shadow-notebook group-hover:-translate-y-0.5 transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <h4 className="font-bold text-sm sm:text-base text-ink dark:text-chalkboard-chalk group-hover:text-redpen transition-colors">
-                            {topic.topicName}
-                          </h4>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <StatusBadge status={topic.status} />
-                            <TrendIndicator trend={topic.trend} />
-                          </div>
-                        </div>
-
-                        <MasteryBar
-                          percent={topic.masteryPercent}
-                          status={topic.status}
-                        />
-
-                        {topic.resourcesRecommended > 0 && (
-                          <div className="pt-2 border-t border-ink/10 dark:border-white/10 flex items-center justify-between text-xs font-mono">
-                            <span className="text-ink-muted dark:text-chalkboard-muted">Resources:</span>
-                            <span className={`font-bold ${topic.status === 'GAP' ? 'text-redpen-dark dark:text-red-300' : 'text-ink dark:text-chalkboard-chalk'}`}>
-                              {topic.resourcesCompleted} of {topic.resourcesRecommended} completed
-                            </span>
-                          </div>
-                        )}
-                      </NotebookCard>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-bold uppercase bg-highlighter-yellow text-ink border border-ink/30 shadow-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-redpen" />
+                        First Step • Required Baseline
+                      </span>
+                      <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                        {diagnostic.questionCount} Questions • Untimed
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* 3. Highlighted Diagnostic Assessment Banner */}
-            {diagnostic && (
-              <div className="relative">
-                <div className="absolute -top-3 left-6 z-10">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold font-mono uppercase bg-highlighter-yellow text-ink border border-ink shadow-notebook-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-redpen" />
-                    Recommended Starting Point
-                  </span>
-                </div>
-                <NotebookCard
-                  pattern="grid"
-                  borderStyle="sketch"
-                  className="pt-6 sm:p-8 bg-paper-warm dark:bg-chalkboard-card border-2 border-ink dark:border-white/50"
-                >
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div className="space-y-2 max-w-2xl">
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                        <span className="px-2 py-0.5 rounded bg-highlighter-mint/40 text-ink font-bold">
-                          {diagnostic.subjectName}
-                        </span>
-                        <span>•</span>
-                        <span>{diagnostic.questionCount} Questions</span>
-                        <span>•</span>
-                        <span>Diagnostic Battery</span>
-                      </div>
-                      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink dark:text-chalkboard-chalk">
+                    <div className="space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink dark:text-chalkboard-chalk">
                         {diagnostic.title}
                       </h2>
-                      <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                        {diagnostic.description}
+                      <p className="text-sm sm:text-base text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                        Take this initial diagnostic to establish your conceptual baseline. As soon as you submit, LearningPal pinpoints your exact strengths and learning gaps by topic.
                       </p>
-
-                      {/* Diagnostic attempt status badge */}
-                      {diagnostic.latestAttemptStatus === 'SUBMITTED' && (
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-highlighter-mint text-ink font-mono text-xs font-bold border border-ink/30">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                          <span>
-                            Latest Score: {diagnostic.latestAttemptScore} / {diagnostic.latestAttemptMaxScore} (
-                            {Math.round(
-                              (diagnostic.latestAttemptScore / diagnostic.latestAttemptMaxScore) * 100
-                            )}
-                            %)
-                          </span>
-                        </div>
-                      )}
-                      {diagnostic.latestAttemptStatus === 'IN_PROGRESS' && (
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-highlighter-yellow text-ink font-mono text-xs font-bold border border-ink/30">
-                          <Clock className="w-4 h-4 text-amber-700" />
-                          <span>Attempt in progress</span>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="flex flex-row md:flex-col items-center gap-3 w-full md:w-auto">
-                      {diagnostic.latestAttemptStatus === 'SUBMITTED' ? (
-                        <>
-                          <Button
-                            variant="primary"
-                            size="md"
-                            className="w-full md:w-44"
-                            onClick={() =>
-                              navigate(`/student/subjects/${effectiveSubjectId}/attempts/${diagnostic.latestAttemptId}/result`)
-                            }
-                          >
-                            <Award className="w-4 h-4 mr-1.5" />
-                            View Result
-                          </Button>
-                          {isArchived || !diagnostic.canStart ? (
-                            <div className="w-full md:w-44 flex flex-col items-center">
-                              <Button
-                                variant="secondary"
-                                size="md"
-                                disabled
-                                className="w-full opacity-50 cursor-not-allowed"
-                                title={diagnostic.lockReason || 'Retake unavailable'}
-                              >
-                                <RotateCcw className="w-4 h-4 mr-1.5" />
-                                {diagnostic.accessStatus === 'RETAKE_LOCKED'
-                                  ? 'Retake Locked'
-                                  : diagnostic.accessStatus === 'CLOSED'
-                                  ? 'Closed by Teacher'
-                                  : isArchived
-                                  ? 'Retake (Archived)'
-                                  : 'Retake Unavailable'}
-                              </Button>
-                              {diagnostic.lockReason && !isArchived && (
-                                <span className="text-[10px] font-mono text-redpen dark:text-redpen-soft text-center mt-1">
-                                  {diagnostic.lockReason}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <Button
-                              variant="secondary"
-                              size="md"
-                              className="w-full md:w-44"
-                              onClick={() =>
-                                navigate(`/student/subjects/${effectiveSubjectId}/assessments/${diagnostic.id}/take`)
-                              }
-                            >
-                              <RotateCcw className="w-4 h-4 mr-1.5" />
-                              Retake Quiz
-                            </Button>
-                          )}
-                        </>
-                      ) : isArchived || !diagnostic.canStart ? (
-                        <div className="w-full md:w-48 flex flex-col items-center">
-                          <Button
-                            variant="secondary"
-                            size="lg"
-                            disabled
-                            className="w-full opacity-50 cursor-not-allowed"
-                            title={diagnostic.lockReason || 'Quiz Unavailable'}
-                          >
-                            <span>
-                              {diagnostic.accessStatus === 'NOT_OPEN_YET'
-                                ? 'Not Open Yet'
-                                : diagnostic.accessStatus === 'CLOSED'
-                                ? 'Closed by Teacher'
-                                : isArchived
-                                ? 'Quiz Unavailable (Archived)'
-                                : 'Quiz Unavailable'}
-                            </span>
-                          </Button>
-                          {diagnostic.lockReason && !isArchived && (
-                            <span className="text-[10px] font-mono text-redpen dark:text-redpen-soft text-center mt-1">
-                              {diagnostic.lockReason}
-                            </span>
-                          )}
-                        </div>
+                    {diagnostic.latestAttemptStatus === 'IN_PROGRESS' && (
+                      <div className="p-3 rounded-xl bg-highlighter-yellowSoft dark:bg-yellow-950/40 border border-ink/20 flex items-center gap-2.5 text-xs font-mono text-ink dark:text-yellow-200">
+                        <Clock className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+                        <span>You have an attempt currently open. Resume to finish and see your topic map.</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      {isArchived || !diagnostic.canStart ? (
+                        <Button
+                          variant="secondary"
+                          size="lg"
+                          disabled
+                          className="opacity-50 cursor-not-allowed"
+                        >
+                          {isArchived ? 'Diagnostic Unavailable (Archived)' : diagnostic.lockReason || 'Quiz Locked'}
+                        </Button>
                       ) : (
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full md:w-48 shadow-notebook"
+                          className="font-bold shadow-notebook hover:translate-y-[-1px] transition-transform"
                           onClick={() =>
-                            navigate(`/student/subjects/${effectiveSubjectId}/assessments/${diagnostic.id}/take`)
+                            navigate(
+                              `/student/subjects/${effectiveSubjectId}/assessments/${diagnostic.id}/take`
+                            )
                           }
                         >
                           <span>
                             {diagnostic.latestAttemptStatus === 'IN_PROGRESS'
-                              ? 'Resume Quiz'
-                              : 'Start Diagnostic'}
+                              ? 'Resume Diagnostic'
+                              : 'Start Diagnostic Quiz'}
                           </span>
                           <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       )}
+                      <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted text-center sm:text-left">
+                        Takes ~15–20 minutes • Immediate feedback
+                      </span>
                     </div>
-                  </div>
-                </NotebookCard>
-              </div>
-            )}
-
-            {/* 4. Topic-by-Topic Quizzes Grid */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
-                    Topic Mastery Quizzes
-                  </h3>
-                  <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
-                    Focused checks targeting individual subject concepts.
-                  </p>
+                  </NotebookCard>
                 </div>
-              </div>
-
-              {topicQuizzes.length === 0 ? (
-                <NotebookCard className="p-8 text-center text-ink-muted dark:text-chalkboard-muted">
-                  <p>No topic quizzes available yet.</p>
-                </NotebookCard>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {topicQuizzes.map((quiz, index) => {
-                    const isSubmitted = quiz.latestAttemptStatus === 'SUBMITTED';
-                    const isInProgress = quiz.latestAttemptStatus === 'IN_PROGRESS';
-                    const scorePercent =
-                        isSubmitted && quiz.latestAttemptMaxScore > 0
-                        ? Math.round((quiz.latestAttemptScore / quiz.latestAttemptMaxScore) * 100)
-                        : null;
-
-                    return (
-                      <NotebookCard
-                        key={quiz.id}
-                        pattern="ruled"
-                        borderStyle="sketch"
-                        className="flex flex-col justify-between p-5 space-y-4 hover:shadow-notebook transition-shadow"
+                /* STATE 2 HERO: Next Step / Highest Priority Remediation */
+                <div className="relative pt-3">
+                  <div className="absolute -top-1 left-8 z-10">
+                    <WashiTape
+                      colorClass={
+                        inProgressQuiz
+                          ? 'bg-highlighter-yellow/90 dark:bg-yellow-500/50'
+                          : priorityGaps.length > 0
+                          ? 'bg-highlighter-pink/80 dark:bg-rose-500/40'
+                          : 'bg-highlighter-mint/90 dark:bg-emerald-500/50'
+                      }
+                      rotate="-rotate-1"
+                    />
+                  </div>
+                  <NotebookCard
+                    pattern="grid"
+                    borderStyle="sketch"
+                    className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4 shadow-notebook-sm"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-bold uppercase border border-ink/30 shadow-xs ${
+                          inProgressQuiz
+                            ? 'bg-highlighter-yellow text-ink'
+                            : priorityGaps.length > 0
+                            ? 'bg-redpen-soft text-redpen-dark dark:bg-rose-950 dark:text-rose-200'
+                            : 'bg-highlighter-mint text-ink'
+                        }`}
                       >
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between text-xs font-mono">
-                            <span className="px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink font-bold border border-ink/20">
-                              Topic 0{index + 1}
-                            </span>
-                            <span className="text-ink-muted dark:text-chalkboard-muted">
-                              {quiz.questionCount} Questions
-                            </span>
-                          </div>
+                        {inProgressQuiz ? (
+                          <>
+                            <Clock className="w-3.5 h-3.5 text-amber-700" />
+                            <span>In-Progress Attempt</span>
+                          </>
+                        ) : priorityGaps.length > 0 ? (
+                          <>
+                            <Target className="w-3.5 h-3.5 text-redpen" />
+                            <span>Recommended Focus • Close Learning Gap</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Great Progress • All Gaps Closed</span>
+                          </>
+                        )}
+                      </span>
 
-                          <h4 className="font-bold text-lg text-ink dark:text-chalkboard-chalk leading-snug">
-                            {quiz.title}
-                          </h4>
+                      {progress?.studyNext?.resourcesRecommended > 0 && (
+                        <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                          {progress.studyNext.resourcesCompleted} of{' '}
+                          {progress.studyNext.resourcesRecommended} resources completed
+                        </span>
+                      )}
+                    </div>
 
-                          <p className="text-xs text-ink-muted dark:text-chalkboard-muted line-clamp-2">
-                            {quiz.description}
-                          </p>
+                    {inProgressQuiz ? (
+                      /* Sub-state: Resume in-progress quiz */
+                      <div className="space-y-2">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink dark:text-chalkboard-chalk">
+                          Resume: {inProgressQuiz.title}
+                        </h2>
+                        <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                          You have an active attempt currently open. Finish your questions and submit to update your topic mastery scores.
+                        </p>
+                        <div className="pt-2">
+                          <Button
+                            variant="primary"
+                            size="lg"
+                            className="font-bold"
+                            onClick={() =>
+                              navigate(
+                                `/student/subjects/${effectiveSubjectId}/assessments/${inProgressQuiz.id}/take`
+                              )
+                            }
+                          >
+                            <span>Resume Quiz</span>
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
                         </div>
+                      </div>
+                    ) : progress?.studyNext || priorityGaps.length > 0 ? (
+                      /* Sub-state: Target priority gap */
+                      (() => {
+                        const targetTopic = progress?.studyNext || priorityGaps[0];
+                        return (
+                          <div className="space-y-3">
+                            <div className="space-y-1">
+                              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink dark:text-chalkboard-chalk">
+                                Focus on: {targetTopic.topicName}
+                              </h2>
+                              <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                                Diagnostic analysis flagged this concept as a learning gap ({targetTopic.masteryPercent}% accuracy). Review missed questions and short study guides to master this topic.
+                              </p>
+                            </div>
 
-                        <div className="pt-3 border-t border-ink/10 dark:border-white/10 space-y-3">
-                          {isSubmitted && (
-                            <div className="flex items-center justify-between text-xs font-mono">
-                              <span className="text-ink-muted dark:text-chalkboard-muted">Latest:</span>
-                              <span className="font-bold px-2 py-0.5 rounded bg-highlighter-mint text-ink">
-                                {quiz.latestAttemptScore} / {quiz.latestAttemptMaxScore} ({scorePercent}%)
+                            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                              <Button
+                                variant="primary"
+                                size="lg"
+                                className="font-bold"
+                                onClick={() =>
+                                  navigate(
+                                    `/student/subjects/${effectiveSubjectId}/progress/topics/${targetTopic.topicId}`
+                                  )
+                                }
+                              >
+                                <span>Study This Topic & Review Misses</span>
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                              </Button>
+                              <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                                Missed questions breakdown ready
                               </span>
                             </div>
-                          )}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      /* Sub-state: Solid mastery across all */
+                      <div className="space-y-3">
+                        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink dark:text-chalkboard-chalk">
+                          You are on track across all topics!
+                        </h2>
+                        <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                          You have scored ≥ 80% on all diagnostic questions. Review completed attempts or take additional topic practice checks to lock in your mastery.
+                        </p>
+                        <div className="pt-2">
+                          <Button
+                            variant="secondary"
+                            size="md"
+                            onClick={() =>
+                              navigate(`/student/subjects/${effectiveSubjectId}/progress`)
+                            }
+                          >
+                            <span>View Full Learning Journey</span>
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </NotebookCard>
+                </div>
+              )}
 
-                          {isInProgress && (
-                            <div className="flex items-center gap-1.5 text-xs font-mono text-amber-700 dark:text-amber-400">
-                              <Clock className="w-3.5 h-3.5" />
-                              <span>Attempt currently open</span>
-                            </div>
-                          )}
+              {/* ---------------------------------------------------------------------
+                  ASSESSMENTS & QUIZZES FEED (Filterable Active vs Completed)
+              --------------------------------------------------------------------- */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ink/15 dark:border-chalkboard-borderSubtle pb-3">
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+                      <FileQuestion className="w-5 h-5 text-ink-blue dark:text-highlighter-mint" />
+                      <span>Class Quizzes & Tests</span>
+                    </h3>
+                    <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
+                      Diagnostic tests and topic-level concept checks assigned by your instructor.
+                    </p>
+                  </div>
 
-                          <div className="flex items-center gap-2">
-                            {isSubmitted ? (
-                              <>
+                  {/* Filter Pills: Active vs Completed */}
+                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setQuizFilter('active')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                        quizFilter === 'active'
+                          ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/20'
+                          : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink'
+                      }`}
+                    >
+                      Active ({activeQuizzes.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQuizFilter('completed')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                        quizFilter === 'completed'
+                          ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/20'
+                          : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink'
+                      }`}
+                    >
+                      Completed ({completedQuizzes.length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* TAB 1: Active Quizzes */}
+                {quizFilter === 'active' && (
+                  <div className="space-y-4">
+                    {activeQuizzes.length === 0 ? (
+                      <NotebookCard className="p-8 text-center space-y-2 bg-paper-card dark:bg-chalkboard-card border border-ink/20">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                        <h4 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
+                          All Available Quizzes Completed!
+                        </h4>
+                        <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-sm mx-auto">
+                          You have submitted all quizzes currently assigned in this class. Flip to the "Completed" tab to review your scores and mistake breakdowns.
+                        </p>
+                      </NotebookCard>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {activeQuizzes.map((quiz, idx) => {
+                          const isInProgress = quiz.latestAttemptStatus === 'IN_PROGRESS';
+
+                          return (
+                            <NotebookCard
+                              key={quiz.id}
+                              pattern="ruled"
+                              borderStyle="sketch"
+                              className="p-5 flex flex-col justify-between space-y-4 hover:shadow-notebook transition-shadow"
+                            >
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs font-mono">
+                                  <span className="px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink font-bold border border-ink/20">
+                                    Topic 0{idx + 1}
+                                  </span>
+                                  <span className="text-ink-muted dark:text-chalkboard-muted">
+                                    {quiz.questionCount} Questions
+                                  </span>
+                                </div>
+                                <h4 className="font-bold text-base sm:text-lg text-ink dark:text-chalkboard-chalk leading-snug">
+                                  {quiz.title}
+                                </h4>
+                                <p className="text-xs text-ink-muted dark:text-chalkboard-muted line-clamp-2">
+                                  {quiz.description}
+                                </p>
+                              </div>
+
+                              <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle space-y-2.5">
+                                {isInProgress && (
+                                  <div className="flex items-center gap-1.5 text-xs font-mono text-amber-700 dark:text-amber-400">
+                                    <Clock className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Attempt in progress</span>
+                                  </div>
+                                )}
+
+                                <div>
+                                  {isArchived || !quiz.canStart ? (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled
+                                      className="w-full opacity-50 cursor-not-allowed"
+                                    >
+                                      {quiz.accessStatus === 'NOT_OPEN_YET'
+                                        ? 'Not Open'
+                                        : quiz.accessStatus === 'CLOSED'
+                                        ? 'Closed by Teacher'
+                                        : isArchived
+                                        ? 'Archived'
+                                        : 'Unavailable'}
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant={isInProgress ? 'yellow' : 'primary'}
+                                      size="sm"
+                                      className="w-full font-bold"
+                                      onClick={() =>
+                                        navigate(
+                                          `/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`
+                                        )
+                                      }
+                                    >
+                                      <span>{isInProgress ? 'Resume Quiz' : 'Take Quiz'}</span>
+                                      <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </NotebookCard>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 2: Completed Quizzes */}
+                {quizFilter === 'completed' && (
+                  <div className="space-y-4">
+                    {completedQuizzes.length === 0 ? (
+                      <NotebookCard className="p-8 text-center space-y-2 bg-paper-card dark:bg-chalkboard-card border border-ink/20">
+                        <FileQuestion className="w-8 h-8 text-ink-muted mx-auto" />
+                        <h4 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
+                          No Completed Quizzes Yet
+                        </h4>
+                        <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-sm mx-auto">
+                          Once you take and submit an assessment, your score, red-pen stamp, and question-by-question mistake breakdown will appear here.
+                        </p>
+                      </NotebookCard>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {completedQuizzes.map((quiz) => {
+                          const scorePercent =
+                            quiz.latestAttemptMaxScore > 0
+                              ? Math.round((quiz.latestAttemptScore / quiz.latestAttemptMaxScore) * 100)
+                              : null;
+                          const isDiag = quiz.title.toLowerCase().includes('diagnostic');
+
+                          return (
+                            <NotebookCard
+                              key={quiz.id}
+                              pattern="ruled"
+                              borderStyle="sketch"
+                              className="p-5 flex flex-col justify-between space-y-4 hover:shadow-notebook transition-shadow"
+                            >
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs font-mono">
+                                  <span
+                                    className={`px-2 py-0.5 rounded font-bold border border-ink/20 ${
+                                      isDiag
+                                        ? 'bg-highlighter-mintSoft text-ink dark:bg-emerald-950 dark:text-emerald-300'
+                                        : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted'
+                                    }`}
+                                  >
+                                    {isDiag ? 'Diagnostic Battery' : 'Topic Check'}
+                                  </span>
+                                  {scorePercent !== null && (
+                                    <span
+                                      className={`px-2 py-0.5 rounded font-bold font-mono text-xs ${
+                                        scorePercent >= 80
+                                          ? 'bg-highlighter-mint text-ink'
+                                          : scorePercent >= 60
+                                          ? 'bg-highlighter-yellow text-ink'
+                                          : 'bg-redpen-soft text-redpen-dark'
+                                      }`}
+                                    >
+                                      {scorePercent}% ({quiz.latestAttemptScore} / {quiz.latestAttemptMaxScore})
+                                    </span>
+                                  )}
+                                </div>
+                                <h4 className="font-bold text-base sm:text-lg text-ink dark:text-chalkboard-chalk leading-snug">
+                                  {quiz.title}
+                                </h4>
+                                <p className="text-xs text-ink-muted dark:text-chalkboard-muted line-clamp-2">
+                                  {quiz.description}
+                                </p>
+                              </div>
+
+                              <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center gap-2">
                                 <Button
                                   variant="secondary"
                                   size="sm"
-                                  className="flex-1"
+                                  className="flex-1 font-bold"
                                   onClick={() =>
-                                    navigate(`/student/subjects/${effectiveSubjectId}/attempts/${quiz.latestAttemptId}/result`)
+                                    navigate(
+                                      `/student/subjects/${effectiveSubjectId}/attempts/${quiz.latestAttemptId}/result`
+                                    )
                                   }
                                 >
-                                  Result
+                                  <Award className="w-3.5 h-3.5 mr-1" />
+                                  <span>Review Mistakes</span>
                                 </Button>
-                                {isArchived || !quiz.canStart ? (
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled
-                                    className="flex-1 opacity-50 cursor-not-allowed"
-                                    title={quiz.lockReason || 'Retake unavailable'}
-                                  >
-                                    {quiz.accessStatus === 'RETAKE_LOCKED'
-                                      ? 'Locked'
-                                      : quiz.accessStatus === 'CLOSED'
-                                      ? 'Closed'
-                                      : 'Retake'}
-                                  </Button>
-                                ) : (
+
+                                {!isArchived && quiz.canStart && (
                                   <Button
                                     variant="mint"
                                     size="sm"
-                                    className="flex-1"
                                     onClick={() =>
-                                      navigate(`/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`)
+                                      navigate(
+                                        `/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`
+                                      )
                                     }
                                   >
-                                    Retake
+                                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                                    <span>Retake</span>
                                   </Button>
                                 )}
-                              </>
-                            ) : isArchived || !quiz.canStart ? (
-                              <div className="w-full">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  disabled
-                                  className="w-full opacity-50 cursor-not-allowed"
-                                  title={quiz.lockReason || 'Quiz unavailable'}
-                                >
-                                  {quiz.accessStatus === 'NOT_OPEN_YET'
-                                    ? 'Not Open'
-                                    : quiz.accessStatus === 'CLOSED'
-                                    ? 'Closed'
-                                    : isArchived
-                                    ? 'Archived'
-                                    : 'Unavailable'}
-                                </Button>
-                                {quiz.lockReason && !isArchived && (
-                                  <p className="text-[10px] font-mono text-redpen dark:text-redpen-soft text-center mt-1">
-                                    {quiz.lockReason}
-                                  </p>
-                                )}
                               </div>
-                            ) : (
-                              <Button
-                                variant={isInProgress ? 'yellow' : 'primary'}
-                                size="sm"
-                                className="w-full"
-                                onClick={() =>
-                                  navigate(`/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`)
-                                }
-                              >
-                                {isInProgress ? 'Resume Quiz' : 'Take Quiz'}
-                                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </NotebookCard>
-                    );
-                  })}
-                </div>
-              )}
+                            </NotebookCard>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </>
+
+            {/* =========================================================================
+                RIGHT SIDEBAR (4 cols desktop, sticky): "My Learning Radar"
+            ========================================================================= */}
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20">
+              <NotebookCard
+                pattern="ruled"
+                borderStyle="sketch"
+                className="p-5 sm:p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
+              >
+                {/* Radar Header */}
+                <div className="flex items-center justify-between border-b border-ink/15 dark:border-chalkboard-borderSubtle pb-3">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-ink-blue dark:text-highlighter-mint" />
+                    <h3 className="font-bold text-base sm:text-lg text-ink dark:text-chalkboard-chalk">
+                      My Learning Radar
+                    </h3>
+                  </div>
+                  {hasAnyAttempts && (
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 font-bold">
+                      {progress?.topics?.length || 0} Topics
+                    </span>
+                  )}
+                </div>
+
+                {!hasAnyAttempts ? (
+                  /* Cold Start Placeholder */
+                  <div className="text-center py-6 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-highlighter-yellow/30 border border-ink/20 flex items-center justify-center mx-auto">
+                      <Target className="w-6 h-6 text-ink dark:text-chalkboard-chalk" />
+                    </div>
+                    <h4 className="font-bold text-sm text-ink dark:text-chalkboard-chalk">
+                      Topic Radar Locked
+                    </h4>
+                    <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                      Your personalized strengths and gaps breakdown will generate automatically as soon as you complete the diagnostic quiz.
+                    </p>
+                  </div>
+                ) : (
+                  /* Active Radar Breakdown */
+                  <div className="space-y-5">
+                    {/* 1. Priority Gaps (< 60%) */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="font-bold text-redpen dark:text-redpen-soft uppercase tracking-wider flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Priority Gaps</span>
+                        </span>
+                        <span className="font-bold text-ink dark:text-chalkboard-chalk">
+                          {priorityGaps.length} Topics
+                        </span>
+                      </div>
+
+                      {priorityGaps.length === 0 ? (
+                        <div className="p-3 rounded-xl bg-highlighter-mintSoft dark:bg-emerald-950/40 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-900 dark:text-emerald-200">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                          <span>No critical concept gaps detected!</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {priorityGaps.map((gap) => (
+                            <div
+                              key={gap.topicId}
+                              className="p-3.5 rounded-xl bg-redpen-soft/60 dark:bg-rose-950/40 border border-redpen/30 space-y-2"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <h5 className="font-bold text-xs sm:text-sm text-ink dark:text-chalkboard-chalk leading-snug">
+                                  {gap.topicName}
+                                </h5>
+                                <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-redpen text-white shrink-0">
+                                  {gap.masteryPercent}%
+                                </span>
+                              </div>
+
+                              <div className="pt-1 flex items-center justify-between text-xs">
+                                <span className="text-ink-muted dark:text-chalkboard-muted font-mono text-[11px]">
+                                  {gap.resourcesCompleted}/{gap.resourcesRecommended} materials
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    navigate(
+                                      `/student/subjects/${effectiveSubjectId}/progress/topics/${gap.topicId}`
+                                    )
+                                  }
+                                  className="font-mono text-xs font-bold text-redpen-dark dark:text-red-300 hover:underline flex items-center gap-0.5"
+                                >
+                                  <span>Study</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. Mastered & Developing Concepts (>= 60%) */}
+                    <div className="space-y-2.5 pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="font-bold text-ink-muted dark:text-chalkboard-muted uppercase tracking-wider flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Mastered &amp; On Track</span>
+                        </span>
+                        <span className="font-bold text-ink dark:text-chalkboard-chalk">
+                          {masteredTopics.length + developingTopics.length}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {[...masteredTopics, ...developingTopics].map((t) => (
+                          <Link
+                            key={t.topicId}
+                            to={`/student/subjects/${effectiveSubjectId}/progress/topics/${t.topicId}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellow/30 transition-colors"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="font-medium truncate max-w-[140px]">{t.topicName}</span>
+                            <span className="text-ink-muted dark:text-chalkboard-muted font-bold text-[10px]">
+                              {t.masteryPercent}%
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 3. Link to Full Gap Analysis */}
+                    <div className="pt-2">
+                      <Link
+                        to={`/student/subjects/${effectiveSubjectId}/progress`}
+                        className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-ink/25 dark:border-chalkboard-borderSubtle text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk bg-paper-warm dark:bg-chalkboard-surface hover:bg-highlighter-yellow/30 transition-colors shadow-xs text-center"
+                      >
+                        <Compass className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
+                        <span>View Full Topic Journey &amp; History →</span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </NotebookCard>
+            </div>
+          </div>
         )}
       </div>
     </PortalShell>
   );
 }
-

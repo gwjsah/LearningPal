@@ -39,3 +39,9 @@ application.properties
 .agents/
 .claude/
 skills-lock.json
+
+LearningPal_Handoff.md
+STUDENT_PAGE_AUDIT.md
+DEMO_VS_REAL_AUDIT.md
+FEATURE_GUIDE.md
+

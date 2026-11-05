@@ -48,6 +48,10 @@ export default {
           card: '#26302B',      // Dark index card
           chalk: '#F3F4F0',     // Crisp chalk white text
           muted: '#A7B5AE',     // Dusted chalk secondary text
+          border: '#38463F',    // Dark card border (soft chalk-slate outline, non-glaring)
+          borderSubtle: '#2A352F', // Inner divider / row line in dark mode
+          borderStrong: '#4F6157', // Defined border for active/focused/primary cards
+          highlight: 'rgba(243, 244, 240, 0.06)', // Chalk dust wash for hover/highlight states
         },
       },
       fontFamily: {

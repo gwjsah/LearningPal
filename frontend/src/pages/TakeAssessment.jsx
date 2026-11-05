@@ -20,6 +20,11 @@ export default function TakeAssessment() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const validSubjectId =
+    subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
+      ? subjectId
+      : null;
+
   const [attemptData, setAttemptData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,8 +87,8 @@ export default function TakeAssessment() {
       }));
 
       const response = await studentService.submitAttempt(attemptData.attemptId, payload);
-      const target = subjectId
-        ? `/student/subjects/${subjectId}/attempts/${response.attemptId}/result`
+      const target = validSubjectId
+        ? `/student/subjects/${validSubjectId}/attempts/${response.attemptId}/result`
         : `/student/attempts/${response.attemptId}/result`;
       navigate(target, { replace: true });
     } catch (err) {
@@ -117,7 +122,7 @@ export default function TakeAssessment() {
             return (
               <pre
                 key={idx}
-                className="p-4 rounded-xl font-mono text-sm sm:text-base bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk shadow-inner"
+                className="p-4 rounded-xl font-mono text-sm sm:text-base bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk shadow-inner"
               >
                 <code>{part}</code>
               </pre>
@@ -166,12 +171,12 @@ export default function TakeAssessment() {
   return (
     <div className="min-h-screen bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk flex flex-col justify-between font-sans">
       {/* Header bar */}
-      <header className="sticky top-0 z-30 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md border-b-2 border-ink/15 dark:border-white/15 shadow-sm transition-colors">
+      <header className="sticky top-0 z-30 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-sm transition-colors">
         <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
-              to={subjectId ? `/student/subjects/${subjectId}` : '/student'}
-              className="p-1.5 rounded-lg border border-ink/20 dark:border-white/20 hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors"
+              to={validSubjectId ? `/student/subjects/${validSubjectId}` : '/student'}
+              className="p-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors"
               title="Exit test and return to dashboard"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -211,7 +216,7 @@ export default function TakeAssessment() {
       {/* Main question workspace */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 space-y-6">
         {/* Question Navigator Pills */}
-        <div className="p-3 bg-paper-card dark:bg-chalkboard-card rounded-xl border border-ink/15 dark:border-white/20">
+        <div className="p-3 bg-paper-card dark:bg-chalkboard-card rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle">
           <div className="flex items-center justify-between mb-2 text-xs font-mono">
             <span className="font-bold text-ink-muted dark:text-chalkboard-muted uppercase">
               Question Navigator
@@ -254,7 +259,7 @@ export default function TakeAssessment() {
         {/* Question Card */}
         <NotebookCard pattern="ruled" borderStyle="margin" className="p-6 sm:p-8 space-y-6">
           {/* Topic header */}
-          <div className="flex items-center justify-between text-xs font-mono border-b border-ink/10 dark:border-white/10 pb-3">
+          <div className="flex items-center justify-between text-xs font-mono border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
             <span className="px-2.5 py-1 rounded-md bg-highlighter-yellow/30 text-ink font-bold border border-ink/20">
               Topic: {currentQuestion.topicName}
             </span>
@@ -267,7 +272,7 @@ export default function TakeAssessment() {
           {renderFormattedQuestion(currentQuestion.text)}
 
           {/* Choices Radio Group */}
-          <div className="space-y-3 pt-4 border-t border-ink/10 dark:border-white/10">
+          <div className="space-y-3 pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
             <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block">
               Choose the best answer:
             </span>
@@ -281,8 +286,8 @@ export default function TakeAssessment() {
                     key={choice.id}
                     className={`flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer select-none ${
                       isSelected
-                        ? 'border-ink dark:border-white bg-highlighter-yellow/40 dark:bg-white/15 shadow-notebook-sm font-semibold'
-                        : 'border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface'
+                        ? 'border-ink dark:border-chalkboard-borderStrong bg-highlighter-yellow/40 dark:bg-chalkboard-surface shadow-notebook-sm font-semibold'
+                        : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface'
                     }`}
                   >
                     <input
@@ -308,7 +313,7 @@ export default function TakeAssessment() {
       </main>
 
       {/* Footer Navigation Bar */}
-      <footer className="sticky bottom-0 z-30 bg-paper-card dark:bg-chalkboard-card border-t-2 border-ink dark:border-white/40 px-4 sm:px-8 py-3">
+      <footer className="sticky bottom-0 z-30 bg-paper-card dark:bg-chalkboard-card border-t-2 border-ink dark:border-chalkboard-borderSubtle px-4 sm:px-8 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Button
             variant="secondary"
@@ -351,7 +356,7 @@ export default function TakeAssessment() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs">
           <NotebookCard
             pattern="grid"
-            className="max-w-md w-full p-6 sm:p-8 space-y-5 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white shadow-notebook-lg"
+            className="max-w-md w-full p-6 sm:p-8 space-y-5 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-notebook-lg"
           >
             <div className="text-center space-y-2">
               <h3 className="text-2xl font-bold text-ink dark:text-chalkboard-chalk">

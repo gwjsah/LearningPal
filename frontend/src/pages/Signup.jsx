@@ -122,7 +122,7 @@ export default function Signup() {
             lifted
             bodyClassName="space-y-6 text-center"
           >
-            <div className="w-16 h-16 mx-auto rounded-full bg-highlighter-yellow/30 border-2 border-dashed border-ink dark:border-white/40 flex items-center justify-center text-ink dark:text-chalkboard-chalk shadow-notebook-sm">
+            <div className="w-16 h-16 mx-auto rounded-full bg-highlighter-yellow/30 border-2 border-dashed border-ink dark:border-chalkboard-border flex items-center justify-center text-ink dark:text-chalkboard-chalk shadow-notebook-sm">
               <Clock className="w-8 h-8 text-ink dark:text-chalkboard-chalk animate-pulse" aria-hidden="true" />
             </div>
 
@@ -134,7 +134,7 @@ export default function Signup() {
                 Thank you for registering,{' '}
                 <strong className="text-ink dark:text-chalkboard-chalk">{formData.fullName}</strong>.
               </p>
-              <div className="p-3 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-white/20 text-xs font-mono text-left space-y-1">
+              <div className="p-3 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle text-xs font-mono text-left space-y-1">
                 <div><span className="text-ink-muted dark:text-chalkboard-muted">Email:</span> {formData.email}</div>
                 <div><span className="text-ink-muted dark:text-chalkboard-muted">Institution:</span> {formData.institutionCode.toUpperCase()}</div>
                 <div><span className="text-ink-muted dark:text-chalkboard-muted">Status:</span> <span className="text-ink-blue dark:text-highlighter-mint font-bold uppercase">PENDING APPROVAL</span></div>
@@ -214,7 +214,7 @@ export default function Signup() {
               I am registering as a:
             </span>
             <div
-              className="grid grid-cols-2 gap-2 p-1 rounded-xl border-2 border-ink dark:border-white/40 bg-paper-warm dark:bg-chalkboard-surface shadow-notebook-sm"
+              className="grid grid-cols-2 gap-2 p-1 rounded-xl border-2 border-ink dark:border-chalkboard-border bg-paper-warm dark:bg-chalkboard-surface shadow-notebook-sm"
               role="radiogroup"
               aria-label="Account role selection"
             >
@@ -352,7 +352,7 @@ export default function Signup() {
             </div>
           </form>
 
-          <div className="pt-3 border-t border-ink/10 dark:border-white/15 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted gap-2">
+          <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted gap-2">
             <span>Already have an account?</span>
             <Link
               to="/login"

@@ -125,7 +125,7 @@ export default function TopicProgressDetail() {
             return (
               <pre
                 key={i}
-                className="p-3.5 rounded-lg font-mono text-xs sm:text-sm bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 whitespace-pre overflow-x-auto text-ink dark:text-chalkboard-chalk"
+                className="p-3.5 rounded-lg font-mono text-xs sm:text-sm bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle whitespace-pre overflow-x-auto text-ink dark:text-chalkboard-chalk"
               >
                 <code>{p.code}</code>
               </pre>
@@ -171,7 +171,7 @@ export default function TopicProgressDetail() {
             return (
               <pre
                 key={idx}
-                className="p-3 rounded-lg font-mono text-xs sm:text-sm bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk"
+                className="p-3 rounded-lg font-mono text-xs sm:text-sm bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk"
               >
                 <code>{part}</code>
               </pre>
@@ -188,6 +188,19 @@ export default function TopicProgressDetail() {
     );
   };
 
+  const validSubjectId =
+    subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
+      ? subjectId
+      : (topicDetail?.subjectId ? String(topicDetail.subjectId) : null);
+
+  const progressBackUrl = validSubjectId
+    ? `/student/subjects/${validSubjectId}/progress`
+    : '/student/progress';
+
+  const dashboardBackUrl = validSubjectId
+    ? `/student/subjects/${validSubjectId}`
+    : '/student';
+
   return (
     <PortalShell
       portalSubtitle="Personalized Diagnostic Feedback & Learning Resources"
@@ -203,11 +216,7 @@ export default function TopicProgressDetail() {
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between text-xs font-mono">
           <Link
-            to={
-              subjectId
-                ? `/student/subjects/${subjectId}/progress`
-                : '/student/progress'
-            }
+            to={progressBackUrl}
             className="inline-flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -215,10 +224,10 @@ export default function TopicProgressDetail() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
-              to={subjectId ? `/student/subjects/${subjectId}` : '/student'}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-ink/20 dark:border-white/20 text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface font-bold text-xs"
+              to={dashboardBackUrl}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface font-bold text-xs"
             >
-              <span>{subjectId ? 'Subject Dashboard' : 'Desk'}</span>
+              <span>{validSubjectId ? 'Subject Dashboard' : 'Desk'}</span>
             </Link>
           </div>
         </div>
@@ -235,15 +244,20 @@ export default function TopicProgressDetail() {
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-4">
+          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <p className="text-sm font-semibold">{error}</p>
             </div>
-            <Button size="sm" variant="secondary" onClick={loadTopicDetail}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1" />
-              Retry
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => navigate('/student')}>
+                Back to My Classes
+              </Button>
+              <Button size="sm" variant="primary" onClick={loadTopicDetail}>
+                <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                Retry
+              </Button>
+            </div>
           </div>
         )}
 
@@ -272,7 +286,7 @@ export default function TopicProgressDetail() {
               <NotebookCard
                 pattern="grid"
                 borderStyle="sketch"
-                className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/50"
+                className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border"
               >
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -320,13 +334,13 @@ export default function TopicProgressDetail() {
                     Questions answered incorrectly or left blank in your most recent submitted quiz attempts.
                   </p>
                 </div>
-                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 text-ink dark:text-chalkboard-chalk">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk">
                   {topicDetail.feedback?.whatToReview?.length || 0} Questions
                 </span>
               </div>
 
               {!topicDetail.feedback?.whatToReview || topicDetail.feedback.whatToReview.length === 0 ? (
-                <NotebookCard className="p-6 text-center space-y-2 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20">
+                <NotebookCard className="p-6 text-center space-y-2 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle">
                   <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-600 dark:text-emerald-400" />
                   <h4 className="text-base font-bold text-ink dark:text-chalkboard-chalk">
                     No Missed Questions!
@@ -383,7 +397,7 @@ export default function TopicProgressDetail() {
 
                       {/* Explanation */}
                       {item.explanation && (
-                        <div className="p-3.5 rounded-lg bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-white/15 space-y-1.5">
+                        <div className="p-3.5 rounded-lg bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle space-y-1.5">
                           <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk">
                             <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
                             <span>Explanation & Misconception</span>
@@ -414,7 +428,7 @@ export default function TopicProgressDetail() {
                 {/* Completion Progress Badge */}
                 {topicDetail.resourcesRecommended > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold px-3 py-1 rounded-full border border-ink/20 dark:border-white/20 bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
+                    <span className="text-xs font-mono font-bold px-3 py-1 rounded-full border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
                       {topicDetail.resourcesCompleted} of {topicDetail.resourcesRecommended} Completed
                     </span>
                   </div>
@@ -424,7 +438,7 @@ export default function TopicProgressDetail() {
               {/* Progress Bar for Resources */}
               {topicDetail.resourcesRecommended > 0 && (
                 <div
-                  className="w-full h-2 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 overflow-hidden"
+                  className="w-full h-2 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle overflow-hidden"
                   role="progressbar"
                   aria-valuenow={topicDetail.resourcesCompleted}
                   aria-valuemin="0"
@@ -493,7 +507,7 @@ export default function TopicProgressDetail() {
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                               isCompleted
                                 ? 'bg-highlighter-mint text-ink border-emerald-700 shadow-notebook-sm'
-                                : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/30 hover:border-ink dark:hover:border-white/50'
+                                : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/30 hover:border-ink dark:hover:border-chalkboard-borderStrong'
                             }`}
                             aria-pressed={isCompleted}
                             aria-label={`Mark ${res.title} as ${isCompleted ? 'incomplete' : 'completed'}`}
@@ -520,7 +534,7 @@ export default function TopicProgressDetail() {
 
                         {/* Resource Content: Plain text with monospace code blocks */}
                         {res.content && (
-                          <div className="pt-2 border-t border-ink/10 dark:border-white/10">
+                          <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                             {renderResourceContent(res.content)}
                           </div>
                         )}
@@ -547,7 +561,7 @@ export default function TopicProgressDetail() {
             </div>
 
             {/* 4. Full Answer History Section */}
-            <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-white/15">
+            <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-ink dark:text-chalkboard-chalk">
@@ -571,7 +585,7 @@ export default function TopicProgressDetail() {
                   {topicDetail.history.map((item, idx) => (
                     <div
                       key={`hist-${item.questionId}-${idx}`}
-                      className="p-3.5 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface/80 border border-ink/15 dark:border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                      className="p-3.5 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface/80 border border-ink/15 dark:border-chalkboard-borderSubtle flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                     >
                       <div className="space-y-1 max-w-xl">
                         <span className="font-mono font-bold text-ink-muted dark:text-chalkboard-muted">

@@ -334,6 +334,7 @@ public class GapAnalysisService {
 
         return new TopicProgressDetailDto(
                 topic.getId(),
+                topic.getSubject() != null ? topic.getSubject().getId() : null,
                 topic.getName(),
                 topic.getDescription(),
                 masteryPercent,

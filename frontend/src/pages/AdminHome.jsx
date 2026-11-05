@@ -223,8 +223,8 @@ export default function AdminHome() {
       )}
 
       {/* SECTION 1: Pending Teachers Approval Queue */}
-      <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/45 rounded-2xl shadow-lifted overflow-hidden">
-        <div className="px-6 py-3 bg-paper-warm dark:bg-chalkboard-surface border-b-2 border-ink dark:border-white/30 flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+      <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted overflow-hidden">
+        <div className="px-6 py-3 bg-paper-warm dark:bg-chalkboard-surface border-b-2 border-ink dark:border-chalkboard-borderSubtle flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
           <span className="font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-redpen inline-block" />
             PENDING TEACHER APPROVALS: {pendingTeachers.length}
@@ -248,7 +248,7 @@ export default function AdminHome() {
           </div>
         ) : pendingTeachers.length === 0 ? (
           <div className="py-12 px-4 text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 mx-auto flex items-center justify-center text-ink-muted dark:text-chalkboard-muted">
+            <div className="w-12 h-12 rounded-2xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle mx-auto flex items-center justify-center text-ink-muted dark:text-chalkboard-muted">
               <Inbox className="w-6 h-6" aria-hidden="true" />
             </div>
             <h2 className="text-base font-bold text-ink dark:text-chalkboard-chalk font-sans">
@@ -262,14 +262,14 @@ export default function AdminHome() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse" aria-label="Pending Teacher Requests Table">
               <thead>
-                <tr className="bg-paper-warm/60 dark:bg-chalkboard-surface/70 border-b border-ink/20 dark:border-white/20 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase">
+                <tr className="bg-paper-warm/60 dark:bg-chalkboard-surface/70 border-b border-ink/20 dark:border-chalkboard-borderSubtle text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase">
                   <th scope="col" className="py-3 px-6">Applicant</th>
                   <th scope="col" className="py-3 px-6">Email</th>
                   <th scope="col" className="py-3 px-6">Date Requested</th>
                   <th scope="col" className="py-3 px-6 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink/10 dark:divide-white/10">
+              <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle">
                 {pendingTeachers.map((teacher) => {
                   const isProcessing = processingId === teacher.id;
                   const isConfirmingReject = confirmRejectId === teacher.id;
@@ -337,8 +337,8 @@ export default function AdminHome() {
       </div>
 
       {/* SECTION 2: Institution Users Directory */}
-      <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/45 rounded-2xl shadow-lifted overflow-hidden">
-        <div className="px-6 py-4 bg-paper-warm dark:bg-chalkboard-surface border-b-2 border-ink dark:border-white/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted overflow-hidden">
+        <div className="px-6 py-4 bg-paper-warm dark:bg-chalkboard-surface border-b-2 border-ink dark:border-chalkboard-borderSubtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-bold text-ink dark:text-chalkboard-chalk text-base flex items-center gap-2">
               <Users className="w-5 h-5 text-ink-blue dark:text-highlighter-mint" aria-hidden="true" />
@@ -355,7 +355,7 @@ export default function AdminHome() {
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
               aria-label="Filter users by role"
-              className="bg-paper dark:bg-chalkboard border border-ink/30 dark:border-white/30 rounded-lg px-2.5 py-1.5 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:ring-2 focus:ring-redpen"
+              className="bg-paper dark:bg-chalkboard border border-ink/30 dark:border-chalkboard-borderSubtle rounded-lg px-2.5 py-1.5 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:ring-2 focus:ring-redpen"
             >
               <option value="">All Roles</option>
               <option value="STUDENT">Students</option>
@@ -367,7 +367,7 @@ export default function AdminHome() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filter users by account status"
-              className="bg-paper dark:bg-chalkboard border border-ink/30 dark:border-white/30 rounded-lg px-2.5 py-1.5 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:ring-2 focus:ring-redpen"
+              className="bg-paper dark:bg-chalkboard border border-ink/30 dark:border-chalkboard-borderSubtle rounded-lg px-2.5 py-1.5 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:ring-2 focus:ring-redpen"
             >
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
@@ -400,7 +400,7 @@ export default function AdminHome() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse" aria-label="Institution Users Table">
               <thead>
-                <tr className="bg-paper-warm/60 dark:bg-chalkboard-surface/70 border-b border-ink/20 dark:border-white/20 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase">
+                <tr className="bg-paper-warm/60 dark:bg-chalkboard-surface/70 border-b border-ink/20 dark:border-chalkboard-borderSubtle text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase">
                   <th scope="col" className="py-3 px-6">Name</th>
                   <th scope="col" className="py-3 px-6">Email</th>
                   <th scope="col" className="py-3 px-6">Role</th>
@@ -408,7 +408,7 @@ export default function AdminHome() {
                   <th scope="col" className="py-3 px-6 text-right">Account Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink/10 dark:divide-white/10">
+              <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle">
                 {users.map((u) => {
                   const isSelf = u.id === user?.id;
                   const isSuper = u.role === 'SUPER_ADMIN';

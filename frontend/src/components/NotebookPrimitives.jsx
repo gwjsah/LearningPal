@@ -6,17 +6,17 @@ import { ThemeToggleButton, useTheme } from '../context/ThemeContext';
 
 const BUTTON_VARIANTS = {
   primary:
-    'border-2 border-ink dark:border-white/60 bg-redpen hover:bg-redpen-dark text-white shadow-notebook hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-borderStrong bg-redpen hover:bg-redpen-dark text-white shadow-notebook hover:-translate-y-0.5 active:translate-y-0',
   secondary:
-    'border-2 border-ink dark:border-white/40 bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
   mint:
-    'border-2 border-ink bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
   yellow:
-    'border-2 border-ink bg-highlighter-yellow hover:bg-highlighter-yellowSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-highlighter-yellow hover:bg-highlighter-yellowSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
   danger:
-    'border-2 border-ink bg-redpen-soft hover:bg-redpen hover:text-white text-redpen-dark shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-redpen-soft hover:bg-redpen hover:text-white text-redpen-dark shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
   ghost:
-    'border border-ink/25 dark:border-white/25 bg-paper-warm dark:bg-chalkboard-surface hover:bg-highlighter-yellow/35 dark:hover:bg-white/10 text-ink dark:text-chalkboard-chalk',
+    'border border-ink/25 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface hover:bg-highlighter-yellow/35 dark:hover:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk',
 };
 
 const BUTTON_SIZES = {
@@ -116,7 +116,7 @@ export function Field({
           } rounded-xl border-2 bg-paper-card dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-medium text-sm placeholder:text-ink-light dark:placeholder:text-chalkboard-muted/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen transition-colors ${
             error
               ? 'border-redpen'
-              : 'border-ink/30 dark:border-white/30 focus:border-ink dark:focus:border-white'
+              : 'border-ink/30 dark:border-chalkboard-border focus:border-ink dark:focus:border-chalkboard-borderStrong'
           }`}
         />
         {isPassword && (
@@ -158,19 +158,19 @@ export function NotebookCard({
 }) {
   return (
     <div
-      className={`relative bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/45 ${
+      className={`relative bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border ${
         lifted ? 'shadow-lifted' : 'shadow-paper'
       } rounded-2xl overflow-hidden ${marginLine ? 'notebook-margin-line' : ''} ${className}`}
     >
       {pageLabel && (
         <div
-          className="flex items-center justify-between px-6 py-2 bg-paper-warm dark:bg-chalkboard-surface border-b border-ink/15 dark:border-white/15 text-xs font-mono text-ink-muted dark:text-chalkboard-muted"
+          className="flex items-center justify-between px-6 py-2 bg-paper-warm dark:bg-chalkboard-surface border-b border-ink/15 dark:border-chalkboard-borderSubtle text-xs font-mono text-ink-muted dark:text-chalkboard-muted"
           aria-hidden="true"
         >
           <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-white/40 shadow-inner inline-block" />
-            <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-white/40 shadow-inner inline-block" />
-            <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-white/40 shadow-inner inline-block" />
+            <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-chalkboard-borderSubtle shadow-inner inline-block" />
+            <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-chalkboard-borderSubtle shadow-inner inline-block" />
+            <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-chalkboard-borderSubtle shadow-inner inline-block" />
           </div>
           <span className="text-[11px] font-semibold text-redpen tracking-wider uppercase">
             {pageLabel}
@@ -194,7 +194,7 @@ export function NotebookCard({
 export function SectionHeading({
   id,
   label,
-  badgeClassName = 'bg-highlighter-yellowSoft dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border-ink/20 dark:border-white/25',
+  badgeClassName = 'bg-highlighter-yellowSoft dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border-ink/20 dark:border-chalkboard-borderSubtle',
   icon: Icon,
   headline,
   subheadline,
@@ -259,7 +259,7 @@ export function PortalShell({
         {skipLabel}
       </a>
 
-      <header className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-white/15 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors">
+      <header className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors">
         <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
           <Link
             to={user?.role === 'STUDENT' ? '/student' : (user?.role === 'TEACHER' ? '/teacher' : '/admin')}
@@ -279,7 +279,7 @@ export function PortalShell({
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {user?.role && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs">
                 {user.role}
               </span>
             )}
@@ -293,13 +293,13 @@ export function PortalShell({
               </span>
             </div>
 
-            <div className="hidden sm:block w-px h-6 bg-ink/15 dark:bg-white/15 my-auto" aria-hidden="true" />
+            <div className="hidden sm:block w-px h-6 bg-ink/15 dark:bg-chalkboard-borderSubtle my-auto" aria-hidden="true" />
 
             {/* Chalkboard / Night Study Toggle matching Navbar */}
             <button
               type="button"
               onClick={toggleDarkMode}
-              className="p-2 rounded-xl border border-ink/20 dark:border-white/20 bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
+              className="p-2 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
               aria-label={darkMode ? 'Switch to Paper Light Mode' : 'Switch to Chalkboard Night Study Mode'}
               title={darkMode ? 'Paper Mode (Light)' : 'Chalkboard Mode (Night Study)'}
             >
@@ -309,7 +309,7 @@ export function PortalShell({
             <button
               type="button"
               onClick={onLogout}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-white/25 text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-redpen hover:text-white hover:border-redpen dark:hover:bg-redpen shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-redpen hover:text-white hover:border-redpen dark:hover:bg-redpen shadow-sm hover:translate-y-[-1px] transition-all whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer"
               title="Sign out of your notebook account"
             >
               <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -364,7 +364,7 @@ export function SessionVerificationBar({
   return (
     <section
       aria-label="Notebook Session Verification"
-      className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-white/45 rounded-2xl p-4 sm:p-5 shadow-paper"
+      className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-4 sm:p-5 shadow-paper"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3">
@@ -378,7 +378,7 @@ export function SessionVerificationBar({
               <h2 className="text-sm font-bold text-ink dark:text-chalkboard-chalk font-sans">
                 Notebook Session Verified
               </h2>
-              <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-white/20 text-ink-muted dark:text-chalkboard-muted">
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle text-ink-muted dark:text-chalkboard-muted">
                 {endpointLabel}
               </span>
             </div>

@@ -391,6 +391,29 @@ public class FeedbackAndResourceTests {
                 .andExpect(jsonPath("$.feedback.whatToReview", hasSize(4)));
     }
 
+    @Test
+    @DisplayName("Malformed or unknown subjectId returns 400 or 404, and topic detail returns subjectId")
+    void testSubjectProgressErrorHandlingAndTopicDetailSubjectId() throws Exception {
+        // 1. Malformed parameter 'undefined' returns 400 Bad Request
+        mockMvc.perform(get("/api/student/subjects/undefined/progress")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Invalid parameter 'subjectId': 'undefined'")));
+
+        // 2. Unknown subject ID returns 404 Not Found
+        mockMvc.perform(get("/api/student/subjects/999999/progress")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", containsString("Subject not found: 999999")));
+
+        // 3. Topic progress detail endpoint returns subjectId matching topic.getSubject().getId()
+        mockMvc.perform(get("/api/student/progress/topics/" + topic1.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topicId", is(topic1.getId().intValue())))
+                .andExpect(jsonPath("$.subjectId", is(topic1.getSubject().getId().intValue())));
+    }
+
     private Choice getCorrectChoice(Question question) {
         return choiceRepository.findByQuestion(question).stream()
                 .filter(Choice::isCorrect)

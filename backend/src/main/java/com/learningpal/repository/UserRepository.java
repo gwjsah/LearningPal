@@ -5,6 +5,8 @@ import com.learningpal.entity.Role;
 import com.learningpal.entity.User;
 import com.learningpal.entity.UserStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -41,4 +43,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByInstitutionIsNullAndRoleNot(Role role);
 
     List<User> findByInstitutionIsNull();
+
+    @Query("SELECT u FROM User u WHERE u.email LIKE CONCAT('%', :suffix)")
+    List<User> findByEmailEndingWith(@Param("suffix") String suffix);
 }

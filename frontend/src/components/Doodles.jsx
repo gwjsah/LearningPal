@@ -198,7 +198,7 @@ export function PaperClip({ className = '' }) {
 export function WashiTape({ colorClass = 'bg-highlighter-yellow/75 dark:bg-yellow-500/40', rotate = '-rotate-2' }) {
   return (
     <div
-      className={`pointer-events-none mx-auto -mt-4 mb-2 h-6 w-28 washi-tape border border-ink/10 dark:border-white/10 ${colorClass} ${rotate}`}
+      className={`pointer-events-none mx-auto -mt-4 mb-2 h-6 w-28 washi-tape border border-ink/10 dark:border-chalkboard-borderSubtle ${colorClass} ${rotate}`}
       aria-hidden="true"
     />
   );
@@ -218,7 +218,7 @@ export function BinderHoles({ vertical = true }) {
       {[0, 1, 2].map((idx) => (
         <span
           key={idx}
-          className="h-3.5 w-3.5 rounded-full bg-paper-warm dark:bg-chalkboard border border-ink/25 dark:border-white/20 shadow-inner"
+          className="h-3.5 w-3.5 rounded-full bg-paper-warm dark:bg-chalkboard border border-ink/25 dark:border-chalkboard-borderSubtle shadow-inner"
         />
       ))}
     </div>
