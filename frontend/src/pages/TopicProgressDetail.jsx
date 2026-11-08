@@ -17,11 +17,203 @@ import {
   Dumbbell,
   Lightbulb,
   AlertTriangle,
+  Star,
+  Check,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
+
+const RATING_LABELS = {
+  1: 'Not helpful',
+  2: 'Slightly helpful',
+  3: 'Moderately helpful',
+  4: 'Very helpful',
+  5: 'Extremely helpful',
+};
+
+/**
+ * Expandable rating control for individual learning resources.
+ */
+function ResourceRatingWidget({ resource, onRatingSaved }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [rating, setRating] = useState(resource.studentRating || 0);
+  const [comment, setComment] = useState(resource.studentComment || '');
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setRating(resource.studentRating || 0);
+    setComment(resource.studentComment || '');
+  }, [resource.studentRating, resource.studentComment]);
+
+  const handleSave = async (e) => {
+    e?.preventDefault();
+    if (!rating || saving) return;
+    setSaving(true);
+    setError('');
+    setSuccess(false);
+    try {
+      const saved = await studentService.rateResource(resource.id, {
+        rating,
+        comment: comment.trim() ? comment.trim() : null,
+      });
+      onRatingSaved(resource.id, saved.rating, saved.comment);
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        setIsOpen(false);
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Failed to save resource rating. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasExistingRating = resource.studentRating != null && resource.studentRating > 0;
+
+  return (
+    <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
+      {!isOpen ? (
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center gap-2">
+            {hasExistingRating ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink dark:text-chalkboard-chalk font-bold">
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                <span>Your rating: {resource.studentRating}/5</span>
+                <span className="text-ink-muted dark:text-chalkboard-muted">({RATING_LABELS[resource.studentRating]})</span>
+              </span>
+            ) : (
+              <span className="text-ink-muted dark:text-chalkboard-muted">
+                Was this resource helpful for your studies?
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="text-xs font-bold text-redpen hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded cursor-pointer"
+          >
+            {hasExistingRating ? 'Edit rating' : '+ Rate resource'}
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSave} className="p-3.5 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk">
+              Rate this resource (1 to 5):
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              disabled={saving}
+              className="text-xs text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* 1-5 Star / Button selector */}
+          <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Resource rating">
+            {[1, 2, 3, 4, 5].map((score) => {
+              const isSelected = rating >= score;
+              return (
+                <button
+                  key={score}
+                  type="button"
+                  onClick={() => setRating(score)}
+                  disabled={saving}
+                  role="radio"
+                  aria-checked={rating === score}
+                  className={`p-1.5 rounded-lg border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer ${
+                    rating === score
+                      ? 'border-redpen bg-redpen-soft/40 shadow-xs'
+                      : isSelected
+                      ? 'border-amber-400 bg-amber-100/50 dark:bg-amber-950/40 text-amber-500'
+                      : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink-muted dark:text-chalkboard-muted hover:border-ink'
+                  }`}
+                  title={`${score} - ${RATING_LABELS[score]}`}
+                >
+                  <Star
+                    className={`w-4 h-4 ${
+                      isSelected
+                        ? 'fill-amber-500 text-amber-500'
+                        : 'text-ink-muted dark:text-chalkboard-muted'
+                    }`}
+                  />
+                  <span className="sr-only">{score} of 5 - {RATING_LABELS[score]}</span>
+                </button>
+              );
+            })}
+            {rating > 0 && (
+              <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk ml-2">
+                {rating}/5 · {RATING_LABELS[rating]}
+              </span>
+            )}
+          </div>
+
+          {/* Optional comment */}
+          <div className="space-y-1">
+            <label htmlFor={`res-comment-${resource.id}`} className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted flex justify-between">
+              <span>Optional note on this material (plain text):</span>
+              <span>{300 - (comment?.length || 0)} left</span>
+            </label>
+            <input
+              id={`res-comment-${resource.id}`}
+              type="text"
+              maxLength={300}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              disabled={saving}
+              placeholder="e.g. Clear diagrams, good practice problem"
+              className="w-full px-3 py-1.5 text-xs rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-redpen font-semibold" role="alert">{error}</p>
+          )}
+
+          {success && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold" role="status">
+              <Check className="w-3.5 h-3.5" />
+              <span>Rating saved successfully!</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              disabled={saving}
+              className="px-2.5 py-1 text-xs font-bold rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-paper-warm cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!rating || saving}
+              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-lg border border-ink dark:border-chalkboard-borderStrong bg-redpen hover:bg-redpen-dark text-white disabled:opacity-50 cursor-pointer shadow-notebook-sm"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <span>Save Rating</span>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
 
 export default function TopicProgressDetail() {
   const { id, subjectId } = useParams();
@@ -33,6 +225,62 @@ export default function TopicProgressDetail() {
   const [error, setError] = useState('');
   const [completionError, setCompletionError] = useState('');
   const [togglingId, setTogglingId] = useState(null);
+
+  // Topic Feedback Helpfulness Rating State
+  const [feedbackRatingValue, setFeedbackRatingValue] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
+  const [feedbackSaveSuccess, setFeedbackSaveSuccess] = useState(false);
+  const [feedbackSaveError, setFeedbackSaveError] = useState('');
+
+  // Sync feedback rating state from loaded topic detail
+  useEffect(() => {
+    if (topicDetail?.studentFeedbackRating) {
+      setFeedbackRatingValue(topicDetail.studentFeedbackRating.rating || 0);
+      setFeedbackComment(topicDetail.studentFeedbackRating.comment || '');
+    } else {
+      setFeedbackRatingValue(0);
+      setFeedbackComment('');
+    }
+  }, [topicDetail?.studentFeedbackRating]);
+
+  const handleSaveFeedbackRating = async (e) => {
+    e?.preventDefault();
+    if (!feedbackRatingValue || feedbackSaving) return;
+    setFeedbackSaving(true);
+    setFeedbackSaveError('');
+    setFeedbackSaveSuccess(false);
+    try {
+      const saved = await studentService.rateTopicFeedback(id, {
+        rating: feedbackRatingValue,
+        comment: feedbackComment.trim() ? feedbackComment.trim() : null,
+      });
+      setTopicDetail((prev) => ({
+        ...prev,
+        studentFeedbackRating: saved,
+      }));
+      setFeedbackSaveSuccess(true);
+      setTimeout(() => setFeedbackSaveSuccess(false), 4000);
+    } catch (err) {
+      setFeedbackSaveError(err.message || 'Failed to save feedback rating. Please try again.');
+    } finally {
+      setFeedbackSaving(false);
+    }
+  };
+
+  const handleResourceRatingSaved = (resourceId, newRating, newComment) => {
+    setTopicDetail((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        resources: (prev.resources || []).map((r) =>
+          r.id === resourceId
+            ? { ...r, studentRating: newRating, studentComment: newComment }
+            : r
+        ),
+      };
+    });
+  };
 
   const loadTopicDetail = async () => {
     setLoading(true);
@@ -319,6 +567,122 @@ export default function TopicProgressDetail() {
                       status={topicDetail.status}
                     />
                   </div>
+
+                  {/* Helpfulness Rating Section */}
+                  <form
+                    onSubmit={handleSaveFeedbackRating}
+                    className="pt-4 mt-2 border-t border-ink/15 dark:border-chalkboard-borderSubtle space-y-3"
+                  >
+                    <fieldset className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <legend className="text-xs sm:text-sm font-bold text-ink dark:text-chalkboard-chalk">
+                          Was this feedback helpful?
+                        </legend>
+                        {topicDetail.studentFeedbackRating && (
+                          <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                            Previously rated {topicDetail.studentFeedbackRating.rating}/5
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 5-Option Accessible Radio Group */}
+                      <div
+                        className="grid grid-cols-1 sm:grid-cols-5 gap-2"
+                        role="radiogroup"
+                        aria-label="Diagnostic feedback helpfulness"
+                      >
+                        {[
+                          { score: 1, label: 'Not helpful' },
+                          { score: 2, label: 'Slightly helpful' },
+                          { score: 3, label: 'Moderately helpful' },
+                          { score: 4, label: 'Very helpful' },
+                          { score: 5, label: 'Extremely helpful' },
+                        ].map((opt) => {
+                          const isSelected = feedbackRatingValue === opt.score;
+                          return (
+                            <label
+                              key={opt.score}
+                              className={`flex sm:flex-col items-center sm:justify-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition-all focus-within:ring-2 focus-within:ring-redpen ${
+                                isSelected
+                                  ? 'border-redpen bg-redpen-soft/40 text-redpen-dark dark:text-red-300 font-bold shadow-notebook-sm'
+                                  : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/70 text-ink dark:text-chalkboard-chalk hover:border-ink/50'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="feedbackHelpfulness"
+                                value={opt.score}
+                                checked={isSelected}
+                                onChange={() => setFeedbackRatingValue(opt.score)}
+                                disabled={feedbackSaving}
+                                className="w-3.5 h-3.5 accent-redpen focus:ring-redpen"
+                              />
+                              <span className="text-center font-mono">
+                                <span className="font-bold sm:block sm:mb-0.5">{opt.score} ·</span> {opt.label}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+
+                    {/* Optional Comment */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                        <label htmlFor="feedback-comment-input">
+                          Optional comment for instructor & curriculum improvements (max 300 chars):
+                        </label>
+                        <span>{300 - feedbackComment.length} characters left</span>
+                      </div>
+                      <textarea
+                        id="feedback-comment-input"
+                        rows={2}
+                        maxLength={300}
+                        value={feedbackComment}
+                        onChange={(e) => setFeedbackComment(e.target.value)}
+                        disabled={feedbackSaving}
+                        placeholder="What made this feedback clear or unclear? Any specific concept that helped you understand your mistake?"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen transition-colors"
+                      />
+                    </div>
+
+                    {/* Error Message */}
+                    {feedbackSaveError && (
+                      <div className="p-2.5 rounded-lg border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2" role="alert">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{feedbackSaveError}</span>
+                      </div>
+                    )}
+
+                    {/* Success Confirmation */}
+                    {feedbackSaveSuccess && (
+                      <div className="p-2.5 rounded-lg border border-emerald-600/30 bg-highlighter-mint/30 text-ink dark:text-chalkboard-chalk text-xs flex items-center gap-2" role="status">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="font-bold">Thank you! Your feedback rating has been recorded.</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        disabled={!feedbackRatingValue || feedbackSaving}
+                        className="font-bold text-xs"
+                      >
+                        {feedbackSaving ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            <span>Saving Rating...</span>
+                          </>
+                        ) : (
+                          <span>
+                            {topicDetail.studentFeedbackRating ? 'Update Feedback Rating' : 'Save Feedback Rating'}
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
                 </div>
               </NotebookCard>
             )}
@@ -553,6 +917,12 @@ export default function TopicProgressDetail() {
                             </a>
                           </div>
                         )}
+
+                        {/* Student Resource Rating Control */}
+                        <ResourceRatingWidget
+                          resource={res}
+                          onRatingSaved={handleResourceRatingSaved}
+                        />
                       </NotebookCard>
                     );
                   })}

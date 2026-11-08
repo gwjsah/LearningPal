@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun } from 'lucide-react';
+import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun, MessageSquare } from 'lucide-react';
 import { LearningPalLogo, SquigglyUnderline } from './Doodles';
 import { ThemeToggleButton, useTheme } from '../context/ThemeContext';
 
@@ -294,6 +294,18 @@ export function PortalShell({
             </div>
 
             <div className="hidden sm:block w-px h-6 bg-ink/15 dark:bg-chalkboard-borderSubtle my-auto" aria-hidden="true" />
+
+            {/* In-app Usability Survey shortcut for Students and Teachers */}
+            {(user?.role === 'STUDENT' || user?.role === 'TEACHER') && (
+              <Link
+                to="/feedback/survey"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                title="Share your experience in our 2-minute usability survey"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
+                <span>Give Feedback</span>
+              </Link>
+            )}
 
             {/* Chalkboard / Night Study Toggle matching Navbar */}
             <button

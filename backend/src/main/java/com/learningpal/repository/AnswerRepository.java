@@ -21,5 +21,12 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     @Query("SELECT a FROM Answer a WHERE a.attempt.student = :student AND a.question.topic = :topic AND a.attempt.status = :status ORDER BY a.attempt.submittedAt DESC, a.id DESC")
     List<Answer> findStudentTopicAnswers(@Param("student") User student, @Param("topic") Topic topic, @Param("status") AttemptStatus status);
+
+    @Query("SELECT a FROM Answer a WHERE a.attempt.student.id = :studentId AND a.attempt.classId = :classId AND a.attempt.status = :status ORDER BY a.attempt.submittedAt ASC, a.id ASC")
+    List<Answer> findStudentClassAnswers(
+            @Param("studentId") Long studentId,
+            @Param("classId") Long classId,
+            @Param("status") AttemptStatus status
+    );
 }
 

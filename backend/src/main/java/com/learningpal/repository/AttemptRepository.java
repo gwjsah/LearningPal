@@ -21,5 +21,12 @@ public interface AttemptRepository extends JpaRepository<Attempt, Long> {
     long countByStudentIdAndAssessmentId(Long studentId, Long assessmentId);
     List<Attempt> findByClassId(Long classId);
     boolean existsByStudentIdAndClassIdAndStatusAndSubmittedAtAfter(Long studentId, Long classId, AttemptStatus status, Instant submittedAt);
+    long countByStudentIdAndClassIdAndStatus(Long studentId, Long classId, AttemptStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT a.student.id, COUNT(a) FROM Attempt a WHERE a.classId = :classId AND a.status = :status GROUP BY a.student.id")
+    List<Object[]> countSubmittedAttemptsPerStudentInClass(
+            @org.springframework.data.repository.query.Param("classId") Long classId,
+            @org.springframework.data.repository.query.Param("status") AttemptStatus status
+    );
 }
 

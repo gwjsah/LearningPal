@@ -14,6 +14,8 @@ import {
   Building2,
   UserX,
   RotateCcw,
+  FlaskConical,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services/adminService';
@@ -172,17 +174,37 @@ export default function AdminHome() {
     navigate('/login', { replace: true });
   };
 
-  const refreshButton = (
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={refreshAll}
-      disabled={loadingPending || loadingUsers}
-      className="self-start sm:self-auto font-mono"
-    >
-      <RefreshCw className={`w-3.5 h-3.5 ${loadingPending || loadingUsers ? 'animate-spin' : ''}`} aria-hidden="true" />
-      <span>Refresh Data</span>
-    </Button>
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <Button
+        to="/admin/evaluation"
+        variant="primary"
+        size="sm"
+        className="font-mono text-xs"
+      >
+        <BarChart3 className="w-3.5 h-3.5 mr-1 text-white" />
+        <span>Evaluation Dashboard</span>
+      </Button>
+      <Button
+        to="/admin/validation"
+        variant="mint"
+        size="sm"
+        className="font-mono text-xs"
+      >
+        <FlaskConical className="w-3.5 h-3.5 mr-1 text-ink-blue" />
+        <span>Validation Lab</span>
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={refreshAll}
+        disabled={loadingPending || loadingUsers}
+        className="self-start sm:self-auto font-mono text-xs"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 mr-1 ${loadingPending || loadingUsers ? 'animate-spin' : ''}`} aria-hidden="true" />
+        <span>Refresh</span>
+      </Button>
+    </div>
   );
 
   const institutionLabel = user?.institutionName
@@ -199,8 +221,8 @@ export default function AdminHome() {
       badgeLabel="Campus Administrator"
       badgeColorClass="bg-highlighter-yellow text-ink"
       title="Institution Administration Portal"
-      subtitle={`Managing users and teacher verifications for ${institutionLabel}.`}
-      headerRight={refreshButton}
+      subtitle={`Managing users, classes, and research validation for ${institutionLabel}.`}
+      headerRight={headerActions}
     >
       {/* Action Confirmation Banner */}
       {actionNotice && (
@@ -221,6 +243,59 @@ export default function AdminHome() {
           <span>{actionNotice.text}</span>
         </div>
       )}
+
+      {/* Evaluation Dashboard Overview Card */}
+      <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted p-6 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
+              Project Objectives & Empirical Measurement
+            </span>
+            <h2 className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
+              <span>Project Evaluation Dashboard</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted max-w-2xl leading-relaxed">
+              Track live evaluation metrics against project targets: Helpfulness Ratings (≥ 80%), Usability Survey (≥ 4.0 / 5.0), and Validation Lab (≥ 85% Agreement). Export research-ready pseudonymized CSV datasets.
+            </p>
+          </div>
+          <Button
+            to="/admin/evaluation"
+            variant="primary"
+            size="md"
+            className="shrink-0"
+          >
+            <BarChart3 className="w-4 h-4 mr-1.5" />
+            <span>Open Evaluation Dashboard</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Validation Lab Overview Card */}
+      <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted p-6 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
+              Research Validation & Accuracy Objective
+            </span>
+            <h2 className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
+              <span>Institution Validation Lab</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted max-w-2xl leading-relaxed">
+              Monitor campus-wide agreement between blind teacher judgments and automated topic gap classifications against the ≥ 85% validation target.
+            </p>
+          </div>
+          <Button
+            to="/admin/validation"
+            variant="mint"
+            size="md"
+            className="shrink-0"
+          >
+            <span>Open Validation Report</span>
+          </Button>
+        </div>
+      </div>
 
       {/* SECTION 1: Pending Teachers Approval Queue */}
       <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted overflow-hidden">

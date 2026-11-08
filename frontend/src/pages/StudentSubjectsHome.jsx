@@ -28,6 +28,14 @@ export default function StudentSubjectsHome() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [surveyDismissed, setSurveyDismissed] = useState(() => {
+    return localStorage.getItem('learningpal_survey_dismissed_v1') === 'true';
+  });
+
+  const handleDismissSurvey = () => {
+    localStorage.setItem('learningpal_survey_dismissed_v1', 'true');
+    setSurveyDismissed(true);
+  };
 
   // Join Class Modal State
   const [joinModalOpen, setJoinModalOpen] = useState(false);
@@ -232,6 +240,48 @@ export default function StudentSubjectsHome() {
               <span>Join Your First Class</span>
             </Button>
           </NotebookCard>
+        )}
+
+        {/* Dismissible 2-Minute Usability Survey Banner */}
+        {!surveyDismissed && (
+          <div className="p-4 sm:p-5 rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-highlighter-yellow/30 border border-ink/20 dark:border-chalkboard-borderSubtle text-redpen dark:text-highlighter-yellow shrink-0">
+                <Sparkles className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-highlighter-yellow text-ink border border-ink/20">
+                    Usability Study
+                  </span>
+                  <h3 className="text-sm sm:text-base font-bold text-ink dark:text-chalkboard-chalk">
+                    Help us improve LearningPal · 2-minute usability survey
+                  </h3>
+                </div>
+                <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-2xl leading-relaxed">
+                  Tell us about your learning experience, topic feedback clarity, and platform usability to support our user research targets.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <button
+                type="button"
+                onClick={handleDismissSurvey}
+                className="px-3 py-1.5 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors cursor-pointer"
+              >
+                Dismiss
+              </button>
+              <Button
+                to="/feedback/survey"
+                variant="mint"
+                size="sm"
+                className="font-bold text-xs"
+              >
+                <span>Take Survey</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Active Classes Grid */}

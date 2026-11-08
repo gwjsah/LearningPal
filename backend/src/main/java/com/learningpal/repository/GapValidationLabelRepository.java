@@ -18,11 +18,21 @@ public interface GapValidationLabelRepository extends JpaRepository<GapValidatio
 
     List<GapValidationLabel> findByStudentId(Long studentId);
 
+    List<GapValidationLabel> findByStudentIdAndSource(Long studentId, ValidationSource source);
+
+    List<GapValidationLabel> findByStudentInAndSource(java.util.Collection<com.learningpal.entity.User> students, ValidationSource source);
+
     List<GapValidationLabel> findByTopicId(Long topicId);
 
     List<GapValidationLabel> findBySource(ValidationSource source);
 
     long countBySource(ValidationSource source);
+
+    @Query("SELECT g FROM GapValidationLabel g WHERE (g.classroom.id = :classId OR (g.student IN (SELECT e.student FROM Enrollment e WHERE e.classEntity.id = :classId) AND g.topic.subject = (SELECT c.subject FROM ClassEntity c WHERE c.id = :classId))) AND g.source = :source")
+    List<GapValidationLabel> findByClassIdAndSource(@Param("classId") Long classId, @Param("source") ValidationSource source);
+
+    @Query("SELECT g FROM GapValidationLabel g WHERE g.student.institution.id = :institutionId AND g.source = :source")
+    List<GapValidationLabel> findByInstitutionIdAndSource(@Param("institutionId") Long institutionId, @Param("source") ValidationSource source);
 
     @Modifying
     @Query("DELETE FROM GapValidationLabel g WHERE g.student.email LIKE :emailPattern")

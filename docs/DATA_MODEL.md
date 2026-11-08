@@ -22,6 +22,9 @@ erDiagram
     users ||--o{ assessment_access : "student / reopenedBy"
     users ||--o{ classes : "teaches"
     users ||--o{ enrollments : "student joins"
+    users ||--o{ feedback_ratings : "rates topic feedback"
+    users ||--o{ resource_ratings : "rates study resource"
+    users ||--o{ survey_responses : "completes usability survey"
 
     subjects ||--|{ topics : "contains"
     subjects ||--o{ assessments : "categorizes"
@@ -35,6 +38,7 @@ erDiagram
     topics ||--o{ student_topic_mastery : "evaluates"
     topics ||--o{ resources : "provides"
     topics ||--o{ interventions : "targets"
+    topics ||--o{ feedback_ratings : "receives ratings"
 
     questions ||--|{ choices : "has options"
     questions ||--o{ assessment_questions : "reused in"
@@ -47,6 +51,9 @@ erDiagram
     attempts ||--|{ answers : "contains responses"
 
     resources ||--o{ resource_progress : "tracks completion"
+    resources ||--o{ resource_ratings : "receives ratings"
+
+    survey_responses ||--|{ survey_answers : "records item scores"
 ```
 
 ---
@@ -74,6 +81,7 @@ Think of the LearningPal database like a multi-school educational network:
 | `resources` | **The Study Kit:** Flashcard-style bite-sized study notes and practice challenges designed to close learning gaps. |
 | `resource_progress` | **The Reading Checklist:** Checkmarks recording whether a student has finished reviewing a recommended note or practice problem. |
 | `interventions` | **The Teacher Action Plan:** Action items logged by teachers when they notice a student struggling on a topic. |
+| `gap_validation_labels` | **The Validation Lab Ground Truth:** Teacher blind evaluations (`WEAK`, `NOT_WEAK`, `CANNOT_JUDGE`) or synthetic simulation parameters, with server-side snapshot of system mastery, status, and attempt count for agreement measurement. |
 
 ---
 
@@ -211,4 +219,83 @@ In medical science, a rapid diagnostic screening tool (like our algorithmic gap 
 
 - **Unique Constraint:** `(student_id, topic_id, source)` ensures each student-topic pair has exactly one ground truth label per evaluation source.
 - **Validation Utility:** Allows researchers and engineers to measure classifier accuracy, precision, recall, and false discovery rate without relying on circular self-evaluation.
+
+---
+
+## 10. Empirical Measurement Architecture (Helpfulness & Usability)
+
+### Plain-Language Analogy: The Patient Care Review & The Hospital Accreditation Audit
+In a modern clinic, delivering diagnostic test results to patients is only half the mission. Clinicians need to know:
+1. **Did the diagnosis actually make sense to the patient?** (Did the patient understand the doctor's explanation and follow the dietary guidance?)
+2. **How smooth was the patient's entire visit?** (Did the hospital intake process work without confusion, bottlenecks, or frustration?)
+
+In LearningPal:
+- `feedback_ratings` and `resource_ratings` act as the **Post-Visit Care Review**: Did this specific diagnostic explanation help the student understand their mistake, and was this particular practice worksheet effective?
+- `survey_responses` and `survey_answers` act as the **Accreditation Usability Audit**: Standardized, periodic Likert audits measuring overall workflow smoothness, clarity, and platform satisfaction across both student and teacher roles.
+
+### 10.1 Feedback Helpfulness Ratings (`feedback_ratings`)
+
+Stores student ratings (1 to 5) evaluating the clarity and usefulness of diagnostic feedback generated for a specific curriculum topic.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `student_id` | `BIGINT NOT NULL` | FK to `users` (student rater) |
+| `topic_id` | `BIGINT NOT NULL` | FK to `topics` (evaluated topic) |
+| `rating` | `INT NOT NULL` | Helpfulness score ($1$ = Not helpful to $5$ = Extremely helpful) |
+| `comment` | `VARCHAR(300) NULL` | Optional plain-text reflection on feedback clarity |
+| `topic_status_at_rating` | `VARCHAR(30) NULL` | Topic status snapshot at rating time (`GAP`, `DEVELOPING`, `STRENGTH`, `INSUFFICIENT_DATA`) |
+| `created_at` | `DATETIME NOT NULL` | Timestamp of initial submission |
+| `updated_at` | `DATETIME NOT NULL` | Timestamp of most recent update |
+
+- **Unique Constraint:** `(student_id, topic_id)` ensures idempotent upserts so a student can refine their rating over time.
+- **Objective Benchmark:** Used to evaluate whether $\ge 80\%$ of feedback ratings are Helpful ($4$ or $5$) across $\ge 10$ distinct raters.
+
+### 10.2 Learning Resource Ratings (`resource_ratings`)
+
+Stores student ratings (1 to 5) evaluating recommended pedagogical study notes, reference sheets, and coding exercises.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `student_id` | `BIGINT NOT NULL` | FK to `users` (student rater) |
+| `resource_id` | `BIGINT NOT NULL` | FK to `resources` (evaluated learning material) |
+| `rating` | `INT NOT NULL` | Helpfulness score ($1$ to $5$) |
+| `comment` | `VARCHAR(300) NULL` | Optional student note on the resource |
+| `created_at` | `DATETIME NOT NULL` | Timestamp of initial submission |
+| `updated_at` | `DATETIME NOT NULL` | Timestamp of update |
+
+- **Unique Constraint:** `(student_id, resource_id)` ensures single rating per student per resource.
+- **Teacher Quality Loop:** Aggregated anonymously in the Teacher Class View to highlight underperforming resources ($\ge 3$ ratings with low averages) requiring revision.
+
+### 10.3 Usability Survey Responses (`survey_responses`)
+
+Header record for in-app standardized 8-item usability questionnaires administered to students and teachers.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `user_id` | `BIGINT NOT NULL` | FK to `users` (respondent) |
+| `user_role` | `VARCHAR(20) NOT NULL` | `STUDENT` or `TEACHER` at submission time |
+| `institution_id` | `BIGINT NOT NULL` | FK to `institutions` for multi-tenant scoping |
+| `survey_version` | `VARCHAR(20) NOT NULL` | Survey instrument version (default: `"v1"`) |
+| `general_comment` | `VARCHAR(500) NULL` | Optional open-ended qualitative feedback |
+| `created_at` | `DATETIME NOT NULL` | Timestamp of completion |
+
+- **Unique Constraint:** `(user_id, survey_version)` enforces single submission per version per user.
+
+### 10.4 Usability Survey Item Answers (`survey_answers`)
+
+Child item scores for each individual prompt in the standardized survey.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `response_id` | `BIGINT NOT NULL` | FK to `survey_responses` (cascaded on delete) |
+| `item_key` | `VARCHAR(50) NOT NULL` | Unique identifier of the survey item (e.g., `stu_diagnostic_clarity`) |
+| `score` | `INT NOT NULL` | Likert score ($1$ = Strongly Disagree to $5$ = Strongly Agree) |
+
+- **Unique Constraint:** `(response_id, item_key)` ensures exactly one response per survey item.
+- **Evaluation Benchmark:** Supports the $\ge 4.0 / 5.0$ overall usability score requirement across $\ge 5$ responses per role.
+
 

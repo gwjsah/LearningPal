@@ -37,6 +37,23 @@ public class GapValidationLabel {
     @JoinColumn(name = "labeled_by")
     private User labeledBy;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id")
+    private ClassEntity classroom;
+
+    @Column(name = "note", length = 300)
+    private String note;
+
+    @Column(name = "attempt_count_at_label")
+    private Integer attemptCountAtLabel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "system_status_at_label", length = 30)
+    private MasteryStatus systemStatusAtLabel;
+
+    @Column(name = "system_mastery_at_label")
+    private Double systemMasteryAtLabel;
+
     @Column(name = "labeled_at", nullable = false)
     private Instant labeledAt;
 
@@ -49,6 +66,21 @@ public class GapValidationLabel {
         this.source = source;
         this.labeledBy = labeledBy;
         this.labeledAt = labeledAt != null ? labeledAt : Instant.now();
+    }
+
+    public GapValidationLabel(User student, Topic topic, ValidationLabel label, ValidationSource source, User labeledBy, Instant labeledAt,
+                              ClassEntity classroom, String note, Integer attemptCountAtLabel, MasteryStatus systemStatusAtLabel, Double systemMasteryAtLabel) {
+        this.student = student;
+        this.topic = topic;
+        this.label = label;
+        this.source = source;
+        this.labeledBy = labeledBy;
+        this.labeledAt = labeledAt != null ? labeledAt : Instant.now();
+        this.classroom = classroom;
+        this.note = note;
+        this.attemptCountAtLabel = attemptCountAtLabel;
+        this.systemStatusAtLabel = systemStatusAtLabel;
+        this.systemMasteryAtLabel = systemMasteryAtLabel;
     }
 
     public Long getId() {
@@ -101,6 +133,46 @@ public class GapValidationLabel {
 
     public void setLabeledAt(Instant labeledAt) {
         this.labeledAt = labeledAt;
+    }
+
+    public ClassEntity getClassroom() {
+        return classroom;
+    }
+
+    public void setClassroom(ClassEntity classroom) {
+        this.classroom = classroom;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public Integer getAttemptCountAtLabel() {
+        return attemptCountAtLabel;
+    }
+
+    public void setAttemptCountAtLabel(Integer attemptCountAtLabel) {
+        this.attemptCountAtLabel = attemptCountAtLabel;
+    }
+
+    public MasteryStatus getSystemStatusAtLabel() {
+        return systemStatusAtLabel;
+    }
+
+    public void setSystemStatusAtLabel(MasteryStatus systemStatusAtLabel) {
+        this.systemStatusAtLabel = systemStatusAtLabel;
+    }
+
+    public Double getSystemMasteryAtLabel() {
+        return systemMasteryAtLabel;
+    }
+
+    public void setSystemMasteryAtLabel(Double systemMasteryAtLabel) {
+        this.systemMasteryAtLabel = systemMasteryAtLabel;
     }
 }
 

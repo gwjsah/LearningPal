@@ -301,6 +301,29 @@ public class IsolationMatrixTests {
             mockMvc.perform(get("/api/teacher/classes/" + unauthorizedClassId + "/interventions")
                             .header("Authorization", "Bearer " + tokenTeacherA1))
                     .andExpect(status().isNotFound());
+
+            // 9. Validation Lab endpoints (foreign teacher or foreign institution -> 404)
+            mockMvc.perform(get("/api/teacher/classes/" + unauthorizedClassId + "/validation/students")
+                            .header("Authorization", "Bearer " + tokenTeacherA1))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(get("/api/teacher/classes/" + unauthorizedClassId + "/validation/students/" + studentA1.getId())
+                            .header("Authorization", "Bearer " + tokenTeacherA1))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(put("/api/teacher/classes/" + unauthorizedClassId + "/validation/students/" + studentA1.getId() + "/topics/1")
+                            .header("Authorization", "Bearer " + tokenTeacherA1)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"label\": \"WEAK\"}"))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(get("/api/teacher/classes/" + unauthorizedClassId + "/validation/report")
+                            .header("Authorization", "Bearer " + tokenTeacherA1))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(get("/api/teacher/classes/" + unauthorizedClassId + "/validation/export")
+                            .header("Authorization", "Bearer " + tokenTeacherA1))
+                    .andExpect(status().isNotFound());
         }
     }
 
@@ -386,5 +409,72 @@ public class IsolationMatrixTests {
                 .andExpect(jsonPath("$[*].sectionName", hasItem("Section A1")))
                 .andExpect(jsonPath("$[*].sectionName", not(hasItem("Section A2"))))
                 .andExpect(jsonPath("$[*].sectionName", not(hasItem("Section B1"))));
+    }
+
+    @Test
+    @DisplayName("Validation Lab Role & Tenant Isolation: Student and SuperAdmin refused; Admin report scoped to institution")
+    void testValidationLabSecurityAndIsolation() throws Exception {
+        // 1. Student token calling teacher validation -> 403
+        mockMvc.perform(get("/api/teacher/classes/" + classA1.getId() + "/validation/students")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        // 2. Student token calling admin validation report -> 403
+        mockMvc.perform(get("/api/admin/validation/report")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        // 3. Super Admin token calling teacher validation -> 403
+        User superAdmin = userRepository.findByEmail("superadmin@learningpal.edu").orElseGet(() ->
+                userRepository.save(new User("Super Admin", "superadmin@learningpal.edu", "pass", Role.SUPER_ADMIN, UserStatus.ACTIVE, null))
+        );
+        String superToken = jwtService.generateToken(superAdmin);
+        mockMvc.perform(get("/api/teacher/classes/" + classA1.getId() + "/validation/students")
+                        .header("Authorization", "Bearer " + superToken))
+                .andExpect(status().isForbidden());
+
+        // 4. Admin report is strictly scoped to Admin's institution
+        mockMvc.perform(get("/api/admin/validation/report")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.institutionName").value(instA.getName()));
+    }
+
+    @Test
+    @DisplayName("Measurement Tools Security & Multi-Tenant Isolation")
+    void testMeasurementToolsSecurityAndIsolation() throws Exception {
+        // 1. Student token calling teacher ratings summary -> 403
+        mockMvc.perform(get("/api/teacher/classes/" + classA1.getId() + "/ratings-summary")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        // 2. Student token calling admin ratings summary -> 403
+        mockMvc.perform(get("/api/admin/ratings/summary")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        // 3. Student token calling admin survey summary -> 403
+        mockMvc.perform(get("/api/admin/survey/summary")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        // 4. Teacher A1 accessing another teacher's class ratings summary (same institution) -> 404
+        mockMvc.perform(get("/api/teacher/classes/" + classA2.getId() + "/ratings-summary")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isNotFound());
+
+        // 5. Teacher A1 accessing foreign institution class ratings summary -> 404
+        mockMvc.perform(get("/api/teacher/classes/" + classB1.getId() + "/ratings-summary")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isNotFound());
+
+        // 6. Admin A summaries are scoped to institution A
+        mockMvc.perform(get("/api/admin/ratings/summary")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/admin/survey/summary")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isOk());
     }
 }

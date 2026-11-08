@@ -97,4 +97,89 @@ export const adminService = {
       body: JSON.stringify({ teacherId }),
     });
   },
+
+  /**
+   * Validation Lab: Retrieves institution-wide validation agreement report.
+   * @param {string} [source='TEACHER'] - TEACHER or SYNTHETIC
+   * @param {boolean} [includeStale=false]
+   */
+  async getValidationReport(source = 'TEACHER', includeStale = false) {
+    const params = new URLSearchParams({
+      source,
+      includeStale: String(includeStale),
+    });
+    return apiRequest(`/admin/validation/report?${params.toString()}`);
+  },
+
+  /**
+   * Helpfulness Ratings: Retrieves institution-wide ratings summary.
+   */
+  async getRatingsSummary() {
+    return apiRequest('/admin/ratings/summary');
+  },
+
+  /**
+   * Helpfulness Ratings: Downloads institution ratings CSV export.
+   */
+  async downloadRatingsExport() {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+    const token = localStorage.getItem('learningpal_token');
+    const url = `${API_BASE_URL}/admin/ratings/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Export failed with status ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `ratings-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+
+  /**
+   * Usability Survey: Retrieves institution survey summary.
+   */
+  async getSurveySummary() {
+    return apiRequest('/admin/survey/summary');
+  },
+
+  /**
+   * Usability Survey: Downloads institution survey responses CSV export.
+   */
+  async downloadSurveyExport() {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+    const token = localStorage.getItem('learningpal_token');
+    const url = `${API_BASE_URL}/admin/survey/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Export failed with status ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `survey-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
 };

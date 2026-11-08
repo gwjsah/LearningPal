@@ -101,6 +101,15 @@ public class DemoDataPopulatorTests {
     private GapValidationLabelRepository gapValidationLabelRepository;
 
     @Autowired
+    private FeedbackRatingRepository feedbackRatingRepository;
+
+    @Autowired
+    private ResourceRatingRepository resourceRatingRepository;
+
+    @Autowired
+    private SurveyResponseRepository surveyResponseRepository;
+
+    @Autowired
     private GradingService gradingService;
 
     @Autowired
@@ -155,6 +164,9 @@ public class DemoDataPopulatorTests {
                 interventionRepository,
                 classAssessmentSettingRepository,
                 gapValidationLabelRepository,
+                feedbackRatingRepository,
+                resourceRatingRepository,
+                surveyResponseRepository,
                 gradingService,
                 gapAnalysisService,
                 teacherClassService,

@@ -95,4 +95,22 @@ export const studentService = {
     apiRequest(`/student/resources/${resourceId}/complete`, {
       method: 'DELETE',
     }),
+
+  /**
+   * Submits or updates helpfulness rating for topic diagnostic feedback.
+   */
+  rateTopicFeedback: (topicId, { rating, comment }) =>
+    apiRequest(`/student/topics/${topicId}/feedback-rating`, {
+      method: 'PUT',
+      body: JSON.stringify({ rating, comment }),
+    }),
+
+  /**
+   * Submits or updates helpfulness rating for an educational resource.
+   */
+  rateResource: (resourceId, { rating, comment }) =>
+    apiRequest(`/student/resources/${resourceId}/rating`, {
+      method: 'PUT',
+      body: JSON.stringify({ rating, comment }),
+    }),
 };

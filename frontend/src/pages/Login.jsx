@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggleButton } from '../context/ThemeContext';
@@ -7,13 +7,25 @@ import { LearningPalLogo } from '../components/Doodles';
 import { Button, Field, NotebookCard } from '../components/NotebookPrimitives';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  // If already authenticated, redirect immediately to the user's role workspace
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      const roleHomeMap = {
+        STUDENT: '/student',
+        TEACHER: '/teacher',
+        ADMIN: '/admin',
+      };
+      const dest = roleHomeMap[user.role] || '/';
+      navigate(dest, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,10 +56,8 @@ export default function Login() {
         ADMIN: '/admin',
       };
 
-      const from = location.state?.from?.pathname;
-      const defaultDest = roleHomeMap[response.user?.role] || '/';
-      const destination = from && !from.includes('/login') ? from : defaultDest;
-
+      // Always redirect cleanly to role home: STUDENT -> /student, TEACHER -> /teacher, ADMIN -> /admin
+      const destination = roleHomeMap[response.user?.role] || '/';
       navigate(destination, { replace: true });
     } catch (err) {
       setServerError(err.message || 'Login failed. Please check your credentials.');

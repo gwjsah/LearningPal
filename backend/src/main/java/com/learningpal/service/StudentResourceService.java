@@ -6,6 +6,7 @@ import com.learningpal.entity.*;
 import com.learningpal.exception.ResourceNotFoundException;
 import com.learningpal.repository.EnrollmentRepository;
 import com.learningpal.repository.ResourceProgressRepository;
+import com.learningpal.repository.ResourceRatingRepository;
 import com.learningpal.repository.ResourceRepository;
 import com.learningpal.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,16 +25,19 @@ public class StudentResourceService {
 
     private final ResourceRepository resourceRepository;
     private final ResourceProgressRepository resourceProgressRepository;
+    private final ResourceRatingRepository resourceRatingRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
 
     public StudentResourceService(
             ResourceRepository resourceRepository,
             ResourceProgressRepository resourceProgressRepository,
+            ResourceRatingRepository resourceRatingRepository,
             UserRepository userRepository,
             EnrollmentRepository enrollmentRepository) {
         this.resourceRepository = resourceRepository;
         this.resourceProgressRepository = resourceProgressRepository;
+        this.resourceRatingRepository = resourceRatingRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
     }
@@ -104,6 +108,10 @@ public class StudentResourceService {
                 .map(p -> p.getResource().getId())
                 .collect(Collectors.toSet());
 
+        // Fetch student's ratings for resources
+        Map<Long, ResourceRating> studentRatings = resourceRatingRepository.findByStudent(student).stream()
+                .collect(Collectors.toMap(r -> r.getResource().getId(), r -> r, (a, b) -> a));
+
         MasteryStatus effectiveStatus = (status != null) ? status : MasteryStatus.INSUFFICIENT_DATA;
 
         List<Resource> filteredAndSorted = new ArrayList<>();
@@ -136,15 +144,20 @@ public class StudentResourceService {
         }
 
         return filteredAndSorted.stream()
-                .map(r -> new RecommendedResourceDto(
-                        r.getId(),
-                        r.getTitle(),
-                        r.getType(),
-                        r.getDescription(),
-                        r.getContent(),
-                        r.getUrl(),
-                        completedResourceIds.contains(r.getId())
-                ))
+                .map(r -> {
+                    ResourceRating rating = studentRatings.get(r.getId());
+                    return new RecommendedResourceDto(
+                            r.getId(),
+                            r.getTitle(),
+                            r.getType(),
+                            r.getDescription(),
+                            r.getContent(),
+                            r.getUrl(),
+                            completedResourceIds.contains(r.getId()),
+                            rating != null ? rating.getRating() : null,
+                            rating != null ? rating.getComment() : null
+                    );
+                })
                 .toList();
     }
 

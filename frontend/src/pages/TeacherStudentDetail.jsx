@@ -65,7 +65,7 @@ export default function TeacherStudentDetail() {
     try {
       const res = await teacherService.getStudentDetail(classId, studentId);
       setData(res);
-      if (res.topicMasteries.length > 0) {
+      if (res.topicMasteries && res.topicMasteries.length > 0) {
         setIntervForm((prev) => ({
           ...prev,
           topicId: prev.topicId || String(res.topicMasteries[0].topicId),
@@ -324,7 +324,7 @@ export default function TeacherStudentDetail() {
               </div>
 
               <div className="space-y-3">
-                {data.topicMasteries.map((tm) => {
+                {(data.topicMasteries || []).map((tm) => {
                   const hasGapOrDev = tm.status === 'GAP' || tm.status === 'DEVELOPING';
                   const misses = data.missedQuestionsByTopic?.[tm.topicId] || [];
                   const isExpanded = !!expandedTopics[tm.topicId];

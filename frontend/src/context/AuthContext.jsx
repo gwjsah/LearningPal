@@ -31,6 +31,14 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.warn('Session restoration failed or token expired:', err.message);
         localStorage.removeItem(TOKEN_KEY);
+        try {
+          sessionStorage.clear();
+          localStorage.removeItem('learningpal_last_path');
+          localStorage.removeItem('learningpal_redirect');
+          localStorage.removeItem('learningpal_user');
+        } catch {
+          // Ignore storage access errors in restricted iframe/browser modes
+        }
         if (isMounted) {
           setUser(null);
           setToken(null);
@@ -76,10 +84,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Clears token and user context.
+   * Clears token, user context, and any cached navigation/redirect artifacts.
    */
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem('learningpal_last_path');
+      localStorage.removeItem('learningpal_redirect');
+      localStorage.removeItem('learningpal_user');
+    } catch {
+      // Ignore storage access errors in restricted iframe/browser modes
+    }
     setToken(null);
     setUser(null);
   }, []);

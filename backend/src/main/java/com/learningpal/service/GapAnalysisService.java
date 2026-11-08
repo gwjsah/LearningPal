@@ -35,6 +35,7 @@ public class GapAnalysisService {
     private final StudentResourceService studentResourceService;
     private final SubjectRepository subjectRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final FeedbackRatingRepository feedbackRatingRepository;
 
     @Value("${app.analysis.strength-threshold:80.0}")
     private double strengthThreshold;
@@ -55,7 +56,8 @@ public class GapAnalysisService {
             StudentTopicMasteryRepository studentTopicMasteryRepository,
             StudentResourceService studentResourceService,
             SubjectRepository subjectRepository,
-            EnrollmentRepository enrollmentRepository) {
+            EnrollmentRepository enrollmentRepository,
+            FeedbackRatingRepository feedbackRatingRepository) {
         this.userRepository = userRepository;
         this.topicRepository = topicRepository;
         this.attemptRepository = attemptRepository;
@@ -66,6 +68,7 @@ public class GapAnalysisService {
         this.studentResourceService = studentResourceService;
         this.subjectRepository = subjectRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.feedbackRatingRepository = feedbackRatingRepository;
     }
 
     /**
@@ -332,6 +335,11 @@ public class GapAnalysisService {
         int resourcesRecommended = resources.size();
         int resourcesCompleted = (int) resources.stream().filter(RecommendedResourceDto::completed).count();
 
+        // 5. Student's own current feedback rating (if any)
+        FeedbackRatingDto studentRating = feedbackRatingRepository.findByStudentAndTopic(student, topic)
+                .map(r -> new FeedbackRatingDto(r.getRating(), r.getComment(), r.getUpdatedAt()))
+                .orElse(null);
+
         return new TopicProgressDetailDto(
                 topic.getId(),
                 topic.getSubject() != null ? topic.getSubject().getId() : null,
@@ -346,7 +354,8 @@ public class GapAnalysisService {
                 feedback,
                 resources,
                 resourcesCompleted,
-                resourcesRecommended
+                resourcesRecommended,
+                studentRating
         );
     }
 

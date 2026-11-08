@@ -1,17 +1,16 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 /**
  * Route protection guard:
  * 1. Shows a warm notebook loading state while restoring session from JWT.
- * 2. Redirects unauthenticated users to /login (preserving intended destination).
+ * 2. Redirects unauthenticated users to /login cleanly without lingering redirect state.
  * 3. Enforces role-based access: if a user opens another role's page,
  *    redirects them smoothly to their own role's home view.
  */
 export default function ProtectedRoute({ allowedRole, children }) {
   const { user, isAuthenticated, loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -26,20 +25,23 @@ export default function ProtectedRoute({ allowedRole, children }) {
     );
   }
 
-  // Not logged in -> send to login
+  // Not logged in -> send cleanly to login
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Logged in, but wrong role -> send to own role home
-  if (allowedRole && user.role !== allowedRole) {
-    const roleHomeMap = {
-      STUDENT: '/student',
-      TEACHER: '/teacher',
-      ADMIN: '/admin',
-    };
-    const destination = roleHomeMap[user.role] || '/';
-    return <Navigate to={destination} replace />;
+  if (allowedRole) {
+    const allowedList = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+    if (!allowedList.includes(user.role)) {
+      const roleHomeMap = {
+        STUDENT: '/student',
+        TEACHER: '/teacher',
+        ADMIN: '/admin',
+      };
+      const destination = roleHomeMap[user.role] || '/';
+      return <Navigate to={destination} replace />;
+    }
   }
 
   return children;

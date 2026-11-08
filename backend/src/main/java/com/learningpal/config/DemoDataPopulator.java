@@ -2,10 +2,12 @@ package com.learningpal.config;
 
 import com.learningpal.dto.AnswerSubmissionDto;
 import com.learningpal.dto.GradeAnswerRequest;
+import com.learningpal.dto.SurveyItemDto;
 import com.learningpal.entity.*;
 import com.learningpal.repository.*;
 import com.learningpal.service.GapAnalysisService;
 import com.learningpal.service.GradingService;
+import com.learningpal.service.MeasurementSurveyService;
 import com.learningpal.service.TeacherClassService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +64,9 @@ public class DemoDataPopulator implements CommandLineRunner {
     private final InterventionRepository interventionRepository;
     private final ClassAssessmentSettingRepository classAssessmentSettingRepository;
     private final GapValidationLabelRepository gapValidationLabelRepository;
+    private final FeedbackRatingRepository feedbackRatingRepository;
+    private final ResourceRatingRepository resourceRatingRepository;
+    private final SurveyResponseRepository surveyResponseRepository;
     private final GradingService gradingService;
     private final GapAnalysisService gapAnalysisService;
     private final TeacherClassService teacherClassService;
@@ -92,6 +97,9 @@ public class DemoDataPopulator implements CommandLineRunner {
             InterventionRepository interventionRepository,
             ClassAssessmentSettingRepository classAssessmentSettingRepository,
             GapValidationLabelRepository gapValidationLabelRepository,
+            FeedbackRatingRepository feedbackRatingRepository,
+            ResourceRatingRepository resourceRatingRepository,
+            SurveyResponseRepository surveyResponseRepository,
             GradingService gradingService,
             GapAnalysisService gapAnalysisService,
             TeacherClassService teacherClassService,
@@ -120,6 +128,9 @@ public class DemoDataPopulator implements CommandLineRunner {
         this.interventionRepository = interventionRepository;
         this.classAssessmentSettingRepository = classAssessmentSettingRepository;
         this.gapValidationLabelRepository = gapValidationLabelRepository;
+        this.feedbackRatingRepository = feedbackRatingRepository;
+        this.resourceRatingRepository = resourceRatingRepository;
+        this.surveyResponseRepository = surveyResponseRepository;
         this.gradingService = gradingService;
         this.gapAnalysisService = gapAnalysisService;
         this.teacherClassService = teacherClassService;
@@ -204,6 +215,13 @@ public class DemoDataPopulator implements CommandLineRunner {
             // GapValidationLabels
             gapValidationLabelRepository.deleteAll(gapValidationLabelRepository.findByStudentId(user.getId()));
 
+            // Helpfulness ratings
+            feedbackRatingRepository.deleteAll(feedbackRatingRepository.findByStudent(user));
+            resourceRatingRepository.deleteAll(resourceRatingRepository.findByStudent(user));
+
+            // Usability survey responses
+            surveyResponseRepository.deleteAll(surveyResponseRepository.findByUser(user));
+
             // Interventions as student or teacher
             interventionRepository.deleteAll(interventionRepository.findByStudent(user));
             interventionRepository.deleteAll(interventionRepository.findByTeacher(user));
@@ -279,6 +297,23 @@ public class DemoDataPopulator implements CommandLineRunner {
         User teacherPilot3 = userRepository.save(new User("Prof. John von Neumann", "teacher.pilot3" + DEMO_DOMAIN, encodedPassword, Role.TEACHER, UserStatus.ACTIVE, pilotInst));
         User teacherPending = userRepository.save(new User("Mr. Claude Shannon", "teacher.pending" + DEMO_DOMAIN, encodedPassword, Role.TEACHER, UserStatus.PENDING, pilotInst));
         User teacherDemo = userRepository.save(new User("Dr. Ada Lovelace", "teacher.demo" + DEMO_DOMAIN, encodedPassword, Role.TEACHER, UserStatus.ACTIVE, demoInst));
+
+        List<User> pilotTeachers = new ArrayList<>(List.of(teacherPilot1, teacherPilot2, teacherPilot3));
+        String[] additionalTeacherNames = {
+                "Dr. Donald Knuth", "Prof. Barbara Liskov", "Dr. Leslie Lamport",
+                "Prof. Ken Thompson", "Dr. Dennis Ritchie", "Prof. Linus Torvalds", "Dr. Tim Berners-Lee"
+        };
+        for (int i = 0; i < additionalTeacherNames.length; i++) {
+            User extraTeacher = userRepository.save(new User(
+                    additionalTeacherNames[i],
+                    "teacher.pilot" + (i + 4) + DEMO_DOMAIN,
+                    encodedPassword,
+                    Role.TEACHER,
+                    UserStatus.ACTIVE,
+                    pilotInst
+            ));
+            pilotTeachers.add(extraTeacher);
+        }
 
         // 4. Curriculum
         Subject subject = subjectRepository.findAll().stream().findFirst()
@@ -563,7 +598,143 @@ public class DemoDataPopulator implements CommandLineRunner {
         createInterventionBatch(sectionAStudents, sectionBStudents, demoSectionStudents, topics,
                 classSectionA, classSectionB, classDemo, teacherPilot1, teacherPilot2, teacherDemo, now, rng);
 
+        // 13. Snapshot synthetic labels with calculated class, status, and mastery
+        for (User st : allStudents) {
+            ClassEntity studentClass = enrollmentRepository.findByStudentOrderByEnrolledAtDesc(st).stream()
+                    .map(Enrollment::getClassEntity)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+
+            if (studentClass != null) {
+                int attemptsCount = (int) attemptRepository.countByStudentIdAndClassIdAndStatus(
+                        st.getId(), studentClass.getId(), AttemptStatus.SUBMITTED
+                );
+
+                for (Topic t : topics) {
+                    Optional<GapValidationLabel> labelOpt = gapValidationLabelRepository.findByStudentIdAndTopicIdAndSource(
+                            st.getId(), t.getId(), ValidationSource.SYNTHETIC
+                    );
+                    if (labelOpt.isPresent()) {
+                        GapValidationLabel gvl = labelOpt.get();
+                        gvl.setClassroom(studentClass);
+                        gvl.setAttemptCountAtLabel(attemptsCount);
+
+                        Optional<StudentTopicMastery> mOpt = studentTopicMasteryRepository.findByStudentIdAndTopicId(st.getId(), t.getId());
+                        gvl.setSystemStatusAtLabel(mOpt.map(StudentTopicMastery::getStatus).orElse(MasteryStatus.INSUFFICIENT_DATA));
+                        gvl.setSystemMasteryAtLabel(mOpt.map(StudentTopicMastery::getMasteryPercent).orElse(0.0));
+                        gapValidationLabelRepository.save(gvl);
+                    }
+                }
+            }
+        }
+
+        // 14. Populate Helpfulness Ratings (Part A)
+        populateDemoRatings(allStudents, topics, subject);
+
+        // 15. Populate Usability Survey Responses (Part B)
+        populateDemoSurveys(allStudents, pilotTeachers);
+
         log.info("DemoDataPopulator: Populated 2 institutions, 7 accounts, 5 classes, 46 students, realistic journeys, and validation labels.");
+    }
+
+    private void populateDemoRatings(List<User> students, List<Topic> topics, Subject subject) {
+        List<Resource> resources = resourceRepository.findBySubjectId(subject.getId());
+        String[] feedbackComments = {
+                "The targeted guidance on conditional branches helped me locate my logic error.",
+                "Clear step-by-step review of why my expression failed.",
+                "Good pointers on operator precedence and parentheses.",
+                "Very concise explanation of the loop boundary condition.",
+                "The suggestion to review array indexing was right on point."
+        };
+        String[] resourceComments = {
+                "Great walkthrough notes with helpful syntax diagrams.",
+                "The practice problems directly matched what was tricky on the quiz.",
+                "Useful cheat sheet for formatting specifiers.",
+                "Helped reinforce how return types work in C functions."
+        };
+
+        int raterCount = Math.min(18, students.size());
+        for (int i = 0; i < raterCount; i++) {
+            User student = students.get(i);
+            int numTopics = 2 + (i % 2);
+            for (int tIdx = 0; tIdx < numTopics && tIdx < topics.size(); tIdx++) {
+                Topic topic = topics.get((i + tIdx) % topics.size());
+                int rating = (i % 7 == 0) ? 3 : (i % 2 == 0 ? 5 : 4);
+                String comment = (i % 3 == 0) ? feedbackComments[(i + tIdx) % feedbackComments.length] : null;
+
+                MasteryStatus status = studentTopicMasteryRepository
+                        .findByStudentIdAndTopicId(student.getId(), topic.getId())
+                        .map(StudentTopicMastery::getStatus)
+                        .orElse(MasteryStatus.DEVELOPING);
+
+                FeedbackRating fr = new FeedbackRating(student, topic, rating, comment, status);
+                feedbackRatingRepository.save(fr);
+            }
+
+            if (!resources.isEmpty()) {
+                int numResources = 2 + (i % 2);
+                for (int rIdx = 0; rIdx < numResources && rIdx < resources.size(); rIdx++) {
+                    Resource resource = resources.get((i + rIdx) % resources.size());
+                    int rating;
+                    if (rIdx == 0 && i % 4 == 0) {
+                        rating = 2;
+                    } else if (i % 6 == 0) {
+                        rating = 3;
+                    } else {
+                        rating = (i % 2 == 0) ? 5 : 4;
+                    }
+                    String comment = (i % 4 == 0) ? resourceComments[(i + rIdx) % resourceComments.length] : null;
+
+                    ResourceRating rr = new ResourceRating(student, resource, rating, comment);
+                    resourceRatingRepository.save(rr);
+                }
+            }
+        }
+    }
+
+    private void populateDemoSurveys(List<User> students, List<User> teachers) {
+        String[] studentComments = {
+                "LearningPal made it so easy to see which topics I needed to study before the quiz.",
+                "The progress breakdown clearly showed my weak spots.",
+                "Very clean notebook theme, easy on the eyes during late night study sessions.",
+                "Loved having the recommended practice problems right next to my quiz results.",
+                "Navigation was intuitive and fast."
+        };
+
+        String[] teacherComments = {
+                "Class roster and topic gap distribution gave me immediate insight into section weaknesses.",
+                "Logging interventions and tracking student follow-ups was seamless and straightforward.",
+                "The clean notebook aesthetic makes grading and reviewing less fatiguing.",
+                "Join code generation and class setup worked smoothly on day one.",
+                "Excellent overview of diagnostic results across the entire cohort."
+        };
+
+        int studentSurveyCount = Math.min(12, students.size());
+        for (int i = 0; i < studentSurveyCount; i++) {
+            User student = students.get(i);
+            String comment = (i < studentComments.length) ? studentComments[i] : null;
+            SurveyResponse response = new SurveyResponse(student, Role.STUDENT, MeasurementSurveyService.CURRENT_SURVEY_VERSION, comment);
+
+            for (SurveyItemDto item : MeasurementSurveyService.STUDENT_SURVEY_ITEMS) {
+                int score = ((i + item.key().length()) % 7 == 0) ? 3 : (i % 2 == 0 ? 5 : 4);
+                response.addAnswer(item.key(), score);
+            }
+            surveyResponseRepository.save(response);
+        }
+
+        int teacherSurveyCount = Math.min(10, teachers.size());
+        for (int i = 0; i < teacherSurveyCount; i++) {
+            User teacher = teachers.get(i);
+            String comment = (i < teacherComments.length) ? teacherComments[i] : null;
+            SurveyResponse response = new SurveyResponse(teacher, Role.TEACHER, MeasurementSurveyService.CURRENT_SURVEY_VERSION, comment);
+
+            for (SurveyItemDto item : MeasurementSurveyService.TEACHER_SURVEY_ITEMS) {
+                int score = ((i + item.key().length()) % 8 == 0) ? 3 : (i % 2 == 0 ? 5 : 4);
+                response.addAnswer(item.key(), score);
+            }
+            surveyResponseRepository.save(response);
+        }
     }
 
     private Long resolveStudentClassId(User st, ClassEntity secA, ClassEntity secB, ClassEntity secDemo, ClassEntity secArch) {

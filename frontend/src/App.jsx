@@ -17,7 +17,13 @@ import TeacherHome from './pages/TeacherHome';
 import TeacherClassDetail from './pages/TeacherClassDetail';
 import TeacherStudentDetail from './pages/TeacherStudentDetail';
 import TeacherAttemptReview from './pages/TeacherAttemptReview';
+import TeacherValidationHub from './pages/TeacherValidationHub';
+import TeacherValidationLabeling from './pages/TeacherValidationLabeling';
+import TeacherValidationReport from './pages/TeacherValidationReport';
 import AdminHome from './pages/AdminHome';
+import AdminValidationReport from './pages/AdminValidationReport';
+import UsabilitySurvey from './pages/UsabilitySurvey';
+import AdminEvaluationDashboard from './pages/AdminEvaluationDashboard';
 
 /**
  * Main application router wiring:
@@ -165,12 +171,62 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/teacher/classes/:classId/validation"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherValidationHub />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/classes/:classId/validation/students/:studentId"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherValidationLabeling />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/classes/:classId/validation/report"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherValidationReport />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/admin"
               element={
                 <ProtectedRoute allowedRole="ADMIN">
                   <AdminHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/validation"
+              element={
+                <ProtectedRoute allowedRole="ADMIN">
+                  <AdminValidationReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/evaluation"
+              element={
+                <ProtectedRoute allowedRole="ADMIN">
+                  <AdminEvaluationDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* In-App Usability Survey (Students & Teachers) */}
+            <Route
+              path="/feedback/survey"
+              element={
+                <ProtectedRoute allowedRole={['STUDENT', 'TEACHER']}>
+                  <UsabilitySurvey />
                 </ProtectedRoute>
               }
             />

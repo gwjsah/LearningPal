@@ -27,6 +27,10 @@ import {
   BarChart3,
   BookOpen,
   HeartHandshake,
+  FlaskConical,
+  Star,
+  MessageSquare,
+  ThumbsUp,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
@@ -41,6 +45,7 @@ export default function TeacherClassDetail() {
   const [roster, setRoster] = useState([]);
   const [overview, setOverview] = useState(null);
   const [classInterventions, setClassInterventions] = useState([]);
+  const [ratingsSummary, setRatingsSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -77,18 +82,20 @@ export default function TeacherClassDetail() {
     setLoading(true);
     setError('');
     try {
-      const [detailData, rosterData, overviewData, assessmentsData, interventionsData] = await Promise.all([
+      const [detailData, rosterData, overviewData, assessmentsData, interventionsData, ratingsData] = await Promise.all([
         teacherService.getClassDetail(id),
         teacherService.getClassRoster(id),
         teacherService.getClassOverview(id),
         teacherService.getClassAssessments(id),
         teacherService.getClassInterventions(id),
+        teacherService.getClassRatingsSummary(id).catch(() => null),
       ]);
       setClassDetail(detailData);
       setRoster(rosterData);
       setOverview(overviewData);
       setAssessments(assessmentsData || []);
       setClassInterventions(interventionsData || []);
+      setRatingsSummary(ratingsData);
     } catch (err) {
       if (err.status === 401) {
         logout();
@@ -293,6 +300,26 @@ export default function TeacherClassDetail() {
     return overview.topics.filter((t) => t.gapCount > 0).slice(0, 2);
   }, [overview]);
 
+  // Normalized Ratings Summary Data (safe against undefined/null)
+  const { topicRatingsList, resourceRatingsList, lowestRatedResourcesList, recentCommentsList, totalRatingsCount } = useMemo(() => {
+    const topics = ratingsSummary?.topics || ratingsSummary?.topicRatings || [];
+    const resources = ratingsSummary?.resources || ratingsSummary?.resourceRatings || [];
+    const lowest = ratingsSummary?.lowestRatedResources || [];
+    const comments = ratingsSummary?.recentComments || [];
+
+    const totalTopicRatings = topics.reduce((acc, t) => acc + (t.totalRatings || 0), 0);
+    const totalResourceRatings = resources.reduce((acc, r) => acc + (r.totalRatings || 0), 0);
+    const totalCount = ratingsSummary?.totalRatingsCount ?? (totalTopicRatings + totalResourceRatings);
+
+    return {
+      topicRatingsList: topics,
+      resourceRatingsList: resources,
+      lowestRatedResourcesList: lowest,
+      recentCommentsList: comments,
+      totalRatingsCount: totalCount,
+    };
+  }, [ratingsSummary]);
+
   const isArchived = classDetail?.status === 'ARCHIVED';
 
   return (
@@ -310,13 +337,22 @@ export default function TeacherClassDetail() {
           : 'View your class join code, topic gap breakdown, and student roster.'
       }
       headerRight={
-        <Link
-          to="/teacher"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to My Classes</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/teacher/classes/${id}/validation`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-highlighter-mint hover:bg-highlighter-mintSoft shadow-xs transition-colors"
+          >
+            <FlaskConical className="w-3.5 h-3.5 text-ink-blue" />
+            <span>Validation Lab</span>
+          </Link>
+          <Link
+            to="/teacher"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to My Classes</span>
+          </Link>
+        </div>
       }
     >
       <div className="w-full space-y-8">
@@ -1349,6 +1385,240 @@ export default function TeacherClassDetail() {
                       </NotebookCard>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* PART 5: TEACHER VALIDATION LAB SECTION */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3 gap-2">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+                    <FlaskConical className="w-6 h-6 text-redpen dark:text-highlighter-yellow" />
+                    <span>Teacher Validation Lab</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
+                    Blind evaluation study comparing teacher judgments with automated gap classifications.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    to={`/teacher/classes/${id}/validation/report`}
+                    variant="secondary"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5 mr-1" />
+                    <span>View Agreement Report</span>
+                  </Button>
+                  <Button
+                    to={`/teacher/classes/${id}/validation`}
+                    variant="primary"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <span>Enter Validation Lab</span>
+                  </Button>
+                </div>
+              </div>
+
+              <NotebookCard
+                ruled
+                marginLine
+                lifted
+                className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-2 max-w-2xl">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
+                      Research & Accuracy Benchmark
+                    </span>
+                    <h3 className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk">
+                      Validate Learning Gaps Blindly
+                    </h3>
+                    <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                      Evaluate your students’ topic mastery based strictly on their raw quiz answers without seeing system scores.
+                      This generates ground-truth data to measure whether LearningPal meets the 85% agreement objective across 30+ students.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                    <Button
+                      to={`/teacher/classes/${id}/validation`}
+                      variant="mint"
+                      size="md"
+                      className="w-full sm:w-auto"
+                    >
+                      <FlaskConical className="w-4 h-4 mr-2" />
+                      <span>Start Blind Labeling</span>
+                    </Button>
+                  </div>
+                </div>
+              </NotebookCard>
+            </div>
+
+            {/* PART 6: FEEDBACK QUALITY & STUDENT RATINGS */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3 gap-2">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+                    <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+                    <span>Feedback Quality & Student Ratings</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
+                    Anonymous student ratings on diagnostic feedback and study materials (Target: ≥ 80% Helpful).
+                  </p>
+                </div>
+                {totalRatingsCount > 0 && (
+                  <span className="font-mono text-xs font-bold px-3 py-1 rounded-full border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
+                    {totalRatingsCount} Total Student Ratings
+                  </span>
+                )}
+              </div>
+
+              {totalRatingsCount === 0 ? (
+                <NotebookCard className="p-8 text-center space-y-2 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border">
+                  <div className="w-12 h-12 rounded-2xl bg-highlighter-yellow/30 border border-ink/20 flex items-center justify-center mx-auto">
+                    <Star className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <h3 className="text-base font-bold text-ink dark:text-chalkboard-chalk">
+                    No Ratings Yet
+                  </h3>
+                  <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-md mx-auto leading-relaxed">
+                    As students in this section review their diagnostic feedback and recommended study resources, their anonymous helpfulness ratings (1 to 5) and comments will appear here.
+                  </p>
+                </NotebookCard>
+              ) : (
+                <div className="space-y-6">
+                  {/* Topic Ratings Table */}
+                  <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl overflow-hidden shadow-lifted">
+                    <div className="px-5 py-3 bg-paper-warm dark:bg-chalkboard-surface border-b-2 border-ink dark:border-chalkboard-borderSubtle flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
+                        Topic Diagnostic Feedback Ratings
+                      </span>
+                      <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                        Ratings of 4 or 5 count as "Helpful"
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle overflow-x-auto">
+                      <table className="w-full text-left text-xs font-mono">
+                        <thead className="bg-paper-warm/50 dark:bg-chalkboard-surface/50 text-ink-muted dark:text-chalkboard-muted">
+                          <tr>
+                            <th className="px-5 py-2.5 font-bold">Topic</th>
+                            <th className="px-4 py-2.5 font-bold text-center">Ratings</th>
+                            <th className="px-4 py-2.5 font-bold text-center">Avg Score</th>
+                            <th className="px-5 py-2.5 font-bold text-right">Helpful %</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-ink/5 dark:divide-chalkboard-borderSubtle">
+                          {topicRatingsList.map((tr) => {
+                            const avg = Number(tr.averageRating || 0);
+                            const helpful = Number(tr.helpfulPercentage ?? tr.helpfulPercent ?? 0);
+                            return (
+                              <tr key={tr.topicId} className="hover:bg-paper-warm/30 dark:hover:bg-chalkboard-surface/40 transition-colors">
+                                <td className="px-5 py-3 font-sans font-bold text-ink dark:text-chalkboard-chalk">
+                                  {tr.topicName}
+                                </td>
+                                <td className="px-4 py-3 text-center text-ink dark:text-chalkboard-chalk">
+                                  {tr.totalRatings}
+                                </td>
+                                <td className="px-4 py-3 text-center font-bold text-ink dark:text-chalkboard-chalk">
+                                  {avg.toFixed(1)} / 5.0
+                                </td>
+                                <td className="px-5 py-3 text-right">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
+                                    helpful >= 80
+                                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                      : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                                  }`}>
+                                    {helpful.toFixed(0)}%
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Lowest-Rated Resources (for resources with at least 3 ratings) */}
+                  {lowestRatedResourcesList.length > 0 && (
+                    <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-redpen/40 dark:border-redpen/50 rounded-2xl overflow-hidden shadow-notebook-sm">
+                      <div className="px-5 py-3 bg-redpen-soft/40 border-b border-redpen/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-mono font-bold text-redpen-dark dark:text-red-300">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>Materials Flagged for Improvement (≥ 3 ratings)</span>
+                        </div>
+                        <span className="text-[11px] font-mono text-redpen-dark dark:text-red-300">
+                          Lowest rated learning resources
+                        </span>
+                      </div>
+                      <div className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle">
+                        {lowestRatedResourcesList.map((res) => {
+                          const avg = Number(res.averageRating || 0);
+                          const helpful = Number(res.helpfulPercentage ?? res.helpfulPercent ?? 0);
+                          return (
+                            <div key={res.resourceId} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-ink/20 bg-paper-warm dark:bg-chalkboard-surface font-bold text-ink dark:text-chalkboard-chalk">
+                                    {res.resourceType}
+                                  </span>
+                                  <h4 className="text-sm font-bold text-ink dark:text-chalkboard-chalk">
+                                    {res.resourceTitle}
+                                  </h4>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs font-mono shrink-0">
+                                <span className="text-ink-muted dark:text-chalkboard-muted">
+                                  {res.totalRatings} ratings
+                                </span>
+                                <span className="font-bold text-redpen dark:text-red-400">
+                                  {avg.toFixed(1)} / 5.0 avg
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-bold">
+                                  {helpful.toFixed(0)}% helpful
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Anonymous Student Comments List */}
+                  {recentCommentsList.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Recent Anonymous Feedback Comments</span>
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {recentCommentsList.slice(0, 6).map((comm, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3.5 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50 space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between text-[11px] font-mono">
+                              <span className="font-bold text-ink dark:text-chalkboard-chalk truncate max-w-[200px]">
+                                {comm.itemTitle || comm.topicName || 'Topic Feedback'}
+                              </span>
+                              <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
+                                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                {comm.rating}/5
+                              </span>
+                            </div>
+                            <p className="text-xs text-ink-muted dark:text-chalkboard-muted italic leading-relaxed">
+                              "{comm.comment}"
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
