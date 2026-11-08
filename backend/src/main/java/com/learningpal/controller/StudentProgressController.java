@@ -23,6 +23,27 @@ public class StudentProgressController {
     }
 
     /**
+     * Retrieves overall curriculum topic mastery for a specific classroom.
+     */
+    @GetMapping("/classes/{classId}/progress")
+    public ResponseEntity<StudentProgressResponseDto> getClassProgress(
+            @PathVariable Long classId,
+            Principal principal) {
+        return ResponseEntity.ok(gapAnalysisService.getStudentProgressForClass(classId, principal.getName()));
+    }
+
+    /**
+     * Retrieves detailed mastery and answer history for a single topic in a classroom.
+     */
+    @GetMapping("/classes/{classId}/progress/topics/{topicId}")
+    public ResponseEntity<TopicProgressDetailDto> getClassTopicProgressDetail(
+            @PathVariable Long classId,
+            @PathVariable Long topicId,
+            Principal principal) {
+        return ResponseEntity.ok(gapAnalysisService.getTopicProgressDetailForClass(classId, topicId, principal.getName()));
+    }
+
+    /**
      * Retrieves overall curriculum topic mastery, categorized strengths, gaps, and study suggestions.
      * Optionally scoped by subjectId.
      */

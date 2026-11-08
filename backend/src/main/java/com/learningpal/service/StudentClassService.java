@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service managing student classroom memberships, join-code redemption, and workspace loading.
@@ -28,6 +30,8 @@ public class StudentClassService {
     private final GapAnalysisService gapAnalysisService;
     private final ClassJoinRateLimiter rateLimiter;
     private final TenantAccess tenantAccess;
+    private final ResourceRepository resourceRepository;
+    private final ResourceProgressRepository resourceProgressRepository;
 
     public StudentClassService(
             UserRepository userRepository,
@@ -36,7 +40,9 @@ public class StudentClassService {
             TopicRepository topicRepository,
             GapAnalysisService gapAnalysisService,
             ClassJoinRateLimiter rateLimiter,
-            TenantAccess tenantAccess) {
+            TenantAccess tenantAccess,
+            ResourceRepository resourceRepository,
+            ResourceProgressRepository resourceProgressRepository) {
         this.userRepository = userRepository;
         this.classEntityRepository = classEntityRepository;
         this.enrollmentRepository = enrollmentRepository;
@@ -44,6 +50,8 @@ public class StudentClassService {
         this.gapAnalysisService = gapAnalysisService;
         this.rateLimiter = rateLimiter;
         this.tenantAccess = tenantAccess;
+        this.resourceRepository = resourceRepository;
+        this.resourceProgressRepository = resourceProgressRepository;
     }
 
     /**
@@ -139,6 +147,37 @@ public class StudentClassService {
     }
 
     /**
+     * Retrieves all active study materials (notes, practice, links) for the class.
+     */
+    @Transactional(readOnly = true)
+    public List<RecommendedResourceDto> getClassStudyMaterials(String studentEmail, Long classId) {
+        User student = getActiveStudent(studentEmail);
+        ClassEntity cls = classEntityRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+
+        enrollmentRepository.findByStudentAndClassEntity(student, cls)
+                .orElseThrow(() -> new ResourceNotFoundException("You are not enrolled in class: " + classId));
+
+        List<Resource> resources = resourceRepository.findBySubjectAndStatus(cls.getSubject(), ResourceStatus.ACTIVE);
+        Set<Long> completedIds = resourceProgressRepository.findByStudentAndClassroom(student, cls).stream()
+                .filter(p -> p.getStatus() == ProgressStatus.COMPLETED)
+                .map(p -> p.getResource().getId())
+                .collect(Collectors.toSet());
+
+        return resources.stream().map(r -> new RecommendedResourceDto(
+                r.getId(),
+                r.getTitle(),
+                r.getType(),
+                r.getDescription(),
+                r.getContent(),
+                r.getUrl(),
+                completedIds.contains(r.getId()),
+                null,
+                null
+        )).toList();
+    }
+
+    /**
      * Resolves the student's active (or most recent) class ID for a given subject.
      * Enables seamless backwards compatibility when navigating /student/subjects/:subjectId.
      */
@@ -161,7 +200,7 @@ public class StudentClassService {
         Subject subject = cls.getSubject();
 
         List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(subject);
-        StudentProgressResponseDto progress = gapAnalysisService.buildProgressResponse(student, topics);
+        StudentProgressResponseDto progress = gapAnalysisService.buildProgressResponse(student, cls, topics);
 
         boolean hasAnyQuestionsAnswered = progress.topics().stream().anyMatch(t -> t.questionsAnswered() > 0);
         String oneLineStatus;

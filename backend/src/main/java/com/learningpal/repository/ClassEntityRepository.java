@@ -29,10 +29,14 @@ public interface ClassEntityRepository extends JpaRepository<ClassEntity, Long> 
     List<ClassEntity> findByTeacherOrderByCreatedAtDesc(User teacher);
 
     boolean existsByTeacherAndSubjectAndNameIgnoreCase(User teacher, Subject subject, String name);
+    Optional<ClassEntity> findByTeacherAndSubjectAndNameIgnoreCase(User teacher, Subject subject, String name);
+    List<ClassEntity> findBySubject(Subject subject);
 
     Optional<ClassEntity> findFirstByInstitutionAndSubjectAndStatus(Institution institution, Subject subject, ClassStatus status);
 
     Optional<ClassEntity> findFirstByInstitutionAndSubject(Institution institution, Subject subject);
 
     long countByInstitution(Institution institution);
+    long countBySubject(Subject subject);
+    boolean existsBySubject(Subject subject);
 }

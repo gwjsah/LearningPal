@@ -13,9 +13,12 @@ import java.util.Optional;
 public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
     List<Assessment> findBySubject(Subject subject);
     List<Assessment> findBySubjectId(Long subjectId);
+    List<Assessment> findBySubjectOrderByCreatedAtDesc(Subject subject);
     List<Assessment> findByStatus(AssessmentStatus status);
     List<Assessment> findBySubjectAndStatus(Subject subject, AssessmentStatus status);
+    List<Assessment> findBySubjectAndStatusOrderByCreatedAtDesc(Subject subject, AssessmentStatus status);
     List<Assessment> findBySubjectIdAndStatus(Long subjectId, AssessmentStatus status);
+    long countBySubject(Subject subject);
     long countBySubjectAndStatus(Subject subject, AssessmentStatus status);
     Optional<Assessment> findByTitle(String title);
 }

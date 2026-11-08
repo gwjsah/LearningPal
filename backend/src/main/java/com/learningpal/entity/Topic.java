@@ -33,6 +33,10 @@ public class Topic {
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private TopicStatus status = TopicStatus.ACTIVE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -44,6 +48,7 @@ public class Topic {
         this.name = name;
         this.description = description;
         this.displayOrder = displayOrder;
+        this.status = TopicStatus.ACTIVE;
         this.createdAt = Instant.now();
     }
 
@@ -51,6 +56,9 @@ public class Topic {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
+        }
+        if (this.status == null) {
+            this.status = TopicStatus.ACTIVE;
         }
     }
 
@@ -92,6 +100,14 @@ public class Topic {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public TopicStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TopicStatus status) {
+        this.status = status;
     }
 }
 

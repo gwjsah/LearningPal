@@ -74,6 +74,12 @@ public class IsolationMatrixTests {
     @Autowired
     private InterventionRepository interventionRepository;
 
+    @Autowired
+    private StudentTopicMasteryRepository studentTopicMasteryRepository;
+
+    @Autowired
+    private GapValidationLabelRepository gapValidationLabelRepository;
+
     private Institution instA;
     private Institution instB;
 
@@ -104,6 +110,8 @@ public class IsolationMatrixTests {
 
     @BeforeEach
     void setUp() {
+        gapValidationLabelRepository.deleteAll();
+        studentTopicMasteryRepository.deleteAll();
         interventionRepository.deleteAll();
         answerRepository.deleteAll();
         attemptRepository.deleteAll();

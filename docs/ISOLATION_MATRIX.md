@@ -41,6 +41,10 @@ This document defines the strict multi-tenant and ownership isolation rules acro
 | `GET /api/admin/validation/report` | `ADMIN` | Scoped strictly to caller's institution | `testValidationLabSecurityAndIsolation` |
 | `GET /api/student/classes` | `STUDENT` | Scoped strictly to caller's enrolled classes | `testCollectionEndpointsDoNotLeakForeignTenantRecords` |
 | `GET /api/student/classes/{id}` | `STUDENT` | Student must be enrolled in target class in same institution (404 if not enrolled or foreign institution) | `testStudentEndpointsRefuseForeignIds` |
+| `GET /api/student/classes/{classId}/progress` | `STUDENT` | Student must be enrolled in target class (403 if not enrolled) | `testFreshMasteryOnNewClass` |
+| `GET /api/student/classes/{classId}/progress/topics/{topicId}` | `STUDENT` | Student must be enrolled in target class and topic must match class subject (403 if not enrolled, 404 if topic invalid) | `testFreshMasteryOnNewClass` |
+| `POST /api/student/classes/{classId}/resources/{resourceId}/complete` | `STUDENT` | Student must be enrolled in target class (403 if not enrolled) | `testResourceProgressPerClass` |
+| `DELETE /api/student/classes/{classId}/resources/{resourceId}/complete` | `STUDENT` | Student must be enrolled in target class (403 if not enrolled) | `testResourceProgressPerClass` |
 | `GET /api/student/classes/resolve-by-subject/{subjectId}` | `STUDENT` | Resolves student's active class for subject; returns 404 if not enrolled in that subject | `testStudentEndpointsRefuseForeignIds` |
 | `GET /api/student/attempts/{attemptId}/result` | `STUDENT` | Attempt must belong to calling student (404 on another student's attempt) | `testStudentEndpointsRefuseForeignIds` |
 | `POST /api/student/attempts/{attemptId}/submit` | `STUDENT` | Attempt must belong to calling student (404 on another student's attempt) | `testStudentEndpointsRefuseForeignIds` |
@@ -53,3 +57,36 @@ This document defines the strict multi-tenant and ownership isolation rules acro
 | `POST /api/survey` | `STUDENT`, `TEACHER` | Enforces exact role items, bounds 1-5, single submission per version | `testMeasurementToolsSecurityAndIsolation` |
 | `GET /api/admin/survey/summary` | `ADMIN` | Scoped strictly to caller's institution; checks 4.0 target with ≥ 5 responses per role | `testMeasurementToolsSecurityAndIsolation` |
 | `GET /api/admin/survey/export` | `ADMIN` | Scoped strictly to caller's institution; pseudonyms (`STU001`, `TEA001`), formula-safe | `testMeasurementToolsSecurityAndIsolation` |
+| `GET /api/teacher/subjects` | `TEACHER` | Scoped strictly to subjects owned by the caller (403 for student/admin) | `testSubjectCreationAndAccessControl` |
+| `POST /api/teacher/subjects` | `TEACHER` | Creates private subject owned by caller with unique `TSUB_` code | `testSubjectCreationAndAccessControl` |
+| `POST /api/teacher/subjects/copy-sample` | `TEACHER` | Creates private clone of seeded C subject owned by caller | `testSubjectCreationAndAccessControl` |
+| `GET /api/teacher/subjects/{id}` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testSubjectCreationAndAccessControl` |
+| `PUT /api/teacher/subjects/{id}` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testSubjectCreationAndAccessControl` |
+| `POST /api/teacher/subjects/{id}/archive` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testSubjectCreationAndAccessControl` |
+| `DELETE /api/teacher/subjects/{id}` | `TEACHER` | Subject must be owned by caller and have 0 topics, questions, quizzes, or classes | `testArchiveNotDelete` |
+| `GET /api/teacher/subjects/{id}/topics` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testTopicLifecycle` |
+| `POST /api/teacher/subjects/{id}/topics` | `TEACHER` | Subject must be owned by caller; topic name unique per subject | `testTopicLifecycle` |
+| `PUT /api/teacher/subjects/{id}/topics/{topicId}` | `TEACHER` | Subject must be owned by caller; topic must belong to subject | `testTopicLifecycle` |
+| `PUT /api/teacher/subjects/{id}/topics/reorder` | `TEACHER` | Subject must be owned by caller; topic IDs must belong to subject | `testTopicLifecycle` |
+| `POST /api/teacher/subjects/{id}/topics/{topicId}/archive` | `TEACHER` | Subject must be owned by caller; topic must belong to subject | `testTopicLifecycle` |
+| `DELETE /api/teacher/subjects/{id}/topics/{topicId}` | `TEACHER` | Subject must be owned by caller; topic must have 0 questions and 0 resources | `testArchiveNotDelete` |
+| `GET /api/teacher/subjects/{id}/questions` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testQuestionValidation` |
+| `POST /api/teacher/subjects/{id}/questions` | `TEACHER` | Subject must be owned by caller; requires 2-6 choices and exactly 1 correct | `testQuestionValidation` |
+| `PUT /api/teacher/subjects/{id}/questions/{qId}` | `TEACHER` | Subject must be owned by caller; in-place edit if 0 answers; creates v(N+1) & retires v(N) if answered | `testQuestionVersioningAndGapAnalysis` |
+| `POST /api/teacher/subjects/{id}/questions/{qId}/duplicate` | `TEACHER` | Subject must be owned by caller; clones into new active question | `testQuestionVersioningAndGapAnalysis` |
+| `POST /api/teacher/subjects/{id}/questions/{qId}/retire` | `TEACHER` | Subject must be owned by caller; marks question RETIRED | `testQuestionVersioningAndGapAnalysis` |
+| `DELETE /api/teacher/subjects/{id}/questions/{qId}` | `TEACHER` | Subject must be owned by caller; allowed only if 0 answers and not in any quiz | `testArchiveNotDelete` |
+| `GET /api/teacher/subjects/{id}/quizzes` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testQuizFreezeAndUnpublish` |
+| `POST /api/teacher/subjects/{id}/quizzes` | `TEACHER` | Subject must be owned by caller; questions must be ACTIVE and belong to subject | `testQuizFreezeAndUnpublish` |
+| `PUT /api/teacher/subjects/{id}/quizzes/{quizId}` | `TEACHER` | Subject must be owned by caller; rejected (400) if PUBLISHED with student attempts | `testQuizFreezeAndUnpublish` |
+| `POST /api/teacher/subjects/{id}/quizzes/{quizId}/publish` | `TEACHER` | Subject must be owned by caller; requires ≥ 1 active question | `testQuizFreezeAndUnpublish` |
+| `POST /api/teacher/subjects/{id}/quizzes/{quizId}/unpublish` | `TEACHER` | Subject must be owned by caller; allowed only if 0 student attempts | `testQuizFreezeAndUnpublish` |
+| `POST /api/teacher/subjects/{id}/quizzes/{quizId}/duplicate` | `TEACHER` | Subject must be owned by caller; clones questions into new DRAFT quiz | `testQuizFreezeAndUnpublish` |
+| `POST /api/teacher/subjects/{id}/quizzes/{quizId}/archive` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testQuizFreezeAndUnpublish` |
+| `DELETE /api/teacher/subjects/{id}/quizzes/{quizId}` | `TEACHER` | Subject must be owned by caller; allowed only if 0 student attempts | `testQuizFreezeAndUnpublish` |
+| `GET /api/teacher/subjects/{id}/resources` | `TEACHER` | Subject must be owned by caller (404 on foreign teacher/institution) | `testLinkResourceValidation` |
+| `POST /api/teacher/subjects/{id}/resources` | `TEACHER` | Subject must be owned by caller; strictly http/https and ≤ 2000 chars | `testLinkResourceValidation` |
+| `PUT /api/teacher/subjects/{id}/resources/{resId}` | `TEACHER` | Subject must be owned by caller; strictly http/https | `testLinkResourceValidation` |
+| `POST /api/teacher/subjects/{id}/resources/{resId}/archive` | `TEACHER` | Subject must be owned by caller | `testLinkResourceValidation` |
+| `DELETE /api/teacher/subjects/{id}/resources/{resId}` | `TEACHER` | Subject must be owned by caller | `testLinkResourceValidation` |
+| `GET /api/student/classes/{classId}/materials` | `STUDENT` | Student must be enrolled in class (403/404 if unenrolled); returns general links | `testFreshMasteryOnNewClass` |

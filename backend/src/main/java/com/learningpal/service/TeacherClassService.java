@@ -104,11 +104,28 @@ public class TeacherClassService {
             throw new BadRequestException("Class section name must be 60 characters or fewer");
         }
 
-        if (request.subjectId() == null) {
-            throw new BadRequestException("Subject ID is required");
+        Subject subject;
+        if (request.subjectName() != null && !request.subjectName().trim().isBlank()) {
+            String trimmedSubj = request.subjectName().trim();
+            if (trimmedSubj.length() > 80) {
+                throw new BadRequestException("Subject name must be 80 characters or fewer");
+            }
+            subject = subjectRepository.findByOwnerAndStatusAndNameIgnoreCase(teacher, SubjectStatus.ACTIVE, trimmedSubj)
+                    .orElseGet(() -> {
+                        String code;
+                        do {
+                            code = "TSUB_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                        } while (subjectRepository.existsByCode(code));
+                        Subject newSubj = new Subject(code, trimmedSubj, null, teacher);
+                        newSubj.setStatus(SubjectStatus.ACTIVE);
+                        return subjectRepository.save(newSubj);
+                    });
+        } else if (request.subjectId() != null) {
+            subject = subjectRepository.findById(request.subjectId())
+                    .orElseThrow(() -> new BadRequestException("Subject not found: " + request.subjectId()));
+        } else {
+            throw new BadRequestException("Subject name is required");
         }
-        Subject subject = subjectRepository.findById(request.subjectId())
-                .orElseThrow(() -> new BadRequestException("Subject not found: " + request.subjectId()));
 
         if (classEntityRepository.existsByTeacherAndSubjectAndNameIgnoreCase(teacher, subject, trimmedName)) {
             throw new BadRequestException("You already have a class with this name for this subject");
@@ -179,8 +196,8 @@ public class TeacherClassService {
         List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(subject);
         List<User> students = enrollments.stream().map(Enrollment::getStudent).toList();
 
-        // Bulk fetch 1: topic masteries for all students in subject
-        List<StudentTopicMastery> masteries = studentTopicMasteryRepository.findByStudentsAndSubject(students, subject);
+        // Bulk fetch 1: topic masteries for all students in this class
+        List<StudentTopicMastery> masteries = studentTopicMasteryRepository.findByStudentsAndClassroom(students, cls);
         Map<Long, Map<Long, StudentTopicMastery>> masteryByStudentAndTopic = masteries.stream()
                 .collect(Collectors.groupingBy(
                         m -> m.getStudent().getId(),
@@ -205,22 +222,43 @@ public class TeacherClassService {
             int attemptsCount = studentAttempts.size();
             int openInterventions = openInterventionCounts.getOrDefault(student.getId(), 0L).intValue();
 
-            // Find latest submitted diagnostic in this class
-            LatestDiagnosticDto latestDiagnostic = studentAttempts.stream()
-                    .filter(a -> a.getStatus() == AttemptStatus.SUBMITTED
-                            && a.getAssessment() != null
-                            && a.getAssessment().getTitle() != null
-                            && a.getAssessment().getTitle().toLowerCase().contains("diagnostic"))
-                    .max(Comparator.comparing(a -> a.getSubmittedAt() != null ? a.getSubmittedAt() : a.getStartedAt()))
-                    .map(a -> {
-                        Double score = a.getTotalScore();
-                        Double max = a.getMaxScore();
-                        Double percent = (score != null && max != null && max > 0.0)
-                                ? Math.round((score / max) * 1000.0) / 10.0
-                                : 0.0;
-                        return new LatestDiagnosticDto(score, max, percent, a.getSubmittedAt());
-                    })
-                    .orElse(null);
+            // Generalize: if the class's subject has a DIAGNOSTIC-kind assessment, use it;
+            // otherwise use the latest submitted attempt in this class and label it "Latest quiz".
+            boolean hasDiagnosticAssessment = assessmentRepository.findBySubject(cls.getSubject()).stream()
+                    .anyMatch(a -> a.getKind() == AssessmentKind.DIAGNOSTIC
+                            || (a.getTitle() != null && a.getTitle().toLowerCase().contains("diagnostic")));
+
+            LatestDiagnosticDto latestDiagnostic;
+            if (hasDiagnosticAssessment) {
+                latestDiagnostic = studentAttempts.stream()
+                        .filter(a -> a.getStatus() == AttemptStatus.SUBMITTED
+                                && a.getAssessment() != null
+                                && (a.getAssessment().getKind() == AssessmentKind.DIAGNOSTIC
+                                        || (a.getAssessment().getTitle() != null && a.getAssessment().getTitle().toLowerCase().contains("diagnostic"))))
+                        .max(Comparator.comparing(a -> a.getSubmittedAt() != null ? a.getSubmittedAt() : a.getStartedAt()))
+                        .map(a -> {
+                            Double score = a.getTotalScore();
+                            Double max = a.getMaxScore();
+                            Double percent = (score != null && max != null && max > 0.0)
+                                    ? Math.round((score / max) * 1000.0) / 10.0
+                                    : 0.0;
+                            return new LatestDiagnosticDto(score, max, percent, a.getSubmittedAt(), "Diagnostic");
+                        })
+                        .orElse(null);
+            } else {
+                latestDiagnostic = studentAttempts.stream()
+                        .filter(a -> a.getStatus() == AttemptStatus.SUBMITTED && a.getAssessment() != null)
+                        .max(Comparator.comparing(a -> a.getSubmittedAt() != null ? a.getSubmittedAt() : a.getStartedAt()))
+                        .map(a -> {
+                            Double score = a.getTotalScore();
+                            Double max = a.getMaxScore();
+                            Double percent = (score != null && max != null && max > 0.0)
+                                    ? Math.round((score / max) * 1000.0) / 10.0
+                                    : 0.0;
+                            return new LatestDiagnosticDto(score, max, percent, a.getSubmittedAt(), "Latest quiz");
+                        })
+                        .orElse(null);
+            }
 
             Map<Long, StudentTopicMastery> studentTopicMap = masteryByStudentAndTopic.getOrDefault(student.getId(), Map.of());
             List<ClassTopicMasteryDto> topicMasteries = new ArrayList<>();
@@ -587,12 +625,12 @@ public class TeacherClassService {
         Subject subject = cls.getSubject();
         List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(subject);
 
-        // Fetch subject-scoped topic mastery rows for this student
-        List<StudentTopicMastery> masteries = studentTopicMasteryRepository.findByStudentAndSubject(student, subject);
+        // Fetch class-scoped topic mastery rows for this student
+        List<StudentTopicMastery> masteries = studentTopicMasteryRepository.findByStudentAndClassroomOrderByTopicDisplayOrderAsc(student, cls);
         Map<Long, StudentTopicMastery> masteryByTopicId = masteries.stream()
                 .collect(Collectors.toMap(m -> m.getTopic().getId(), m -> m, (a, b) -> a));
 
-        Map<Long, Integer> distinctCounts = gapAnalysisService.countDistinctQuestionsEvaluatedPerTopic(student.getId());
+        Map<Long, Integer> distinctCounts = gapAnalysisService.countDistinctQuestionsEvaluatedPerTopicInClass(student.getId(), cls.getId());
 
         List<TeacherStudentTopicMasteryDto> topicMasteries = new ArrayList<>();
         int gapCount = 0;
@@ -609,7 +647,7 @@ public class TeacherClassService {
             }
 
             int questionsAnswered = distinctCounts.getOrDefault(t.getId(), 0);
-            List<RecommendedResourceDto> resources = studentResourceService.getRecommendationsForTopic(t, status, student);
+            List<RecommendedResourceDto> resources = studentResourceService.getRecommendationsForTopic(t, status, student, cls);
             int resourcesRecommended = resources.size();
             int resourcesCompleted = (int) resources.stream().filter(RecommendedResourceDto::completed).count();
 
@@ -637,7 +675,7 @@ public class TeacherClassService {
 
         // Most-missed questions per GAP or DEVELOPING topic (capped at 5)
         Map<Long, GapAnalysisService.QuestionEvaluation> latestByQuestion =
-                gapAnalysisService.getLatestQuestionEvaluations(student.getId());
+                gapAnalysisService.getLatestQuestionEvaluationsInClass(student.getId(), cls.getId());
         Map<Long, List<MissedQuestionDto>> missedQuestionsByTopic = new LinkedHashMap<>();
 
         for (Topic t : topics) {
@@ -706,12 +744,17 @@ public class TeacherClassService {
             ));
         }
 
-        // Diagnostic trend over time (chronological)
+        // Diagnostic/Quiz trend over time (chronological)
+        boolean hasDiagnostic = assessmentRepository.findBySubject(cls.getSubject()).stream()
+                .anyMatch(a -> a.getKind() == AssessmentKind.DIAGNOSTIC
+                        || (a.getTitle() != null && a.getTitle().toLowerCase().contains("diagnostic")));
+
         List<DiagnosticTrendPointDto> diagnosticTrend = classAttempts.stream()
                 .filter(a -> a.getStatus() == AttemptStatus.SUBMITTED
                         && a.getAssessment() != null
-                        && a.getAssessment().getTitle() != null
-                        && a.getAssessment().getTitle().toLowerCase().contains("diagnostic"))
+                        && (!hasDiagnostic
+                                || a.getAssessment().getKind() == AssessmentKind.DIAGNOSTIC
+                                || (a.getAssessment().getTitle() != null && a.getAssessment().getTitle().toLowerCase().contains("diagnostic"))))
                 .sorted(Comparator.comparing((Attempt a) -> a.getSubmittedAt() != null ? a.getSubmittedAt() : Instant.EPOCH))
                 .map(a -> {
                     Double score = a.getTotalScore();
@@ -889,12 +932,23 @@ public class TeacherClassService {
         attemptRepository.save(attempt);
 
         // Recalculate student mastery & gap analysis in same transaction
-        gapAnalysisService.recalculateForStudent(attempt.getStudent().getId());
+        if (attempt.getClassId() != null) {
+            gapAnalysisService.recalculateForStudentInClass(attempt.getStudent().getId(), attempt.getClassId());
+        } else {
+            gapAnalysisService.recalculateForStudent(attempt.getStudent().getId());
+        }
 
         Topic topic = answer.getQuestion().getTopic();
-        StudentTopicMastery updatedMastery = studentTopicMasteryRepository
-                .findByStudentAndTopic(attempt.getStudent(), topic)
-                .orElse(null);
+        StudentTopicMastery updatedMastery = null;
+        if (attempt.getClassId() != null) {
+            updatedMastery = studentTopicMasteryRepository
+                    .findByStudentIdAndClassroomIdAndTopicId(attempt.getStudent().getId(), attempt.getClassId(), topic.getId())
+                    .orElse(null);
+        } else {
+            updatedMastery = studentTopicMasteryRepository
+                    .findByStudentAndTopic(attempt.getStudent(), topic)
+                    .orElse(null);
+        }
 
         Question q = answer.getQuestion();
         List<ChoiceReviewDto> choiceReviews = choiceRepository.findByQuestion(q).stream()
@@ -991,7 +1045,7 @@ public class TeacherClassService {
             throw new BadRequestException("Follow-up date must be today or in the future");
         }
 
-        StudentTopicMastery current = studentTopicMasteryRepository.findByStudentAndTopic(student, topic).orElse(null);
+        StudentTopicMastery current = studentTopicMasteryRepository.findByStudentAndClassroomAndTopic(student, cls, topic).orElse(null);
         Double masteryAtStart = (current != null) ? current.getMasteryPercent() : null;
 
         Intervention intervention = new Intervention(
@@ -1032,7 +1086,7 @@ public class TeacherClassService {
         }
 
         List<User> students = list.stream().map(Intervention::getStudent).distinct().toList();
-        List<StudentTopicMastery> masteries = studentTopicMasteryRepository.findByStudentsAndSubject(students, cls.getSubject());
+        List<StudentTopicMastery> masteries = studentTopicMasteryRepository.findByStudentsAndClassroom(students, cls);
         Map<String, StudentTopicMastery> studentTopicKeyMap = masteries.stream()
                 .collect(Collectors.toMap(m -> m.getStudent().getId() + "_" + m.getTopic().getId(), m -> m, (a, b) -> a));
 
@@ -1083,7 +1137,7 @@ public class TeacherClassService {
         }
 
         StudentTopicMastery current = studentTopicMasteryRepository
-                .findByStudentAndTopic(intervention.getStudent(), intervention.getTopic())
+                .findByStudentAndClassroomAndTopic(intervention.getStudent(), cls, intervention.getTopic())
                 .orElse(null);
         Double currentMastery = current != null ? current.getMasteryPercent() : null;
 

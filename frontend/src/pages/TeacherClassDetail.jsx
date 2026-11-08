@@ -1033,7 +1033,9 @@ export default function TeacherClassDetail() {
                           <th className="py-3 px-3">#</th>
                           <th className="py-3 px-3">Student</th>
                           <th className="py-3 px-3">Status</th>
-                          <th className="py-3 px-3">Latest Diagnostic</th>
+                          <th className="py-3 px-3">
+                            {filteredAndSortedRoster[0]?.latestDiagnostic?.label || 'Latest Assessment'}
+                          </th>
                           <th className="py-3 px-3">Curriculum Topics</th>
                           <th className="py-3 px-3">Attempts</th>
                           <th className="py-3 px-3">Interventions</th>
@@ -1079,7 +1081,7 @@ export default function TeacherClassDetail() {
                               )}
                             </td>
 
-                            {/* Latest Diagnostic Score */}
+                            {/* Latest Assessment / Quiz Score */}
                             <td className="py-3 px-3">
                               {student.latestDiagnostic ? (
                                 <div>
@@ -1087,9 +1089,14 @@ export default function TeacherClassDetail() {
                                     {student.latestDiagnostic.score} / {student.latestDiagnostic.maxScore} (
                                     {student.latestDiagnostic.percent}%)
                                   </span>
-                                  <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted">
-                                    {formatDate(student.latestDiagnostic.submittedAt)}
-                                  </span>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[9px] font-mono uppercase px-1 py-0.2 rounded bg-ink/10 text-ink-muted font-bold">
+                                      {student.latestDiagnostic.label || 'Diagnostic'}
+                                    </span>
+                                    <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted">
+                                      {formatDate(student.latestDiagnostic.submittedAt)}
+                                    </span>
+                                  </div>
                                 </div>
                               ) : (
                                 <span className="text-ink-muted dark:text-chalkboard-muted italic">
@@ -1195,7 +1202,9 @@ export default function TeacherClassDetail() {
 
                         <div className="grid grid-cols-3 gap-2 text-xs font-mono pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                           <div>
-                            <span className="text-ink-muted block text-[10px] uppercase">Diagnostic</span>
+                            <span className="text-ink-muted block text-[10px] uppercase">
+                              {student.latestDiagnostic?.label || 'Assessment'}
+                            </span>
                             <span className="font-bold text-ink dark:text-chalkboard-chalk">
                               {student.latestDiagnostic
                                 ? `${student.latestDiagnostic.score}/${student.latestDiagnostic.maxScore} (${student.latestDiagnostic.percent}%)`

@@ -19,6 +19,10 @@ public class Question {
     @JoinColumn(name = "topic_id", nullable = false)
     private Topic topic;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 20)
     private QuestionType type;
@@ -40,6 +44,24 @@ public class Question {
     @JoinColumn(name = "created_by")
     private User createdBy;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private QuestionStatus status = QuestionStatus.ACTIVE;
+
+    @Column(name = "version", nullable = false)
+    private Integer version = 1;
+
+    @Column(name = "lineage_id")
+    private Long lineageId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supersedes_id")
+    private Question supersedes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origin", nullable = false, length = 20)
+    private QuestionOrigin origin = QuestionOrigin.MANUAL;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -48,12 +70,16 @@ public class Question {
 
     public Question(Topic topic, QuestionType type, String text, String explanation, DifficultyLevel difficulty, Double points, User createdBy) {
         this.topic = topic;
+        this.subject = topic != null ? topic.getSubject() : null;
         this.type = type;
         this.text = text;
         this.explanation = explanation;
         this.difficulty = difficulty;
         this.points = points != null ? points : 1.0;
         this.createdBy = createdBy;
+        this.status = QuestionStatus.ACTIVE;
+        this.version = 1;
+        this.origin = QuestionOrigin.MANUAL;
         this.createdAt = Instant.now();
     }
 
@@ -64,6 +90,18 @@ public class Question {
         }
         if (this.points == null) {
             this.points = 1.0;
+        }
+        if (this.status == null) {
+            this.status = QuestionStatus.ACTIVE;
+        }
+        if (this.version == null) {
+            this.version = 1;
+        }
+        if (this.origin == null) {
+            this.origin = QuestionOrigin.MANUAL;
+        }
+        if (this.subject == null && this.topic != null) {
+            this.subject = this.topic.getSubject();
         }
     }
 
@@ -129,6 +167,54 @@ public class Question {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
+    public void setSubject(Subject subject) {
+        this.subject = subject;
+    }
+
+    public QuestionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(QuestionStatus status) {
+        this.status = status;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public Long getLineageId() {
+        return lineageId != null ? lineageId : id;
+    }
+
+    public void setLineageId(Long lineageId) {
+        this.lineageId = lineageId;
+    }
+
+    public Question getSupersedes() {
+        return supersedes;
+    }
+
+    public void setSupersedes(Question supersedes) {
+        this.supersedes = supersedes;
+    }
+
+    public QuestionOrigin getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(QuestionOrigin origin) {
+        this.origin = origin;
     }
 }
 

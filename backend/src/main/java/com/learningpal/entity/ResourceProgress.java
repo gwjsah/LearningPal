@@ -10,7 +10,7 @@ import java.time.Instant;
 @Table(
     name = "resource_progress",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_student_resource_progress", columnNames = {"student_id", "resource_id"})
+        @UniqueConstraint(name = "uk_student_class_resource_progress", columnNames = {"student_id", "class_id", "resource_id"})
     }
 )
 public class ResourceProgress {
@@ -22,6 +22,11 @@ public class ResourceProgress {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id")
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
+    private ClassEntity classroom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_id", nullable = false)
@@ -39,6 +44,14 @@ public class ResourceProgress {
 
     public ResourceProgress(User student, Resource resource) {
         this.student = student;
+        this.classroom = null;
+        this.resource = resource;
+        this.status = ProgressStatus.NOT_STARTED;
+    }
+
+    public ResourceProgress(User student, ClassEntity classroom, Resource resource) {
+        this.student = student;
+        this.classroom = classroom;
         this.resource = resource;
         this.status = ProgressStatus.NOT_STARTED;
     }
@@ -58,6 +71,14 @@ public class ResourceProgress {
 
     public void setStudent(User student) {
         this.student = student;
+    }
+
+    public ClassEntity getClassroom() {
+        return classroom;
+    }
+
+    public void setClassroom(ClassEntity classroom) {
+        this.classroom = classroom;
     }
 
     public Resource getResource() {

@@ -244,7 +244,7 @@ public class DemoDataPopulator implements CommandLineRunner {
         }
 
         // 3. Delete demo classes
-        List<String> demoJoinCodes = List.of("PILOT1", "PILOT2", "DEMO01", "EMPTY1", "ARCH01");
+        List<String> demoJoinCodes = List.of("PILOT1", "PILOT2", "DEMO01", "EMPTY1", "ARCH01", "WEB101");
         for (String jc : demoJoinCodes) {
             classEntityRepository.findByJoinCode(jc).ifPresent(cls -> {
                 classAssessmentSettingRepository.deleteAll(classAssessmentSettingRepository.findByClassEntity(cls));
@@ -253,6 +253,48 @@ public class DemoDataPopulator implements CommandLineRunner {
                 classEntityRepository.delete(cls);
             });
         }
+
+        // Clean demo teacher-owned private subject
+        subjectRepository.findByCode("TSUB_DEMO_WEB").ifPresent(webSubj -> {
+            List<ClassEntity> webClasses = classEntityRepository.findBySubject(webSubj);
+            for (ClassEntity wc : webClasses) {
+                classAssessmentSettingRepository.deleteAll(classAssessmentSettingRepository.findByClassEntity(wc));
+                enrollmentRepository.deleteAll(enrollmentRepository.findByClassEntity(wc));
+                classEntityRepository.delete(wc);
+            }
+            List<Assessment> assessments = assessmentRepository.findBySubject(webSubj);
+            for (Assessment a : assessments) {
+                List<Attempt> atts = attemptRepository.findByAssessment(a);
+                for (Attempt att : atts) {
+                    answerRepository.deleteAll(answerRepository.findByAttempt(att));
+                }
+                attemptRepository.deleteAll(atts);
+                assessmentQuestionRepository.deleteAll(assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(a));
+                assessmentRepository.delete(a);
+            }
+            resourceRepository.deleteAll(resourceRepository.findBySubjectId(webSubj.getId()));
+            List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(webSubj);
+            for (Topic t : topics) {
+                List<Question> qs = questionRepository.findByTopic(t);
+                for (Question q : qs) {
+                    q.setSupersedes(null);
+                    questionRepository.save(q);
+                }
+            }
+            questionRepository.flush();
+
+            for (Topic t : topics) {
+                List<Question> qs = questionRepository.findByTopic(t);
+                for (Question q : qs) {
+                    choiceRepository.deleteAll(choiceRepository.findByQuestion(q));
+                    choiceRepository.flush();
+                    questionRepository.delete(q);
+                }
+                questionRepository.flush();
+                topicRepository.delete(t);
+            }
+            subjectRepository.delete(webSubj);
+        });
 
         // 4. Delete classes in DEMO-2026 institution
         institutionRepository.findByCodeIgnoreCase(DEMO_INST_CODE).ifPresent(demoInst -> {
@@ -388,9 +430,11 @@ public class DemoDataPopulator implements CommandLineRunner {
         }
 
         // Archived class students (2 past students)
+        // Morgan Past is also enrolled in Section B (Spring 2026) to showcase fresh mastery on new active class vs preserved archived class
         User studentArchived1 = userRepository.save(new User("Morgan Past (Alum)", "student.arch1" + DEMO_DOMAIN, encodedPassword, Role.STUDENT, UserStatus.ACTIVE, pilotInst));
         User studentArchived2 = userRepository.save(new User("Casey Past (Alum)", "student.arch2" + DEMO_DOMAIN, encodedPassword, Role.STUDENT, UserStatus.ACTIVE, pilotInst));
         enrollmentRepository.save(new Enrollment(studentArchived1, classArchived));
+        enrollmentRepository.save(new Enrollment(studentArchived1, classSectionB));
         enrollmentRepository.save(new Enrollment(studentArchived2, classArchived));
 
         // 7. Student Skill Distribution
@@ -449,11 +493,16 @@ public class DemoDataPopulator implements CommandLineRunner {
         // 8. GapValidationLabel (Ground Truth synthetic labels)
         for (User st : allStudents) {
             Map<Long, Double> skills = studentTopicSkills.get(st.getId());
+            Long classId = resolveStudentClassId(st, classSectionA, classSectionB, classDemo, classArchived);
+            ClassEntity stClass = (classId != null && classId.equals(classSectionA.getId())) ? classSectionA
+                    : (classId != null && classId.equals(classSectionB.getId())) ? classSectionB
+                    : (classId != null && classId.equals(classDemo.getId())) ? classDemo : classArchived;
+
             for (Topic t : topics) {
                 double skill = skills.getOrDefault(t.getId(), 0.5);
                 ValidationLabel label = (skill < 0.55) ? ValidationLabel.WEAK : ValidationLabel.NOT_WEAK;
                 gapValidationLabelRepository.save(new GapValidationLabel(
-                        st, t, label, ValidationSource.SYNTHETIC, null, now
+                        st, t, label, ValidationSource.SYNTHETIC, null, now, stClass, null, 0, null, null
                 ));
             }
         }
@@ -476,14 +525,14 @@ public class DemoDataPopulator implements CommandLineRunner {
             Instant attemptTime = now.minus(Duration.ofDays(backdateDays));
 
             takeAssessment(st, diagnosticAssessment, classId, 1, studentTopicSkills.get(st.getId()), attemptTime, rng);
-            gapAnalysisService.recalculateForStudent(st.getId());
+            gapAnalysisService.recalculateForStudentInClass(st.getId(), classId);
         }
 
         // B) Archived students past attempts
         takeAssessment(studentArchived1, diagnosticAssessment, classArchived.getId(), 1, studentTopicSkills.get(studentArchived1.getId()), now.minus(Duration.ofDays(120)), rng);
-        gapAnalysisService.recalculateForStudent(studentArchived1.getId());
+        gapAnalysisService.recalculateForStudentInClass(studentArchived1.getId(), classArchived.getId());
         takeAssessment(studentArchived2, diagnosticAssessment, classArchived.getId(), 1, studentTopicSkills.get(studentArchived2.getId()), now.minus(Duration.ofDays(110)), rng);
-        gapAnalysisService.recalculateForStudent(studentArchived2.getId());
+        gapAnalysisService.recalculateForStudentInClass(studentArchived2.getId(), classArchived.getId());
 
         // C) Follow-up Topic Quizzes for ~16 students in Section A & B
         int quizCount = 0;
@@ -498,7 +547,7 @@ public class DemoDataPopulator implements CommandLineRunner {
                 if (quiz != null) {
                     Instant quizTime = now.minus(Duration.ofDays(14 + (quizCount % 7)));
                     takeAssessment(st, quiz, classId, 1, studentTopicSkills.get(st.getId()), quizTime, rng);
-                    gapAnalysisService.recalculateForStudent(st.getId());
+                    gapAnalysisService.recalculateForStudentInClass(st.getId(), classId);
                     quizCount++;
                 }
             }
@@ -508,7 +557,7 @@ public class DemoDataPopulator implements CommandLineRunner {
         // Diagnostic at T-35 days
         Instant showcaseDiagTime = now.minus(Duration.ofDays(35));
         Attempt showcaseDiagAttempt = takeAssessment(studentShowcase, diagnosticAssessment, classSectionA.getId(), 1, showcaseSkills, showcaseDiagTime, rng);
-        gapAnalysisService.recalculateForStudent(studentShowcase.getId());
+        gapAnalysisService.recalculateForStudentInClass(studentShowcase.getId(), classSectionA.getId());
 
         // Teacher Grade Override for Showcase student on Diagnostic (at T-28 days)
         List<Answer> showcaseAnswers = answerRepository.findByAttempt(showcaseDiagAttempt);
@@ -519,7 +568,7 @@ public class DemoDataPopulator implements CommandLineRunner {
                 double total = showcaseAnswers.stream().mapToDouble(a -> a.getFinalScore() != null ? a.getFinalScore() : 0.0).sum();
                 showcaseDiagAttempt.setTotalScore(total);
                 attemptRepository.save(showcaseDiagAttempt);
-                gapAnalysisService.recalculateForStudent(studentShowcase.getId());
+                gapAnalysisService.recalculateForStudentInClass(studentShowcase.getId(), classSectionA.getId());
                 break;
             }
         }
@@ -545,7 +594,7 @@ public class DemoDataPopulator implements CommandLineRunner {
         // Resource completed on Loops at T-22 days
         List<Resource> loopsResources = resourceRepository.findByTopic(loopsTopic);
         if (!loopsResources.isEmpty()) {
-            ResourceProgress rp = new ResourceProgress(studentShowcase, loopsResources.get(0));
+            ResourceProgress rp = new ResourceProgress(studentShowcase, classSectionA, loopsResources.get(0));
             rp.markCompleted();
             resourceProgressRepository.save(rp);
         }
@@ -556,7 +605,7 @@ public class DemoDataPopulator implements CommandLineRunner {
             Map<Long, Double> improvedSkills = new HashMap<>(showcaseSkills);
             improvedSkills.put(loopsTopic.getId(), 0.85); // Improved skill
             takeAssessment(studentShowcase, loopsQuiz, classSectionA.getId(), 1, improvedSkills, now.minus(Duration.ofDays(14)), rng);
-            gapAnalysisService.recalculateForStudent(studentShowcase.getId());
+            gapAnalysisService.recalculateForStudentInClass(studentShowcase.getId(), classSectionA.getId());
         }
 
         // 11. Teacher Grade Overrides (~12 overrides across attempts)
@@ -583,7 +632,7 @@ public class DemoDataPopulator implements CommandLineRunner {
                     ans.applyTeacherOverride(1.0, overrideComments[overrideCount % overrideComments.length], teacher);
                     answerRepository.save(ans);
                     overrideCount++;
-                    gapAnalysisService.recalculateForStudent(att.getStudent().getId());
+                    gapAnalysisService.recalculateForStudentInClass(att.getStudent().getId(), att.getClassId());
                     break;
                 }
             }
@@ -620,7 +669,11 @@ public class DemoDataPopulator implements CommandLineRunner {
                         gvl.setClassroom(studentClass);
                         gvl.setAttemptCountAtLabel(attemptsCount);
 
-                        Optional<StudentTopicMastery> mOpt = studentTopicMasteryRepository.findByStudentIdAndTopicId(st.getId(), t.getId());
+                        Optional<StudentTopicMastery> mOpt = studentTopicMasteryRepository
+                                .findByStudentIdAndClassroomIdAndTopicId(st.getId(), studentClass.getId(), t.getId());
+                        if (mOpt.isEmpty()) {
+                            mOpt = studentTopicMasteryRepository.findByStudentIdAndTopicId(st.getId(), t.getId());
+                        }
                         gvl.setSystemStatusAtLabel(mOpt.map(StudentTopicMastery::getStatus).orElse(MasteryStatus.INSUFFICIENT_DATA));
                         gvl.setSystemMasteryAtLabel(mOpt.map(StudentTopicMastery::getMasteryPercent).orElse(0.0));
                         gapValidationLabelRepository.save(gvl);
@@ -634,6 +687,9 @@ public class DemoDataPopulator implements CommandLineRunner {
 
         // 15. Populate Usability Survey Responses (Part B)
         populateDemoSurveys(allStudents, pilotTeachers);
+
+        // 16. Teacher-Owned Private Subject Showcase (Phase A requirement)
+        populateTeacherPrivateSubject(teacherPilot1, pilotInst, sectionAStudents, rng);
 
         log.info("DemoDataPopulator: Populated 2 institutions, 7 accounts, 5 classes, 46 students, realistic journeys, and validation labels.");
     }
@@ -901,6 +957,161 @@ public class DemoDataPopulator implements CommandLineRunner {
                     doneCount++;
                 }
             }
+        }
+    }
+
+    private void populateTeacherPrivateSubject(User teacher, Institution institution, List<User> students, Random rng) {
+        String subjCode = "TSUB_DEMO_WEB";
+        Subject privateSubject = subjectRepository.findByCode(subjCode).orElseGet(() -> {
+            Subject s = new Subject(subjCode, "Web Systems Architecture", "Private teacher-curated subject covering modern full-stack web architecture.", teacher);
+            s.setStatus(SubjectStatus.ACTIVE);
+            return subjectRepository.save(s);
+        });
+
+        // 3 Topics
+        Topic t1 = topicRepository.findBySubjectAndName(privateSubject, "HTTP & REST Principles").orElseGet(() -> {
+            Topic t = new Topic(privateSubject, "HTTP & REST Principles", "Status codes, headers, and idempotent HTTP methods", 1);
+            t.setStatus(TopicStatus.ACTIVE);
+            return topicRepository.save(t);
+        });
+
+        Topic t2 = topicRepository.findBySubjectAndName(privateSubject, "State & Session Architecture").orElseGet(() -> {
+            Topic t = new Topic(privateSubject, "State & Session Architecture", "Cookies, JWTs, and distributed session storage", 2);
+            t.setStatus(TopicStatus.ACTIVE);
+            return topicRepository.save(t);
+        });
+
+        Topic t3 = topicRepository.findBySubjectAndName(privateSubject, "Caching & Performance").orElseGet(() -> {
+            Topic t = new Topic(privateSubject, "Caching & Performance", "Cache-Control headers, ETags, and CDNs", 3);
+            t.setStatus(TopicStatus.ACTIVE);
+            return topicRepository.save(t);
+        });
+
+        List<Topic> privateTopics = List.of(t1, t2, t3);
+        List<Question> activeQuestions = new ArrayList<>();
+
+        Question q1ToEdit = null;
+        for (int i = 0; i < privateTopics.size(); i++) {
+            Topic topic = privateTopics.get(i);
+            for (int j = 1; j <= 4; j++) {
+                int qNum = (i * 4) + j;
+                String qText = "Q" + qNum + ": What is a primary standard in " + topic.getName() + " (spec " + j + ")?";
+                String exp = "Explanation for question " + qNum + ": Follows the RFC HTTP specification.";
+
+                Question q = new Question(topic, QuestionType.MCQ, qText, exp, DifficultyLevel.EASY, 1.0, teacher);
+                q.setSubject(privateSubject);
+                q.setStatus(QuestionStatus.ACTIVE);
+                q.setVersion(1);
+                q.setOrigin(QuestionOrigin.MANUAL);
+                Question savedQ = questionRepository.save(q);
+                savedQ.setLineageId(savedQ.getId());
+                savedQ = questionRepository.save(savedQ);
+
+                choiceRepository.save(new Choice(savedQ, "A", "Adhere to the standard specification", true));
+                choiceRepository.save(new Choice(savedQ, "B", "Ignore header guidelines entirely", false));
+                choiceRepository.save(new Choice(savedQ, "C", "Disable transport layer security", false));
+                choiceRepository.save(new Choice(savedQ, "D", "Hardcode arbitrary status code 299", false));
+
+                if (i == 0 && j == 1) {
+                    q1ToEdit = savedQ;
+                }
+                activeQuestions.add(savedQ);
+            }
+        }
+
+        // Create class
+        ClassEntity webClass = classEntityRepository.findByTeacherAndSubjectAndNameIgnoreCase(teacher, privateSubject, "Section 101")
+                .orElseGet(() -> {
+                    ClassEntity cls = new ClassEntity(institution, privateSubject, teacher, "Section 101", "WEB101");
+                    return classEntityRepository.save(cls);
+                });
+
+        // Enroll students
+        if (!students.isEmpty()) {
+            User studentA = students.get(0);
+            if (!enrollmentRepository.existsByStudentAndClassEntity(studentA, webClass)) {
+                enrollmentRepository.save(new Enrollment(studentA, webClass));
+            }
+
+            // Create Published Quiz
+            Assessment webQuiz = assessmentRepository.findBySubject(privateSubject).stream().findFirst()
+                    .orElseGet(() -> {
+                        Assessment a = new Assessment(privateSubject, "Web Architecture Assessment 1", "Diagnostic quiz on HTTP and State.", AssessmentStatus.PUBLISHED, AssessmentKind.QUIZ, teacher);
+                        Assessment saved = assessmentRepository.save(a);
+                        int pos = 1;
+                        for (Question q : activeQuestions) {
+                            assessmentQuestionRepository.save(new AssessmentQuestion(saved, q, pos++));
+                        }
+                        return saved;
+                    });
+
+            // Submit attempt for studentA on webQuiz
+            List<AssessmentQuestion> quizQuestions = assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(webQuiz);
+            Attempt attempt = new Attempt(studentA, webQuiz);
+            attempt.setClassId(webClass.getId());
+            attempt.setStatus(AttemptStatus.SUBMITTED);
+            attempt.setStartedAt(Instant.now().minus(Duration.ofDays(7)));
+            attempt.setSubmittedAt(Instant.now().minus(Duration.ofDays(7)));
+            attempt.setMaxScore((double) quizQuestions.size());
+            attempt.setTotalScore(10.0);
+            Attempt savedAttempt = attemptRepository.save(attempt);
+
+            for (AssessmentQuestion aq : quizQuestions) {
+                Question q = aq.getQuestion();
+                List<Choice> choices = choiceRepository.findByQuestion(q);
+                Choice correctChoice = choices.stream().filter(Choice::isCorrect).findFirst().orElse(choices.get(0));
+                Answer ans = new Answer(savedAttempt, q, correctChoice);
+                ans.applyAutoScore(1.0);
+                answerRepository.save(ans);
+            }
+
+            // Now edit q1ToEdit after answers exist to demonstrate Versioning:
+            // Retire v1 and create v2 with same lineageId!
+            if (q1ToEdit != null) {
+                q1ToEdit.setStatus(QuestionStatus.RETIRED);
+                questionRepository.save(q1ToEdit);
+
+                Question q1v2 = new Question(
+                        q1ToEdit.getTopic(), QuestionType.MCQ,
+                        "Q1: What HTTP status code indicates a successful idempotent resource creation or update? (Revised)",
+                        "Explanation: HTTP 200 OK or 204 No Content for updates, 201 Created for initial creation.",
+                        DifficultyLevel.MEDIUM, 1.0, teacher
+                );
+                q1v2.setSubject(privateSubject);
+                q1v2.setStatus(QuestionStatus.ACTIVE);
+                q1v2.setVersion(2);
+                q1v2.setLineageId(q1ToEdit.getLineageId());
+                q1v2.setSupersedes(q1ToEdit);
+                q1v2.setOrigin(QuestionOrigin.MANUAL);
+                Question savedV2 = questionRepository.save(q1v2);
+
+                choiceRepository.save(new Choice(savedV2, "A", "200 OK or 204 No Content", true));
+                choiceRepository.save(new Choice(savedV2, "B", "301 Moved Permanently", false));
+                choiceRepository.save(new Choice(savedV2, "C", "400 Bad Request", false));
+                choiceRepository.save(new Choice(savedV2, "D", "500 Internal Error", false));
+            }
+
+            // 2 Link Resources
+            Resource link1 = new Resource(
+                    privateSubject, t1, "MDN Web Docs: HTTP Overview",
+                    "Comprehensive reference on HTTP headers, methods, and status codes.",
+                    ResourceType.LINK, null, "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+                    DifficultyLevel.EASY, teacher
+            );
+            link1.setStatus(ResourceStatus.ACTIVE);
+            resourceRepository.save(link1);
+
+            Resource link2 = new Resource(
+                    privateSubject, null, "Web Architecture Primer",
+                    "Foundational essays on distributed software and systems architecture.",
+                    ResourceType.LINK, null, "https://architectelevator.com",
+                    DifficultyLevel.EASY, teacher
+            );
+            link2.setStatus(ResourceStatus.ACTIVE);
+            resourceRepository.save(link2);
+
+            // Recalculate mastery in class
+            gapAnalysisService.recalculateForStudentInClass(studentA.getId(), webClass.getId());
         }
     }
 }

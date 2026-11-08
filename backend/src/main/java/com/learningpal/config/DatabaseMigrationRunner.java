@@ -2,6 +2,7 @@ package com.learningpal.config;
 
 import com.learningpal.entity.*;
 import com.learningpal.repository.*;
+import com.learningpal.service.GapAnalysisService;
 import com.learningpal.service.JoinCodeGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Idempotent startup migration runner that transitions LearningPal to the multi-institution & classroom model.
+ * Idempotent startup migration runner that transitions LearningPal to the multi-institution & classroom model
+ * and migrates topic mastery & resource progress to per-student, per-class scoping.
  * - Creates default "Pilot University" (PILOT-2026).
  * - Assigns all existing users without institution to Pilot University.
  * - Creates default "Section A" for the pilot subject (with first active teacher if one exists).
  * - Converts legacy student-subject enrollments to Section A.
  * - Backfills classId on historical attempts.
  * - Relaxes legacy subject_id in enrollments table so inserts without subject_id never fail.
+ * - Backfills classroom on StudentTopicMastery, ResourceProgress, and GapValidationLabel.
+ * - Migrates unique constraints to (student_id, class_id, topic_id/resource_id).
+ * - Recomputes diagnostic mastery per student per classroom.
  */
 @Component
 @Order(1)
@@ -36,6 +41,10 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
     private final EnrollmentRepository enrollmentRepository;
     private final AttemptRepository attemptRepository;
     private final JoinCodeGenerator joinCodeGenerator;
+    private final StudentTopicMasteryRepository studentTopicMasteryRepository;
+    private final ResourceProgressRepository resourceProgressRepository;
+    private final GapValidationLabelRepository gapValidationLabelRepository;
+    private final GapAnalysisService gapAnalysisService;
 
     public DatabaseMigrationRunner(
             JdbcTemplate jdbcTemplate,
@@ -45,7 +54,11 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             ClassEntityRepository classEntityRepository,
             EnrollmentRepository enrollmentRepository,
             AttemptRepository attemptRepository,
-            JoinCodeGenerator joinCodeGenerator) {
+            JoinCodeGenerator joinCodeGenerator,
+            StudentTopicMasteryRepository studentTopicMasteryRepository,
+            ResourceProgressRepository resourceProgressRepository,
+            GapValidationLabelRepository gapValidationLabelRepository,
+            GapAnalysisService gapAnalysisService) {
         this.jdbcTemplate = jdbcTemplate;
         this.institutionRepository = institutionRepository;
         this.userRepository = userRepository;
@@ -54,6 +67,10 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         this.enrollmentRepository = enrollmentRepository;
         this.attemptRepository = attemptRepository;
         this.joinCodeGenerator = joinCodeGenerator;
+        this.studentTopicMasteryRepository = studentTopicMasteryRepository;
+        this.resourceProgressRepository = resourceProgressRepository;
+        this.gapValidationLabelRepository = gapValidationLabelRepository;
+        this.gapAnalysisService = gapAnalysisService;
     }
 
     @Override
@@ -85,8 +102,9 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
 
         // 4. Ensure default class "Section A" exists for pilot subject C_PROG_INTRO
         Subject pilotSubject = subjectRepository.findByCode("C_PROG_INTRO").orElse(null);
+        ClassEntity sectionA = null;
         if (pilotSubject != null) {
-            ClassEntity sectionA = classEntityRepository.findFirstByInstitutionAndSubject(pilot, pilotSubject)
+            sectionA = classEntityRepository.findFirstByInstitutionAndSubject(pilot, pilotSubject)
                     .orElseGet(() -> {
                         User teacher = userRepository.findFirstByInstitutionAndRoleAndStatus(pilot, Role.TEACHER, UserStatus.ACTIVE).orElse(null);
                         String joinCode = joinCodeGenerator.generateUniqueCode(pilot, classEntityRepository);
@@ -119,7 +137,158 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             }
         }
 
+        // 7. Migrate mastery, progress, and validation tables to class-scoping
+        migrateClassScopedMasteryAndConstraints(sectionA);
+
         log.info("Multi-Institution & Classroom migration check complete.");
+    }
+
+    private void migrateClassScopedMasteryAndConstraints(ClassEntity defaultSection) {
+        // Schema adjustments: add class_id column if missing, and adjust unique constraints
+        ensureSchemaColumnsAndConstraints();
+
+        // Data backfills
+        backfillClassOnMasteryAndProgress(defaultSection);
+
+        // Recompute class masteries
+        List<Enrollment> enrollments = enrollmentRepository.findAll();
+        for (Enrollment e : enrollments) {
+            if (e.getClassEntity() != null && e.getStudent() != null) {
+                gapAnalysisService.recalculateForStudentInClass(e.getStudent().getId(), e.getClassEntity().getId());
+            }
+        }
+
+        // Backfill Phase A fields
+        backfillPhaseAFields();
+    }
+
+    private void backfillPhaseAFields() {
+        try {
+            executeSilently("UPDATE questions SET lineage_id = id WHERE lineage_id IS NULL");
+            executeSilently("UPDATE questions SET version = 1 WHERE version IS NULL");
+            executeSilently("UPDATE questions SET status = 'ACTIVE' WHERE status IS NULL");
+            executeSilently("UPDATE questions SET origin = 'MANUAL' WHERE origin IS NULL");
+            executeSilently("UPDATE questions SET subject_id = (SELECT t.subject_id FROM topics t WHERE t.id = questions.topic_id) WHERE subject_id IS NULL");
+            executeSilently("UPDATE assessments SET kind = 'DIAGNOSTIC' WHERE LOWER(title) LIKE '%diagnostic%'");
+            executeSilently("UPDATE assessments SET kind = 'QUIZ' WHERE kind IS NULL");
+            executeSilently("UPDATE subjects SET status = 'ACTIVE' WHERE status IS NULL");
+            executeSilently("UPDATE topics SET status = 'ACTIVE' WHERE status IS NULL");
+            executeSilently("UPDATE resources SET status = 'ACTIVE' WHERE status IS NULL");
+        } catch (Exception e) {
+            log.debug("Phase A backfill notice: {}", e.getMessage());
+        }
+    }
+
+    private void ensureSchemaColumnsAndConstraints() {
+        try {
+            String dbProduct = jdbcTemplate.execute((java.sql.Connection conn) -> conn.getMetaData().getDatabaseProductName());
+            boolean isH2 = "H2".equalsIgnoreCase(dbProduct);
+
+            if (isH2) {
+                // H2 DDL
+                executeSilently("ALTER TABLE student_topic_mastery ADD COLUMN IF NOT EXISTS class_id BIGINT");
+                executeSilently("ALTER TABLE resource_progress ADD COLUMN IF NOT EXISTS class_id BIGINT");
+                executeSilently("ALTER TABLE gap_validation_labels ADD COLUMN IF NOT EXISTS class_id BIGINT");
+
+                executeSilently("ALTER TABLE subjects ADD COLUMN IF NOT EXISTS owner_id BIGINT");
+                executeSilently("ALTER TABLE subjects ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+                executeSilently("ALTER TABLE topics ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS version INT DEFAULT 1");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS lineage_id BIGINT");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS supersedes_id BIGINT");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS origin VARCHAR(20) DEFAULT 'MANUAL'");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS subject_id BIGINT");
+                executeSilently("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS kind VARCHAR(20) DEFAULT 'QUIZ'");
+                executeSilently("ALTER TABLE resources ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
+
+                executeSilently("ALTER TABLE student_topic_mastery DROP CONSTRAINT IF EXISTS uk_student_topic_mastery");
+                executeSilently("ALTER TABLE resource_progress DROP CONSTRAINT IF EXISTS uk_student_resource_progress");
+            } else {
+                // MySQL DDL
+                executeSilently("ALTER TABLE student_topic_mastery ADD COLUMN class_id BIGINT NULL");
+                executeSilently("ALTER TABLE resource_progress ADD COLUMN class_id BIGINT NULL");
+                executeSilently("ALTER TABLE gap_validation_labels ADD COLUMN class_id BIGINT NULL");
+
+                executeSilently("ALTER TABLE subjects ADD COLUMN owner_id BIGINT NULL");
+                executeSilently("ALTER TABLE subjects ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+                executeSilently("ALTER TABLE topics ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+                executeSilently("ALTER TABLE questions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+                executeSilently("ALTER TABLE questions ADD COLUMN version INT NOT NULL DEFAULT 1");
+                executeSilently("ALTER TABLE questions ADD COLUMN lineage_id BIGINT NULL");
+                executeSilently("ALTER TABLE questions ADD COLUMN supersedes_id BIGINT NULL");
+                executeSilently("ALTER TABLE questions ADD COLUMN origin VARCHAR(20) NOT NULL DEFAULT 'MANUAL'");
+                executeSilently("ALTER TABLE questions ADD COLUMN subject_id BIGINT NULL");
+                executeSilently("ALTER TABLE assessments ADD COLUMN kind VARCHAR(20) NOT NULL DEFAULT 'QUIZ'");
+                executeSilently("ALTER TABLE resources ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+
+                executeSilently("ALTER TABLE student_topic_mastery DROP INDEX uk_student_topic_mastery");
+                executeSilently("ALTER TABLE resource_progress DROP INDEX uk_student_resource_progress");
+            }
+        } catch (Exception e) {
+            log.debug("Schema adjustments completed with notice: {}", e.getMessage());
+        }
+    }
+
+    private void backfillClassOnMasteryAndProgress(ClassEntity defaultSection) {
+        // 1. StudentTopicMastery
+        List<StudentTopicMastery> allMasteries = studentTopicMasteryRepository.findAll();
+        for (StudentTopicMastery m : allMasteries) {
+            if (m.getClassroom() == null) {
+                ClassEntity cls = resolveClassForStudentAndSubject(m.getStudent(), m.getTopic().getSubject(), defaultSection);
+                if (cls != null) {
+                    m.setClassroom(cls);
+                    studentTopicMasteryRepository.save(m);
+                }
+            }
+        }
+
+        // 2. ResourceProgress
+        List<ResourceProgress> allProgress = resourceProgressRepository.findAll();
+        for (ResourceProgress rp : allProgress) {
+            if (rp.getClassroom() == null) {
+                Subject subj = rp.getResource().getTopic() != null ? rp.getResource().getTopic().getSubject() : null;
+                ClassEntity cls = resolveClassForStudentAndSubject(rp.getStudent(), subj, defaultSection);
+                if (cls != null) {
+                    rp.setClassroom(cls);
+                    resourceProgressRepository.save(rp);
+                }
+            }
+        }
+
+        // 3. GapValidationLabel
+        List<GapValidationLabel> allLabels = gapValidationLabelRepository.findAll();
+        for (GapValidationLabel l : allLabels) {
+            if (l.getClassroom() == null) {
+                Subject subj = l.getTopic() != null ? l.getTopic().getSubject() : null;
+                ClassEntity cls = resolveClassForStudentAndSubject(l.getStudent(), subj, defaultSection);
+                if (cls != null) {
+                    l.setClassroom(cls);
+                    gapValidationLabelRepository.save(l);
+                }
+            }
+        }
+    }
+
+    private ClassEntity resolveClassForStudentAndSubject(User student, Subject subject, ClassEntity fallback) {
+        if (student == null) return fallback;
+        List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
+        for (Enrollment e : enrollments) {
+            if (e.getClassEntity() != null) {
+                if (subject == null || (e.getClassEntity().getSubject() != null && e.getClassEntity().getSubject().getId().equals(subject.getId()))) {
+                    return e.getClassEntity();
+                }
+            }
+        }
+        return fallback;
+    }
+
+    private void executeSilently(String sql) {
+        try {
+            jdbcTemplate.execute(sql);
+        } catch (Exception ignored) {
+            // Already applied or not applicable
+        }
     }
 
     private void relaxLegacySubjectColumnIfPresent() {

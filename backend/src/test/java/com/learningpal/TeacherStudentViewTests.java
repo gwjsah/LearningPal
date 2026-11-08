@@ -409,8 +409,8 @@ public class TeacherStudentViewTests {
     @Test
     @DisplayName("Pedagogical Interventions: Creation, filtering, completion, outcome boundary, and immutability")
     void testInterventionsLifecycleAndOutcomes() throws Exception {
-        // Baseline mastery: 40.0% for topic1
-        StudentTopicMastery stm = new StudentTopicMastery(student1, topic1, 40.0, MasteryStatus.GAP);
+        // Baseline mastery: 40.0% for topic1 in classA
+        StudentTopicMastery stm = new StudentTopicMastery(student1, classA, topic1, 40.0, MasteryStatus.GAP);
         studentTopicMasteryRepository.save(stm);
 
         // 1. Create intervention: masteryAtStart should be snapshotted at 40.0

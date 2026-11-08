@@ -18,9 +18,13 @@ import java.util.Map;
 public class StudentClassController {
 
     private final StudentClassService studentClassService;
+    private final com.learningpal.service.StudentResourceService studentResourceService;
 
-    public StudentClassController(StudentClassService studentClassService) {
+    public StudentClassController(
+            StudentClassService studentClassService,
+            com.learningpal.service.StudentResourceService studentResourceService) {
         this.studentClassService = studentClassService;
+        this.studentResourceService = studentResourceService;
     }
 
     /**
@@ -50,6 +54,38 @@ public class StudentClassController {
             @PathVariable Long classId,
             Principal principal) {
         return ResponseEntity.ok(studentClassService.getStudentClassWorkspace(principal.getName(), classId));
+    }
+
+    /**
+     * Lists active study materials (notes, practice, link resources) for the class.
+     */
+    @GetMapping("/{classId}/materials")
+    public ResponseEntity<List<RecommendedResourceDto>> getClassStudyMaterials(
+            @PathVariable Long classId,
+            Principal principal) {
+        return ResponseEntity.ok(studentClassService.getClassStudyMaterials(principal.getName(), classId));
+    }
+
+    /**
+     * Marks an educational resource as completed within a class.
+     */
+    @PostMapping("/{classId}/resources/{resourceId}/complete")
+    public ResponseEntity<ResourceCompletionResponseDto> markCompleteInClass(
+            @PathVariable Long classId,
+            @PathVariable Long resourceId,
+            Principal principal) {
+        return ResponseEntity.ok(studentResourceService.markCompleteInClass(classId, resourceId, principal.getName()));
+    }
+
+    /**
+     * Unmarks completion for an educational resource within a class.
+     */
+    @DeleteMapping("/{classId}/resources/{resourceId}/complete")
+    public ResponseEntity<ResourceCompletionResponseDto> markIncompleteInClass(
+            @PathVariable Long classId,
+            @PathVariable Long resourceId,
+            Principal principal) {
+        return ResponseEntity.ok(studentResourceService.markIncompleteInClass(classId, resourceId, principal.getName()));
     }
 
     /**

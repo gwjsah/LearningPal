@@ -29,16 +29,6 @@ public class TeacherClassController {
         this.subjectRepository = subjectRepository;
     }
 
-    /**
-     * Lists available subjects for class creation.
-     */
-    @GetMapping("/subjects")
-    public ResponseEntity<List<SubjectSummaryDto>> getAvailableSubjects() {
-        List<SubjectSummaryDto> subjects = subjectRepository.findAll().stream()
-                .map(SubjectSummaryDto::fromEntity)
-                .toList();
-        return ResponseEntity.ok(subjects);
-    }
 
     /**
      * Creates a new class section.

@@ -258,8 +258,11 @@ public class ValidationService {
             throw new BadRequestException("Note cannot exceed 300 characters");
         }
 
-        // Server-side snapshot: current mastery, status, and attempt count in this class
-        Optional<StudentTopicMastery> masteryOpt = studentTopicMasteryRepository.findByStudentIdAndTopicId(studentId, topicId);
+        // Server-side snapshot: current class mastery, status, and attempt count in this class
+        Optional<StudentTopicMastery> masteryOpt = studentTopicMasteryRepository.findByStudentIdAndClassroomIdAndTopicId(studentId, classId, topicId);
+        if (masteryOpt.isEmpty()) {
+            masteryOpt = studentTopicMasteryRepository.findByStudentIdAndTopicId(studentId, topicId);
+        }
         Double systemMastery = masteryOpt.map(StudentTopicMastery::getMasteryPercent).orElse(0.0);
         MasteryStatus systemStatus = masteryOpt.map(StudentTopicMastery::getStatus).orElse(MasteryStatus.INSUFFICIENT_DATA);
 
@@ -269,11 +272,13 @@ public class ValidationService {
 
         Instant now = Instant.now();
 
-        GapValidationLabel label = gapValidationLabelRepository.findByStudentIdAndTopicIdAndSource(
+        GapValidationLabel label = gapValidationLabelRepository.findByStudentIdAndClassroomIdAndTopicIdAndSource(
+                studentId, classId, topicId, ValidationSource.TEACHER
+        ).orElseGet(() -> gapValidationLabelRepository.findByStudentIdAndTopicIdAndSource(
                 studentId, topicId, ValidationSource.TEACHER
         ).orElseGet(() -> new GapValidationLabel(
                 student, topic, request.getLabel(), ValidationSource.TEACHER, teacher, now
-        ));
+        )));
 
         label.setLabel(request.getLabel());
         label.setNote(note);
@@ -667,7 +672,14 @@ public class ValidationService {
         if (l.getSystemStatusAtLabel() != null) {
             return l.getSystemStatusAtLabel();
         }
-        // Fallback for older synthetic labels
+        // Fallback: look up by class if available, else by student/topic
+        if (l.getClassroom() != null) {
+            Optional<StudentTopicMastery> classMastery = studentTopicMasteryRepository
+                    .findByStudentIdAndClassroomIdAndTopicId(l.getStudent().getId(), l.getClassroom().getId(), l.getTopic().getId());
+            if (classMastery.isPresent()) {
+                return classMastery.get().getStatus();
+            }
+        }
         return studentTopicMasteryRepository.findByStudentIdAndTopicId(l.getStudent().getId(), l.getTopic().getId())
                 .map(StudentTopicMastery::getStatus)
                 .orElse(MasteryStatus.INSUFFICIENT_DATA);
@@ -679,6 +691,13 @@ public class ValidationService {
     private Double resolveSystemMastery(GapValidationLabel l) {
         if (l.getSystemMasteryAtLabel() != null) {
             return l.getSystemMasteryAtLabel();
+        }
+        if (l.getClassroom() != null) {
+            Optional<StudentTopicMastery> classMastery = studentTopicMasteryRepository
+                    .findByStudentIdAndClassroomIdAndTopicId(l.getStudent().getId(), l.getClassroom().getId(), l.getTopic().getId());
+            if (classMastery.isPresent()) {
+                return classMastery.get().getMasteryPercent();
+            }
         }
         return studentTopicMasteryRepository.findByStudentIdAndTopicId(l.getStudent().getId(), l.getTopic().getId())
                 .map(StudentTopicMastery::getMasteryPercent)

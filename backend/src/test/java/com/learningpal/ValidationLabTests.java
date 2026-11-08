@@ -105,13 +105,10 @@ public class ValidationLabTests {
     @BeforeEach
     void setUp() {
         gapValidationLabelRepository.deleteAll();
+        studentTopicMasteryRepository.deleteAll();
         interventionRepository.deleteAll();
         answerRepository.deleteAll();
-        choiceRepository.deleteAll();
-        assessmentQuestionRepository.deleteAll();
-        questionRepository.deleteAll();
         attemptRepository.deleteAll();
-        assessmentRepository.deleteAll();
         enrollmentRepository.deleteAll();
         classEntityRepository.deleteAll();
 
@@ -359,7 +356,7 @@ public class ValidationLabTests {
 
         // Record a real StudentTopicMastery to make sure it DOES NOT leak
         studentTopicMasteryRepository.save(new StudentTopicMastery(
-                studentA1, topic1, 85.0, MasteryStatus.STRENGTH
+                studentA1, classA, topic1, 85.0, MasteryStatus.STRENGTH
         ));
 
         // 1. Check GET /api/teacher/classes/{classId}/validation/students
@@ -386,7 +383,7 @@ public class ValidationLabTests {
     @DisplayName("Upsert keeps one TEACHER label per student-topic, takes snapshot, and validates inputs")
     void testUpsertAndSnapshot() throws Exception {
         studentTopicMasteryRepository.save(new StudentTopicMastery(
-                studentA1, topic1, 45.0, MasteryStatus.GAP
+                studentA1, classA, topic1, 45.0, MasteryStatus.GAP
         ));
 
         // 1. Initial save of TEACHER label

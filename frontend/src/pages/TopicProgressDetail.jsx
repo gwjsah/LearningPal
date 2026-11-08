@@ -216,9 +216,14 @@ function ResourceRatingWidget({ resource, onRatingSaved }) {
 }
 
 export default function TopicProgressDetail() {
-  const { id, subjectId } = useParams();
+  const { id, classId, subjectId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const validClassId =
+    classId && classId !== 'undefined' && !isNaN(classId)
+      ? classId
+      : null;
 
   const [topicDetail, setTopicDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -286,7 +291,9 @@ export default function TopicProgressDetail() {
     setLoading(true);
     setError('');
     try {
-      const data = await studentService.getTopicProgress(id);
+      const data = validClassId
+        ? await studentService.getClassTopicProgress(validClassId, id)
+        : await studentService.getTopicProgress(id);
       setTopicDetail(data);
     } catch (err) {
       if (err.status === 401 || err.message?.includes('authentication is required')) {
@@ -302,7 +309,7 @@ export default function TopicProgressDetail() {
 
   useEffect(() => {
     loadTopicDetail();
-  }, [id]);
+  }, [id, classId]);
 
   // Handle immediate optimistic completion toggle with rollback on failure
   const handleToggleComplete = async (resourceId, currentlyCompleted) => {
@@ -324,9 +331,9 @@ export default function TopicProgressDetail() {
 
     try {
       if (currentlyCompleted) {
-        await studentService.uncompleteResource(resourceId);
+        await studentService.uncompleteResource(resourceId, validClassId);
       } else {
-        await studentService.completeResource(resourceId);
+        await studentService.completeResource(resourceId, validClassId);
       }
     } catch (err) {
       setTopicDetail(previousDetail);
@@ -441,13 +448,23 @@ export default function TopicProgressDetail() {
       ? subjectId
       : (topicDetail?.subjectId ? String(topicDetail.subjectId) : null);
 
-  const progressBackUrl = validSubjectId
+  const progressBackUrl = validClassId
+    ? `/student/classes/${validClassId}/progress`
+    : validSubjectId
     ? `/student/subjects/${validSubjectId}/progress`
     : '/student/progress';
 
-  const dashboardBackUrl = validSubjectId
+  const dashboardBackUrl = validClassId
+    ? `/student/classes/${validClassId}`
+    : validSubjectId
     ? `/student/subjects/${validSubjectId}`
     : '/student';
+
+  const dashboardLabel = validClassId
+    ? 'Class Workspace'
+    : validSubjectId
+    ? 'Subject Dashboard'
+    : 'Desk';
 
   return (
     <PortalShell
@@ -475,7 +492,7 @@ export default function TopicProgressDetail() {
               to={dashboardBackUrl}
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface font-bold text-xs"
             >
-              <span>{validSubjectId ? 'Subject Dashboard' : 'Desk'}</span>
+              <span>{dashboardLabel}</span>
             </Link>
           </div>
         </div>

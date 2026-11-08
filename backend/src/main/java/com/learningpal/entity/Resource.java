@@ -19,7 +19,7 @@ public class Resource {
     private Subject subject;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "topic_id", nullable = false)
+    @JoinColumn(name = "topic_id")
     private Topic topic;
 
     @Column(name = "title", nullable = false, length = 200)
@@ -35,16 +35,20 @@ public class Resource {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "url", length = 500)
+    @Column(name = "url", length = 2048)
     private String url;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "difficulty", nullable = false, length = 20)
-    private DifficultyLevel difficulty;
+    private DifficultyLevel difficulty = DifficultyLevel.EASY;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private ResourceStatus status = ResourceStatus.ACTIVE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -60,8 +64,9 @@ public class Resource {
         this.type = type;
         this.content = content;
         this.url = url;
-        this.difficulty = difficulty;
+        this.difficulty = difficulty != null ? difficulty : DifficultyLevel.EASY;
         this.createdBy = createdBy;
+        this.status = ResourceStatus.ACTIVE;
         this.createdAt = Instant.now();
     }
 
@@ -69,6 +74,12 @@ public class Resource {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
+        }
+        if (this.status == null) {
+            this.status = ResourceStatus.ACTIVE;
+        }
+        if (this.difficulty == null) {
+            this.difficulty = DifficultyLevel.EASY;
         }
     }
 
@@ -150,6 +161,14 @@ public class Resource {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public ResourceStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ResourceStatus status) {
+        this.status = status;
     }
 }
 

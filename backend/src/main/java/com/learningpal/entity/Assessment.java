@@ -28,6 +28,10 @@ public class Assessment {
     @Column(name = "status", nullable = false, length = 20)
     private AssessmentStatus status = AssessmentStatus.DRAFT;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kind", nullable = false, length = 20)
+    private AssessmentKind kind = AssessmentKind.QUIZ;
+
     @Column(name = "available_from")
     private Instant availableFrom;
 
@@ -54,10 +58,15 @@ public class Assessment {
     }
 
     public Assessment(Subject subject, String title, String description, AssessmentStatus status, User createdBy) {
+        this(subject, title, description, status, AssessmentKind.QUIZ, createdBy);
+    }
+
+    public Assessment(Subject subject, String title, String description, AssessmentStatus status, AssessmentKind kind, User createdBy) {
         this.subject = subject;
         this.title = title;
         this.description = description;
         this.status = status != null ? status : AssessmentStatus.DRAFT;
+        this.kind = kind != null ? kind : AssessmentKind.QUIZ;
         this.createdBy = createdBy;
         this.createdAt = Instant.now();
     }
@@ -69,6 +78,9 @@ public class Assessment {
         }
         if (this.status == null) {
             this.status = AssessmentStatus.DRAFT;
+        }
+        if (this.kind == null) {
+            this.kind = AssessmentKind.QUIZ;
         }
     }
 
@@ -106,6 +118,14 @@ public class Assessment {
 
     public void setStatus(AssessmentStatus status) {
         this.status = status;
+    }
+
+    public AssessmentKind getKind() {
+        return kind;
+    }
+
+    public void setKind(AssessmentKind kind) {
+        this.kind = kind;
     }
 
     public Instant getAvailableFrom() {

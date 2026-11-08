@@ -10,7 +10,7 @@ import java.time.Instant;
 @Table(
     name = "student_topic_mastery",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_student_topic_mastery", columnNames = {"student_id", "topic_id"})
+        @UniqueConstraint(name = "uk_student_class_topic_mastery", columnNames = {"student_id", "class_id", "topic_id"})
     }
 )
 public class StudentTopicMastery {
@@ -22,6 +22,11 @@ public class StudentTopicMastery {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id")
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
+    private ClassEntity classroom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "topic_id", nullable = false)
@@ -43,8 +48,18 @@ public class StudentTopicMastery {
     public StudentTopicMastery() {
     }
 
+    public StudentTopicMastery(User student, ClassEntity classroom, Topic topic, Double masteryPercent, MasteryStatus status) {
+        this.student = student;
+        this.classroom = classroom;
+        this.topic = topic;
+        this.masteryPercent = masteryPercent;
+        this.status = status;
+        this.updatedAt = Instant.now();
+    }
+
     public StudentTopicMastery(User student, Topic topic, Double masteryPercent, MasteryStatus status) {
         this.student = student;
+        this.classroom = null;
         this.topic = topic;
         this.masteryPercent = masteryPercent;
         this.status = status;
@@ -67,6 +82,14 @@ public class StudentTopicMastery {
 
     public void setStudent(User student) {
         this.student = student;
+    }
+
+    public ClassEntity getClassroom() {
+        return classroom;
+    }
+
+    public void setClassroom(ClassEntity classroom) {
+        this.classroom = classroom;
     }
 
     public Topic getTopic() {

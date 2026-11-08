@@ -4,6 +4,7 @@ public enum ResourceType {
     NOTE,
     PRACTICE,
     VIDEO,
-    ARTICLE
+    ARTICLE,
+    LINK
 }
 

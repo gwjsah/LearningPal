@@ -77,9 +77,9 @@ Think of the LearningPal database like a multi-school educational network:
 | `assessment_access` | **The Special Permission Hall Pass:** Controls per-student test permissions: enforces the 1-attempt rule by default, allows teachers to reopen closed tests or grant retakes. |
 | `attempts` | **The Student's Exam Booklet:** A student's test session, recording `attempt_number`, timestamps, scores, and the `class_id` context. |
 | `answers` | **The Marked Answers:** Each response given by a student to a question, holding auto score, teacher override, and feedback. |
-| `student_topic_mastery` | **The Diagnostic Report Card:** Cumulative summary of how well each student understands each topic (`STRENGTH`, `DEVELOPING`, or `GAP`), scoped to the student and subject. |
+| `student_topic_mastery` | **The Diagnostic Report Card:** Section-specific diagnostic mastery for each topic (`STRENGTH`, `DEVELOPING`, `GAP`, or `INSUFFICIENT_DATA`), strictly scoped to `(student_id, class_id, topic_id)`. Each new class begins with a clean slate. |
 | `resources` | **The Study Kit:** Flashcard-style bite-sized study notes and practice challenges designed to close learning gaps. |
-| `resource_progress` | **The Reading Checklist:** Checkmarks recording whether a student has finished reviewing a recommended note or practice problem. |
+| `resource_progress` | **The Reading Checklist:** Checkmarks recording whether a student has finished reviewing a recommended note or practice problem, strictly scoped to `(student_id, class_id, resource_id)`. |
 | `interventions` | **The Teacher Action Plan:** Action items logged by teachers when they notice a student struggling on a topic. |
 | `gap_validation_labels` | **The Validation Lab Ground Truth:** Teacher blind evaluations (`WEAK`, `NOT_WEAK`, `CANNOT_JUDGE`) or synthetic simulation parameters, with server-side snapshot of system mastery, status, and attempt count for agreement measurement. |
 
@@ -149,17 +149,36 @@ By default, students can only attempt an assessment **once**.
 
 ## 7. Teacher Class Roster, Overview & Class-Scoped Assessment Access
 
-### Plain-Language Analogy: The Gradebook vs. The Medical Chart
-Think of the difference between **Attempts** and **Topic Mastery** like a clinical exam vs. a patient's overall health chart:
+### Plain-Language Analogy: High School Algebra vs. College Algebra (Class-Scoped Mastery)
+Think of taking a subject across different semesters or sections like **High School Algebra vs. College Algebra**:
 
+- **A Fresh Gradebook for Every Course:** Even if a student aced Algebra in high school with top marks, when they enroll in College Algebra under Professor Davis, they start day one with an empty gradebook ($0.0\%$ mastery, `INSUFFICIENT_DATA`). Professor Davis cannot and should not award them an 'A' based on high school test sheets. They must take quizzes in *this section* to establish their current mastery.
+- **Archived Classes Preserve Permanent History:** The student's high school transcript is never destroyed or altered. It remains an immutable, archived historical record that the student and past instructors can view at any time.
+- **Strict Boundary Across Classrooms:** Attempts submitted in Section A belong to Section A. Attempts in Section B belong to Section B. Mastery and resource completions never bleed across class boundaries.
+
+#### Worked Example: Morgan Past (`studentArchived1`)
+The deterministic demo populator creates a concrete demonstration of this architecture:
+1. **Archived Class (`classArchived` - Intro to C: Fall 2025):**
+   - Morgan completed quizzes in Fall 2025.
+   - Preserved mastery in `classArchived`: Variables ($75.0\%$, `DEVELOPING`), Pointers ($40.0\%$, `GAP`).
+   - Morgan and the teacher can still open `GET /api/student/classes/{archivedId}/progress` to view full attempt histories and preserved topic status in read-only mode.
+   - Any attempt to submit a new test in this class is rejected with HTTP 400 (*"This class is archived. New attempts cannot be started."*).
+2. **Newly Enrolled Active Class (`classSectionB` - Intro to C: Spring 2026):**
+   - Morgan joins Section B taught by Professor Chen.
+   - In Section B, Morgan has submitted **zero** attempts so far.
+   - Morgan's diagnostic mastery in Section B starts completely fresh: $0.0\%$ mastery across all 6 topics with status `INSUFFICIENT_DATA`.
+   - Recommended study notes and practice tasks in Section B are uncompleted, giving Morgan a fresh start to master the material.
+
+---
+
+### The Class Roster & Overview
 - **The Class Roster (`/api/teacher/classes/{id}/roster`) is the Section Gradebook:**
   - Shows every student currently enrolled in *this specific teacher's classroom*.
-  - **Attempts are Class-Scoped:** The diagnostic scores, attempt counts, and latest test dates reflect *only what happened in this classroom section*. If a student took an exam in last semester's archived class with a different teacher, that past test paper belongs to that old room and won't inflate or distort this section's gradebook.
-  - **Mastery is Cumulative (Subject-Scoped):** A student's topic knowledge (`STRENGTH`, `DEVELOPING`, `GAP`) is their real-world mental competency. Just like a student's reading ability travels with them from homeroom to homeroom, their mastery reflects cumulative understanding across the subject.
-  - **The `needsAttention` Flag:** Computed dynamically as `gaps >= 2` (`NEEDS_ATTENTION_GAP_THRESHOLD`). It signals that a student has two or more foundational gaps and needs targeted intervention.
+  - **Attempts & Mastery are Class-Scoped:** Diagnostic scores, attempt counts, and topic masteries reflect *only submitted attempts taken in this classroom section*. If a student took an exam in last semester's archived class with a different teacher, that past test paper belongs to that old room and won't inflate or distort this section's gradebook.
+  - **The `needsAttention` Flag:** Computed dynamically as `gaps >= 2` (`NEEDS_ATTENTION_GAP_THRESHOLD`). It signals that a student has two or more foundational gaps in *this class* and needs targeted intervention.
 
 - **The Class Overview (`/api/teacher/classes/{id}/overview`) is the Teacher's Lesson Planning Radar:**
-  - Aggregates all enrolled students across every curriculum topic into a single distribution: how many students are in `GAP`, `DEVELOPING`, and `STRENGTH`.
+  - Aggregates all enrolled students across every curriculum topic into a single distribution within this section: how many students are in `GAP`, `DEVELOPING`, and `STRENGTH`.
   - **Ranked by Need:** Ranks topics by the highest count of students in `GAP`. This immediately tells the educator: *"Topic #1 (e.g. Operators) has 12 students in GAP—start tomorrow's lecture reteaching Operators."*
 
 - **Class-Scoped Assessment Settings (`class_assessment_settings`):**
@@ -297,5 +316,110 @@ Child item scores for each individual prompt in the standardized survey.
 
 - **Unique Constraint:** `(response_id, item_key)` ensures exactly one response per survey item.
 - **Evaluation Benchmark:** Supports the $\ge 4.0 / 5.0$ overall usability score requirement across $\ge 5$ responses per role.
+
+---
+
+## 11. Phase A Teacher Content Tools: Private Subjects, Versioned Question Bank, Quizzes & Link Resources
+
+### 11.1 The Plain-Language Analogy: The Textbook Edition and Recipe Card
+
+> [!NOTE]
+> **The Textbook Edition Analogy**:
+> Imagine a teacher publishing an assignment from a textbook. If student Alice completes exercise 12 on page 40 today, Alice's grade and answers belong to that specific exercise. Tomorrow, the teacher discovers an ambiguous wording in exercise 12 and revises it. 
+> 
+> Under naive systems, changing exercise 12 would alter the historical grading of Alice's past test. In LearningPal, editing an answered question never overwrites the past:
+> 1. Exercise 12 (v1) is retired from future quizzes, but Alice's submitted answer remains tied to v1.
+> 2. A revised Exercise 12 (v2) is minted with the same **lineage ID** (the book chapter topic thread).
+> 3. When computing Alice's concept mastery, the engine looks along the lineage thread: if Alice retakes the quiz on v2, her newest score represents her current understanding; Alice is never penalized for having answered two "different" questions on the same concept.
+
+### 11.2 Teacher-Owned Subjects (`subjects`)
+
+Subjects represent courses authored by teachers or seeded as universal read-only templates.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `code` | `VARCHAR(50) NOT NULL UNIQUE` | Internal unique identifier (e.g. `TSUB_A1B2C3D4` or `C_PROG_INTRO`) |
+| `name` | `VARCHAR(120) NOT NULL` | Course title |
+| `description` | `VARCHAR(1000) NULL` | Syllabus / course description |
+| `owner_id` | `BIGINT NULL` | FK to `users` (teacher creator; `NULL` for seeded sample subject) |
+| `status` | `VARCHAR(20) NOT NULL` | `ACTIVE` or `ARCHIVED` |
+| `created_at` | `DATETIME NOT NULL` | Creation timestamp |
+
+- **Two-Field Class Creation:** When a teacher creates a class with a Subject Name and Class Name, if the trimmed subject name matches an existing active subject owned by that teacher (case-insensitive), it is reused. Otherwise, a new private subject is created. Seeded sample subjects are read-only and never modified.
+
+### 11.3 Curriculum Topics (`topics`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `subject_id` | `BIGINT NOT NULL` | FK to `subjects` |
+| `name` | `VARCHAR(120) NOT NULL` | Topic name (e.g. "Pointers & Memory") |
+| `description` | `VARCHAR(1000) NULL` | Topic learning objectives |
+| `display_order` | `INT NOT NULL` | Sequence in syllabus |
+| `status` | `VARCHAR(20) NOT NULL` | `ACTIVE` or `ARCHIVED` |
+
+- **Unique Constraints:** `(subject_id, name)` ensures distinct topic names within a subject. Reordering uses safe offset stepping to avoid `(subject_id, display_order)` collisions.
+
+### 11.4 Versioned Question Bank (`questions` and `choices`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `subject_id` | `BIGINT NULL` | Direct FK to `subjects` |
+| `topic_id` | `BIGINT NOT NULL` | FK to `topics` |
+| `type` | `VARCHAR(20) NOT NULL` | `MCQ` (Multiple Choice Question) |
+| `text` | `VARCHAR(2000) NOT NULL` | Question prompt |
+| `explanation` | `VARCHAR(2000) NULL` | Pedagogical explanation and misconception review |
+| `difficulty` | `VARCHAR(20) NOT NULL` | `EASY`, `MEDIUM`, `HARD` |
+| `points` | `DOUBLE NOT NULL DEFAULT 1.0` | Point value |
+| `status` | `VARCHAR(20) NOT NULL` | `ACTIVE` or `RETIRED` |
+| `version` | `INT NOT NULL DEFAULT 1` | 1-based version number |
+| `lineage_id` | `BIGINT NOT NULL` | Root question ID linking all versions of this item |
+| `supersedes_id` | `BIGINT NULL` | Self-referencing FK to previous `questions.id` |
+| `origin` | `VARCHAR(20) NOT NULL` | `MANUAL` (teacher authoring) |
+| `created_by` | `BIGINT NOT NULL` | FK to `users` (authoring teacher) |
+
+- **MCQ Choice Rules:** Each question must have between 2 and 6 choices, with exactly one marked `is_correct = true`.
+- **In-Place vs Versioned Edit:**
+  - If a question has **0 student answers**, edits occur in-place (`version` remains 1).
+  - If a question has **≥ 1 student answers**, editing sets the existing row to `status = RETIRED`, creates a new active row with `version = previous.version + 1`, same `lineage_id`, and `supersedes_id = previous.id`.
+  - Retired questions cannot be added to new quizzes.
+- **Lineage-Aware Gap Analysis:** When calculating student mastery across attempts in a class, answers are aggregated by `q.lineage_id` (using the student's most recent answer on that lineage), preventing duplicate question counts or skewing mastery percent.
+
+### 11.5 Quizzes and Assessments (`assessments`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `subject_id` | `BIGINT NOT NULL` | FK to `subjects` |
+| `title` | `VARCHAR(120) NOT NULL` | Quiz title |
+| `description` | `VARCHAR(1000) NULL` | Student instructions |
+| `status` | `VARCHAR(20) NOT NULL` | `DRAFT`, `PUBLISHED`, `ARCHIVED` |
+| `kind` | `VARCHAR(20) NOT NULL` | `QUIZ` or `DIAGNOSTIC` |
+| `time_limit_minutes` | `INT NULL` | Assessment time limit in minutes |
+| `created_by` | `BIGINT NOT NULL` | FK to `users` |
+
+- **Freeze Rule:** A `PUBLISHED` quiz with student attempts cannot have its questions altered or be unpublished. Teachers can duplicate it into a new `DRAFT` to make adjustments. A `PUBLISHED` quiz with 0 attempts may be unpublished back to `DRAFT`.
+- **Roster Diagnostic Fallback:** In the class roster and student detail views, if the subject has a `DIAGNOSTIC` assessment, the student's diagnostic score is shown. If the subject has no diagnostic assessment, the system dynamically displays the student's latest submitted quiz labeled as `"Latest quiz"`.
+
+### 11.6 Link Resources (`resources`)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `subject_id` | `BIGINT NOT NULL` | FK to `subjects` |
+| `topic_id` | `BIGINT NULL` | Optional FK to `topics` (tagged recommendations vs general materials) |
+| `title` | `VARCHAR(120) NOT NULL` | Resource title |
+| `url` | `VARCHAR(2048) NOT NULL` | External target link (strictly `http://` or `https://`) |
+| `description` | `VARCHAR(1000) NULL` | Resource overview |
+| `type` | `VARCHAR(20) NOT NULL` | `LINK` (or legacy `NOTE`, `PRACTICE`, `VIDEO`, `ARTICLE`) |
+| `status` | `VARCHAR(20) NOT NULL` | `ACTIVE` or `ARCHIVED` |
+
+- **Display Context:**
+  - Topic-tagged link resources appear in student recommendation cards for that topic.
+  - Untagged link resources (`topic_id = NULL`) appear in the class workspace under "Study Materials".
+  - Strictly validated: rejects `javascript:`, `data:`, `ftp:`, and links exceeding 2000 characters. Opens in new tab with `target="_blank" rel="noopener noreferrer"`. No server-side fetching.
+
 
 

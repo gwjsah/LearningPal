@@ -245,7 +245,7 @@ public class TeacherClassViewTests {
     }
 
     private void saveMastery(User student, Topic topic, Double percent, MasteryStatus status) {
-        StudentTopicMastery m = new StudentTopicMastery(student, topic, percent, status);
+        StudentTopicMastery m = new StudentTopicMastery(student, classA, topic, percent, status);
         studentTopicMasteryRepository.save(m);
     }
 

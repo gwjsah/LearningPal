@@ -16,6 +16,8 @@ public interface GapValidationLabelRepository extends JpaRepository<GapValidatio
 
     Optional<GapValidationLabel> findByStudentIdAndTopicIdAndSource(Long studentId, Long topicId, ValidationSource source);
 
+    Optional<GapValidationLabel> findByStudentIdAndClassroomIdAndTopicIdAndSource(Long studentId, Long classId, Long topicId, ValidationSource source);
+
     List<GapValidationLabel> findByStudentId(Long studentId);
 
     List<GapValidationLabel> findByStudentIdAndSource(Long studentId, ValidationSource source);

@@ -72,6 +72,27 @@ public class TenantAccess {
     }
 
     /**
+     * Enforces that the teacher owns the specified subject in the same institution.
+     * Returns 404 if subject does not exist, belongs to another educator,
+     * belongs to another institution, or has no owner (platform-seeded subject).
+     */
+    public com.learningpal.entity.Subject requireOwnedSubject(
+            User teacher,
+            Long subjectId,
+            com.learningpal.repository.SubjectRepository repository) {
+        if (teacher == null || subjectId == null) {
+            throw new ResourceNotFoundException("Subject not found: " + subjectId);
+        }
+        com.learningpal.entity.Subject subject = repository.findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found: " + subjectId));
+        if (subject.getOwner() == null || !subject.getOwner().getId().equals(teacher.getId())) {
+            throw new ResourceNotFoundException("Subject not found: " + subjectId);
+        }
+        requireSameInstitution(teacher, subject.getOwner().getInstitution());
+        return subject;
+    }
+
+    /**
      * Central authorization rule for whether a teacher may inspect a student's learning data.
      * Evaluates to true ONLY IF:
      * 1. Teacher and Student are non-null and belong to the same institution.

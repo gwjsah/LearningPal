@@ -15,12 +15,12 @@ export const teacherService = {
   getClasses: () => apiRequest('/teacher/classes'),
 
   /**
-   * Creates a new class section.
+   * Creates a new class section. Supports new 2-field creation (subjectName + name) and legacy (subjectId + name).
    */
-  createClass: ({ subjectId, name }) =>
+  createClass: ({ subjectName, name, subjectId }) =>
     apiRequest('/teacher/classes', {
       method: 'POST',
-      body: JSON.stringify({ subjectId, name }),
+      body: JSON.stringify({ subjectName, name, subjectId }),
     }),
 
   /**
@@ -206,6 +206,206 @@ export const teacherService = {
    */
   getClassRatingsSummary: (classId) =>
     apiRequest(`/teacher/classes/${classId}/ratings-summary`),
+
+  // =========================================================================
+  // PHASE A: TEACHER CONTENT TOOLS (Subjects, Topics, Question Bank, Quizzes, Resources)
+  // =========================================================================
+
+  /**
+   * Lists the teacher's active and archived subjects.
+   */
+  getTeacherSubjects: () => apiRequest('/teacher/subjects'),
+
+  /**
+   * Autocomplete suggestions for subject names.
+   */
+  getSubjectSuggestions: (query = '') =>
+    apiRequest(`/teacher/subjects/suggestions${query ? `?q=${encodeURIComponent(query)}` : ''}`),
+
+  /**
+   * Creates a new private subject.
+   */
+  createSubject: (data) =>
+    apiRequest('/teacher/subjects', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * Copies the seed C Basics sample subject into a new private teacher-owned subject.
+   */
+  copySampleSubject: () =>
+    apiRequest('/teacher/subjects/copy-sample', {
+      method: 'POST',
+    }),
+
+  /**
+   * Gets details of a teacher subject.
+   */
+  getSubject: (id) => apiRequest(`/teacher/subjects/${id}`),
+
+  /**
+   * Updates a subject name and description.
+   */
+  updateSubject: (id, data) =>
+    apiRequest(`/teacher/subjects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * Archives a subject.
+   */
+  archiveSubject: (id) =>
+    apiRequest(`/teacher/subjects/${id}/archive`, {
+      method: 'POST',
+    }),
+
+  /**
+   * Deletes an unused subject.
+   */
+  deleteSubject: (id) =>
+    apiRequest(`/teacher/subjects/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Topics
+  getTopics: (subjectId) => apiRequest(`/teacher/subjects/${subjectId}/topics`),
+
+  createTopic: (subjectId, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/topics`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateTopic: (subjectId, topicId, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/topics/${topicId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  reorderTopics: (subjectId, topicIds) =>
+    apiRequest(`/teacher/subjects/${subjectId}/topics/reorder`, {
+      method: 'PUT',
+      body: JSON.stringify({ topicIds }),
+    }),
+
+  archiveTopic: (subjectId, topicId) =>
+    apiRequest(`/teacher/subjects/${subjectId}/topics/${topicId}/archive`, {
+      method: 'POST',
+    }),
+
+  deleteTopic: (subjectId, topicId) =>
+    apiRequest(`/teacher/subjects/${subjectId}/topics/${topicId}`, {
+      method: 'DELETE',
+    }),
+
+  // Question Bank
+  getQuestions: (subjectId, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiRequest(`/teacher/subjects/${subjectId}/questions${q ? `?${q}` : ''}`);
+  },
+
+  getQuestion: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/questions/${id}`),
+
+  createQuestion: (subjectId, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/questions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateQuestion: (subjectId, id, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/questions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  duplicateQuestion: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/questions/${id}/duplicate`, {
+      method: 'POST',
+    }),
+
+  retireQuestion: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/questions/${id}/retire`, {
+      method: 'POST',
+    }),
+
+  deleteQuestion: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/questions/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Quizzes
+  getQuizzes: (subjectId) => apiRequest(`/teacher/subjects/${subjectId}/quizzes`),
+
+  getQuiz: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}`),
+
+  createQuiz: (subjectId, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateQuiz: (subjectId, id, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  publishQuiz: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  unpublishQuiz: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/unpublish`, {
+      method: 'POST',
+    }),
+
+  duplicateQuiz: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/duplicate`, {
+      method: 'POST',
+    }),
+
+  archiveQuiz: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/archive`, {
+      method: 'POST',
+    }),
+
+  deleteQuiz: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Resources
+  getResources: (subjectId, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiRequest(`/teacher/subjects/${subjectId}/resources${q ? `?${q}` : ''}`);
+  },
+
+  createResource: (subjectId, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/resources`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateResource: (subjectId, id, data) =>
+    apiRequest(`/teacher/subjects/${subjectId}/resources/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  archiveResource: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/resources/${id}/archive`, {
+      method: 'POST',
+    }),
+
+  deleteResource: (subjectId, id) =>
+    apiRequest(`/teacher/subjects/${subjectId}/resources/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 

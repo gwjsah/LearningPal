@@ -19,9 +19,14 @@ import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimiti
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 
 export default function StudentProgress() {
-  const { subjectId } = useParams();
+  const { classId, subjectId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const validClassId =
+    classId && classId !== 'undefined' && !isNaN(classId)
+      ? classId
+      : null;
 
   const validSubjectId =
     subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
@@ -36,7 +41,9 @@ export default function StudentProgress() {
     setLoading(true);
     setError('');
     try {
-      const data = validSubjectId
+      const data = validClassId
+        ? await studentService.getClassProgress(validClassId)
+        : validSubjectId
         ? await studentService.getSubjectProgress(validSubjectId)
         : await studentService.getProgress();
       setProgress(data);
@@ -54,10 +61,29 @@ export default function StudentProgress() {
 
   useEffect(() => {
     loadProgress();
-  }, [subjectId]);
+  }, [classId, subjectId]);
 
   const hasAnyAttempts =
     progress?.topics?.some((t) => t.status !== 'INSUFFICIENT_DATA' || t.questionsAnswered > 0) ?? false;
+
+  const backUrl = validClassId
+    ? `/student/classes/${validClassId}`
+    : validSubjectId
+    ? `/student/subjects/${validSubjectId}`
+    : '/student';
+
+  const backLabel = validClassId
+    ? 'Back to Class Workspace'
+    : validSubjectId
+    ? 'Back to Subject Dashboard'
+    : 'Back to My Desk';
+
+  const getTopicDetailUrl = (topicId) =>
+    validClassId
+      ? `/student/classes/${validClassId}/progress/topics/${topicId}`
+      : validSubjectId
+      ? `/student/subjects/${validSubjectId}/progress/topics/${topicId}`
+      : `/student/progress/topics/${topicId}`;
 
   return (
     <PortalShell
@@ -74,15 +100,21 @@ export default function StudentProgress() {
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between text-xs font-mono">
           <Link
-            to={validSubjectId ? `/student/subjects/${validSubjectId}` : '/student'}
+            to={backUrl}
             className="inline-flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{validSubjectId ? 'Back to Subject Dashboard' : 'Back to My Desk'}</span>
+            <span>{backLabel}</span>
           </Link>
           <div className="flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted">
             <Link to="/student" className="hover:underline">My Classes</Link>
-            {validSubjectId && (
+            {validClassId && (
+              <>
+                <span>/</span>
+                <Link to={`/student/classes/${validClassId}`} className="hover:underline">Class #{validClassId}</Link>
+              </>
+            )}
+            {!validClassId && validSubjectId && (
               <>
                 <span>/</span>
                 <Link to={`/student/subjects/${validSubjectId}`} className="hover:underline">Subject #{validSubjectId}</Link>
@@ -196,11 +228,7 @@ export default function StudentProgress() {
                             variant="primary"
                             size="sm"
                             onClick={() =>
-                              navigate(
-                                validSubjectId
-                                  ? `/student/subjects/${validSubjectId}/progress/topics/${progress.studyNext.topicId}`
-                                  : `/student/progress/topics/${progress.studyNext.topicId}`
-                              )
+                              navigate(getTopicDetailUrl(progress.studyNext.topicId))
                             }
                           >
                             <span>Topic Details & History</span>
@@ -258,9 +286,7 @@ export default function StudentProgress() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {progress.topics?.map((topic, idx) => {
-                      const topicDetailUrl = validSubjectId
-                        ? `/student/subjects/${validSubjectId}/progress/topics/${topic.topicId}`
-                        : `/student/progress/topics/${topic.topicId}`;
+                      const topicDetailUrl = getTopicDetailUrl(topic.topicId);
                       return (
                         <div
                           key={topic.topicId}

@@ -9,7 +9,7 @@ import java.time.Instant;
  */
 @Entity
 @Table(name = "gap_validation_labels", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"student_id", "topic_id", "source"})
+        @UniqueConstraint(name = "uk_gap_val_student_class_topic_source", columnNames = {"student_id", "class_id", "topic_id", "source"})
 })
 public class GapValidationLabel {
 
@@ -39,6 +39,7 @@ public class GapValidationLabel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private ClassEntity classroom;
 
     @Column(name = "note", length = 300)

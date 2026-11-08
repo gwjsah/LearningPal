@@ -58,7 +58,7 @@ public class StudentEnrollmentService {
 
     private StudentSubjectSummaryDto buildSubjectSummary(User student, Subject subject, Enrollment enrollment) {
         List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(subject);
-        StudentProgressResponseDto progress = gapAnalysisService.buildProgressResponse(student, topics);
+        StudentProgressResponseDto progress = gapAnalysisService.buildProgressResponse(student, enrollment.getClassEntity(), topics);
 
         boolean hasAnyQuestionsAnswered = progress.topics().stream().anyMatch(t -> t.questionsAnswered() > 0);
         String oneLineStatus;

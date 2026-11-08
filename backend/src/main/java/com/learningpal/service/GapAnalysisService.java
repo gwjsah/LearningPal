@@ -36,6 +36,7 @@ public class GapAnalysisService {
     private final SubjectRepository subjectRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final FeedbackRatingRepository feedbackRatingRepository;
+    private final ClassEntityRepository classEntityRepository;
 
     @Value("${app.analysis.strength-threshold:80.0}")
     private double strengthThreshold;
@@ -57,7 +58,8 @@ public class GapAnalysisService {
             StudentResourceService studentResourceService,
             SubjectRepository subjectRepository,
             EnrollmentRepository enrollmentRepository,
-            FeedbackRatingRepository feedbackRatingRepository) {
+            FeedbackRatingRepository feedbackRatingRepository,
+            ClassEntityRepository classEntityRepository) {
         this.userRepository = userRepository;
         this.topicRepository = topicRepository;
         this.attemptRepository = attemptRepository;
@@ -69,6 +71,7 @@ public class GapAnalysisService {
         this.subjectRepository = subjectRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.feedbackRatingRepository = feedbackRatingRepository;
+        this.classEntityRepository = classEntityRepository;
     }
 
     /**
@@ -84,20 +87,29 @@ public class GapAnalysisService {
     ) {}
 
     /**
-     * Recomputes diagnostic topic mastery for a given student across all curriculum topics.
+     * Recomputes diagnostic topic mastery for a given student within a specific classroom.
+     * Evaluates ONLY submitted attempts taken within that classId.
      * Idempotent and safe to invoke after attempt submissions or teacher score overrides.
      */
     @Transactional
-    public void recalculateForStudent(Long studentId) {
+    public void recalculateForStudentInClass(Long studentId, Long classId) {
         User student = userRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentId));
 
-        List<Topic> topics = topicRepository.findAllByOrderByDisplayOrderAsc();
+        ClassEntity classroom = classEntityRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
 
-        // 1. Map of distinct questions to their MOST RECENT answer/evaluation
-        Map<Long, QuestionEvaluation> latestByQuestion = getLatestQuestionEvaluations(studentId);
+        List<Topic> topics;
+        if (classroom.getSubject() != null) {
+            topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(classroom.getSubject());
+        } else {
+            topics = topicRepository.findAllByOrderByDisplayOrderAsc();
+        }
 
-        // 2. For each topic, aggregate mastery over distinct questions evaluated
+        // 1. Map of distinct questions to their MOST RECENT answer/evaluation WITHIN this class
+        Map<Long, QuestionEvaluation> latestByQuestion = getLatestQuestionEvaluationsInClass(studentId, classId);
+
+        // 2. For each topic, aggregate mastery over distinct questions evaluated in this class
         Map<Long, List<QuestionEvaluation>> evaluationsByTopic = latestByQuestion.values().stream()
                 .collect(Collectors.groupingBy(eval -> eval.question().getTopic().getId()));
 
@@ -121,7 +133,7 @@ public class GapAnalysisService {
             );
 
             Optional<StudentTopicMastery> existingOpt =
-                    studentTopicMasteryRepository.findByStudentAndTopic(student, topic);
+                    studentTopicMasteryRepository.findByStudentAndClassroomAndTopic(student, classroom, topic);
 
             if (existingOpt.isPresent()) {
                 StudentTopicMastery existing = existingOpt.get();
@@ -131,18 +143,69 @@ public class GapAnalysisService {
                 existing.setStatus(status);
                 studentTopicMasteryRepository.save(existing);
             } else {
-                StudentTopicMastery newMastery = new StudentTopicMastery(student, topic, masteryPercent, status);
+                StudentTopicMastery newMastery = new StudentTopicMastery(student, classroom, topic, masteryPercent, status);
                 newMastery.setPreviousMasteryPercent(null);
                 studentTopicMasteryRepository.save(newMastery);
             }
         }
 
-        log.info("Diagnostic mastery recalculated for student ID {}", studentId);
+        log.info("Diagnostic mastery recalculated for student ID {} in class ID {}", studentId, classId);
     }
 
     /**
-     * Retrieves overall student progress, strengths, gaps, study recommendations,
-     * and topic resource completion counts across all curriculum topics.
+     * Backward-compatible recalculateForStudent: iterates over all classes the student is enrolled in
+     * and recomputes mastery for each class.
+     */
+    @Transactional
+    public void recalculateForStudent(Long studentId) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentId));
+
+        List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
+        Set<Long> processedClassIds = new HashSet<>();
+        for (Enrollment e : enrollments) {
+            if (e.getClassEntity() != null && processedClassIds.add(e.getClassEntity().getId())) {
+                recalculateForStudentInClass(studentId, e.getClassEntity().getId());
+            }
+        }
+
+        List<Attempt> attempts = attemptRepository.findByStudentId(studentId);
+        for (Attempt a : attempts) {
+            if (a.getClassId() != null && processedClassIds.add(a.getClassId())) {
+                recalculateForStudentInClass(studentId, a.getClassId());
+            }
+        }
+
+        log.info("Diagnostic mastery recalculated across classes for student ID {}", studentId);
+    }
+
+    /**
+     * Retrieves overall student progress for a specific classroom.
+     */
+    @Transactional(readOnly = true)
+    public StudentProgressResponseDto getStudentProgressForClass(Long classId, String studentEmail) {
+        User student = userRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
+
+        ClassEntity classroom = classEntityRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+
+        if (!enrollmentRepository.existsByStudentAndClassEntity(student, classroom)) {
+            throw new AccessDeniedException("Student is not enrolled in class: " + classroom.getName());
+        }
+
+        List<Topic> topics;
+        if (classroom.getSubject() != null) {
+            topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(classroom.getSubject());
+        } else {
+            topics = topicRepository.findAllByOrderByDisplayOrderAsc();
+        }
+
+        return buildProgressResponse(student, classroom, topics);
+    }
+
+    /**
+     * Retrieves overall student progress across all curriculum topics.
      */
     @Transactional(readOnly = true)
     public StudentProgressResponseDto getStudentProgress(String studentEmail) {
@@ -150,11 +213,12 @@ public class GapAnalysisService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         List<Topic> topics = topicRepository.findAllByOrderByDisplayOrderAsc();
-        return buildProgressResponse(student, topics);
+        return buildProgressResponse(student, null, topics);
     }
 
     /**
      * Retrieves curriculum topic mastery scoped to a specific subject after verifying enrollment.
+     * Resolves the student's active class for that subject if present.
      */
     @Transactional(readOnly = true)
     public StudentProgressResponseDto getStudentProgressForSubject(Long subjectId, String studentEmail) {
@@ -168,22 +232,38 @@ public class GapAnalysisService {
             throw new AccessDeniedException("Student is not enrolled in subject: " + subject.getName());
         }
 
+        ClassEntity activeClass = null;
+        List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
+        for (Enrollment e : enrollments) {
+            if (e.getClassEntity() != null && e.getClassEntity().getStatus() == ClassStatus.ACTIVE &&
+                    e.getClassEntity().getSubject() != null && e.getClassEntity().getSubject().getId().equals(subjectId)) {
+                activeClass = e.getClassEntity();
+                break;
+            }
+        }
+
         List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(subject);
-        return buildProgressResponse(student, topics);
+        return buildProgressResponse(student, activeClass, topics);
     }
 
     /**
-     * Core helper building StudentProgressResponseDto from a given list of topics.
+     * Core helper building StudentProgressResponseDto for a given classroom and list of topics.
      */
-    public StudentProgressResponseDto buildProgressResponse(User student, List<Topic> topics) {
-        List<StudentTopicMastery> masteryRecords =
-                studentTopicMasteryRepository.findByStudentOrderByTopicDisplayOrderAsc(student);
+    public StudentProgressResponseDto buildProgressResponse(User student, ClassEntity classroom, List<Topic> topics) {
+        List<StudentTopicMastery> masteryRecords;
+        if (classroom != null) {
+            masteryRecords = studentTopicMasteryRepository.findByStudentAndClassroomOrderByTopicDisplayOrderAsc(student, classroom);
+        } else {
+            masteryRecords = studentTopicMasteryRepository.findByStudentOrderByTopicDisplayOrderAsc(student);
+        }
 
         Map<Long, StudentTopicMastery> masteryByTopic = masteryRecords.stream()
                 .collect(Collectors.toMap(m -> m.getTopic().getId(), m -> m, (m1, m2) -> m2));
 
-        // Get distinct questions evaluated per topic for this student
-        Map<Long, Integer> distinctQuestionCounts = countDistinctQuestionsEvaluatedPerTopic(student.getId());
+        // Get distinct questions evaluated per topic for this student in this class
+        Map<Long, Integer> distinctQuestionCounts = (classroom != null)
+                ? countDistinctQuestionsEvaluatedPerTopicInClass(student.getId(), classroom.getId())
+                : countDistinctQuestionsEvaluatedPerTopic(student.getId());
 
         List<TopicProgressDto> topicProgressList = new ArrayList<>();
 
@@ -198,7 +278,7 @@ public class GapAnalysisService {
 
             String trend = GapAnalysisClassifier.calculateTrend(masteryPercent, previousPercent);
 
-            int[] resourceCounts = studentResourceService.getResourceCountsForTopic(topic, status, student);
+            int[] resourceCounts = studentResourceService.getResourceCountsForTopic(topic, status, student, classroom);
             int resourcesCompleted = resourceCounts[0];
             int resourcesRecommended = resourceCounts[1];
 
@@ -223,7 +303,6 @@ public class GapAnalysisService {
                 .filter(t -> t.status() == MasteryStatus.GAP)
                 .toList();
 
-        // Pick "study next" topic: lowest-mastery GAP topic, or lowest non-INSUFFICIENT_DATA topic
         TopicProgressDto studyNext = topicProgressList.stream()
                 .filter(t -> t.status() != MasteryStatus.INSUFFICIENT_DATA)
                 .min(Comparator
@@ -235,25 +314,33 @@ public class GapAnalysisService {
         return new StudentProgressResponseDto(topicProgressList, strengths, gaps, studyNext);
     }
 
+    public StudentProgressResponseDto buildProgressResponse(User student, List<Topic> topics) {
+        return buildProgressResponse(student, null, topics);
+    }
+
     /**
-     * Retrieves detailed mastery, answer history, personalized feedback, and recommended resources for a single topic.
+     * Retrieves detailed mastery, answer history, personalized feedback, and recommended resources for a single topic in a classroom.
      */
     @Transactional(readOnly = true)
-    public TopicProgressDetailDto getTopicProgressDetail(Long topicId, String studentEmail) {
+    public TopicProgressDetailDto getTopicProgressDetailForClass(Long classId, Long topicId, String studentEmail) {
         User student = userRepository.findByEmail(studentEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
+
+        ClassEntity classroom = classEntityRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+
+        if (!enrollmentRepository.existsByStudentAndClassEntity(student, classroom)) {
+            throw new AccessDeniedException("Student is not enrolled in class: " + classroom.getName());
+        }
 
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
 
-        if (topic.getSubject() != null && !enrollmentRepository.existsByStudentAndSubject(student, topic.getSubject())) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + topic.getSubject().getName());
-        }
-
-        StudentTopicMastery mastery = studentTopicMasteryRepository.findByStudentAndTopic(student, topic)
+        StudentTopicMastery mastery = studentTopicMasteryRepository
+                .findByStudentAndClassroomAndTopic(student, classroom, topic)
                 .orElse(null);
 
-        Map<Long, Integer> distinctCounts = countDistinctQuestionsEvaluatedPerTopic(student.getId());
+        Map<Long, Integer> distinctCounts = countDistinctQuestionsEvaluatedPerTopicInClass(student.getId(), classId);
         int questionsAnswered = distinctCounts.getOrDefault(topicId, 0);
 
         Double masteryPercent = (mastery != null) ? mastery.getMasteryPercent() : 0.0;
@@ -262,8 +349,8 @@ public class GapAnalysisService {
         Instant lastUpdated = (mastery != null) ? mastery.getUpdatedAt() : Instant.now();
         String trend = GapAnalysisClassifier.calculateTrend(masteryPercent, previousPercent);
 
-        // 1. Answer history (chronological, does not leak unsubmitted questions)
-        List<Answer> answers = answerRepository.findStudentTopicAnswers(student, topic, AttemptStatus.SUBMITTED);
+        // 1. Answer history within this class (chronological, submitted only)
+        List<Answer> answers = answerRepository.findStudentClassTopicAnswers(student, classId, topic, AttemptStatus.SUBMITTED);
         List<StudentAnswerHistoryDto> history = new ArrayList<>();
 
         for (Answer a : answers) {
@@ -285,8 +372,8 @@ public class GapAnalysisService {
             ));
         }
 
-        // 2. Extract missed questions from the student's MOST RECENT answers in submitted attempts
-        Map<Long, QuestionEvaluation> latestByQuestion = getLatestQuestionEvaluations(student.getId());
+        // 2. Extract missed questions from the student's MOST RECENT answers in submitted attempts in this class
+        Map<Long, QuestionEvaluation> latestByQuestion = getLatestQuestionEvaluationsInClass(student.getId(), classId);
         List<MissedQuestionDto> missedQuestions = new ArrayList<>();
 
         for (QuestionEvaluation eval : latestByQuestion.values()) {
@@ -329,9 +416,9 @@ public class GapAnalysisService {
                 missedQuestions
         );
 
-        // 4. Recommended resources tailored to status and topic
+        // 4. Recommended resources tailored to status and topic within this class
         List<RecommendedResourceDto> resources =
-                studentResourceService.getRecommendationsForTopic(topic, status, student);
+                studentResourceService.getRecommendationsForTopic(topic, status, student, classroom);
         int resourcesRecommended = resources.size();
         int resourcesCompleted = (int) resources.stream().filter(RecommendedResourceDto::completed).count();
 
@@ -360,9 +447,190 @@ public class GapAnalysisService {
     }
 
     /**
-     * Finds the most recent evaluation per distinct question across all submitted attempts.
+     * Backward-compatible overload: resolves student's active class for the topic's subject.
+     */
+    @Transactional(readOnly = true)
+    public TopicProgressDetailDto getTopicProgressDetail(Long topicId, String studentEmail) {
+        User student = userRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
+
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
+
+        if (topic.getSubject() != null && !enrollmentRepository.existsByStudentAndSubject(student, topic.getSubject())) {
+            throw new AccessDeniedException("Student is not enrolled in subject: " + topic.getSubject().getName());
+        }
+
+        ClassEntity activeClass = null;
+        if (topic.getSubject() != null) {
+            List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
+            for (Enrollment e : enrollments) {
+                if (e.getClassEntity() != null && e.getClassEntity().getStatus() == ClassStatus.ACTIVE &&
+                        e.getClassEntity().getSubject() != null && e.getClassEntity().getSubject().getId().equals(topic.getSubject().getId())) {
+                    activeClass = e.getClassEntity();
+                    break;
+                }
+            }
+        }
+
+        if (activeClass != null) {
+            return getTopicProgressDetailForClass(activeClass.getId(), topicId, studentEmail);
+        }
+
+        // Standalone subject fallback
+        StudentTopicMastery mastery = studentTopicMasteryRepository.findByStudentAndTopic(student, topic)
+                .orElse(null);
+
+        Map<Long, Integer> distinctCounts = countDistinctQuestionsEvaluatedPerTopic(student.getId());
+        int questionsAnswered = distinctCounts.getOrDefault(topicId, 0);
+
+        Double masteryPercent = (mastery != null) ? mastery.getMasteryPercent() : 0.0;
+        Double previousPercent = (mastery != null) ? mastery.getPreviousMasteryPercent() : null;
+        MasteryStatus status = (mastery != null) ? mastery.getStatus() : MasteryStatus.INSUFFICIENT_DATA;
+        Instant lastUpdated = (mastery != null) ? mastery.getUpdatedAt() : Instant.now();
+        String trend = GapAnalysisClassifier.calculateTrend(masteryPercent, previousPercent);
+
+        List<Answer> answers = answerRepository.findStudentTopicAnswers(student, topic, AttemptStatus.SUBMITTED);
+        List<StudentAnswerHistoryDto> history = new ArrayList<>();
+        for (Answer a : answers) {
+            Question q = a.getQuestion();
+            double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
+            double earned = (a.getFinalScore() != null) ? a.getFinalScore() : 0.0;
+            boolean isCorrect = earned >= points;
+            Instant submittedAt = (a.getAttempt().getSubmittedAt() != null)
+                    ? a.getAttempt().getSubmittedAt()
+                    : a.getAttempt().getStartedAt();
+            history.add(new StudentAnswerHistoryDto(q.getId(), q.getText(), isCorrect, earned, points, submittedAt));
+        }
+
+        Map<Long, QuestionEvaluation> latestByQuestion = getLatestQuestionEvaluations(student.getId());
+        List<MissedQuestionDto> missedQuestions = new ArrayList<>();
+        for (QuestionEvaluation eval : latestByQuestion.values()) {
+            if (eval.question().getTopic().getId().equals(topicId) && eval.earned() < eval.possible()) {
+                Question q = eval.question();
+                Answer ans = eval.answer();
+                String studentAnswer = (ans != null && ans.getSelectedChoice() != null) ? ans.getSelectedChoice().getText() : "Left blank";
+                String correctAnswer = choiceRepository.findByQuestion(q).stream().filter(Choice::isCorrect).map(Choice::getText).findFirst().orElse("N/A");
+                missedQuestions.add(new MissedQuestionDto(q.getId(), q.getText(), studentAnswer, correctAnswer, q.getExplanation()));
+            }
+        }
+
+        FeedbackDto feedback = FeedbackService.generateFeedback(topic.getName(), masteryPercent, status, trend, previousPercent, missedQuestions);
+        List<RecommendedResourceDto> resources = studentResourceService.getRecommendationsForTopic(topic, status, student, null);
+        int resourcesRecommended = resources.size();
+        int resourcesCompleted = (int) resources.stream().filter(RecommendedResourceDto::completed).count();
+        FeedbackRatingDto studentRating = feedbackRatingRepository.findByStudentAndTopic(student, topic)
+                .map(r -> new FeedbackRatingDto(r.getRating(), r.getComment(), r.getUpdatedAt()))
+                .orElse(null);
+
+        return new TopicProgressDetailDto(topic.getId(), topic.getSubject() != null ? topic.getSubject().getId() : null,
+                topic.getName(), topic.getDescription(), masteryPercent, status, trend, questionsAnswered, lastUpdated,
+                history, feedback, resources, resourcesCompleted, resourcesRecommended, studentRating);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, QuestionEvaluation> getLatestQuestionEvaluationsInClass(Long studentId, Long classId) {
+        List<Attempt> submittedAttempts =
+                attemptRepository.findByStudentIdAndClassIdAndStatusOrderBySubmittedAtAsc(studentId, classId, AttemptStatus.SUBMITTED);
+
+        submittedAttempts.sort(Comparator.comparing((Attempt a) -> a.getSubmittedAt() != null ? a.getSubmittedAt() : Instant.EPOCH)
+                .thenComparing(Attempt::getId));
+
+        Map<Long, QuestionEvaluation> latestByQuestion = new HashMap<>();
+
+        for (Attempt attempt : submittedAttempts) {
+            Assessment assessment = attempt.getAssessment();
+            List<AssessmentQuestion> assessmentQuestions =
+                    assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(assessment);
+
+            List<Answer> answers = answerRepository.findByAttempt(attempt);
+            Map<Long, Answer> answerMap = answers.stream()
+                    .collect(Collectors.toMap(a -> a.getQuestion().getId(), a -> a, (a1, a2) -> a2));
+            Map<Long, Answer> answerByLineage = answers.stream()
+                    .collect(Collectors.toMap(
+                            a -> a.getQuestion().getLineageId() != null ? a.getQuestion().getLineageId() : a.getQuestion().getId(),
+                            a -> a,
+                            (a1, a2) -> a2
+                    ));
+
+            for (AssessmentQuestion aq : assessmentQuestions) {
+                Question q = aq.getQuestion();
+                Long lineageKey = (q.getLineageId() != null) ? q.getLineageId() : q.getId();
+                Answer ans = answerMap.get(q.getId());
+                if (ans == null) {
+                    ans = answerByLineage.get(lineageKey);
+                }
+                Question evalQ = (ans != null && ans.getQuestion() != null) ? ans.getQuestion() : q;
+                double points = (evalQ.getPoints() != null) ? evalQ.getPoints() : 1.0;
+                double earned = 0.0;
+                boolean answered = false;
+
+                if (ans != null) {
+                    earned = (ans.getFinalScore() != null) ? ans.getFinalScore() : 0.0;
+                    if (ans.getSelectedChoice() != null || (ans.getTextAnswer() != null && !ans.getTextAnswer().isBlank())) {
+                        answered = true;
+                    }
+                }
+
+                latestByQuestion.put(lineageKey, new QuestionEvaluation(
+                        evalQ,
+                        earned,
+                        points,
+                        answered,
+                        attempt.getSubmittedAt(),
+                        ans
+                ));
+            }
+
+            // Also include any answers directly recorded on the attempt
+            for (Answer ans : answers) {
+                Question q = ans.getQuestion();
+                if (q == null) continue;
+                Long lineageKey = (q.getLineageId() != null) ? q.getLineageId() : q.getId();
+                double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
+                double earned = (ans.getFinalScore() != null) ? ans.getFinalScore() : 0.0;
+                boolean answered = (ans.getSelectedChoice() != null || (ans.getTextAnswer() != null && !ans.getTextAnswer().isBlank()));
+
+                latestByQuestion.put(lineageKey, new QuestionEvaluation(
+                        q,
+                        earned,
+                        points,
+                        answered,
+                        attempt.getSubmittedAt(),
+                        ans
+                ));
+            }
+        }
+
+        return latestByQuestion;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, Integer> countDistinctQuestionsEvaluatedPerTopicInClass(Long studentId, Long classId) {
+        List<Attempt> attempts =
+                attemptRepository.findByStudentIdAndClassIdAndStatusOrderBySubmittedAtAsc(studentId, classId, AttemptStatus.SUBMITTED);
+
+        Map<Long, Set<Long>> questionIdsByTopic = new HashMap<>();
+        for (Attempt attempt : attempts) {
+            List<AssessmentQuestion> aqList =
+                    assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(attempt.getAssessment());
+            for (AssessmentQuestion aq : aqList) {
+                Long topicId = aq.getQuestion().getTopic().getId();
+                Long lineageKey = (aq.getQuestion().getLineageId() != null) ? aq.getQuestion().getLineageId() : aq.getQuestion().getId();
+                questionIdsByTopic.computeIfAbsent(topicId, k -> new HashSet<>()).add(lineageKey);
+            }
+        }
+
+        Map<Long, Integer> result = new HashMap<>();
+        questionIdsByTopic.forEach((topicId, set) -> result.put(topicId, set.size()));
+        return result;
+    }
+
+    /**
+     * Finds the most recent evaluation per distinct question lineage across all submitted attempts.
      * Iterating chronologically ensures newer attempt evaluations overwrite older ones.
      */
+    @Transactional(readOnly = true)
     public Map<Long, QuestionEvaluation> getLatestQuestionEvaluations(Long studentId) {
         List<Attempt> submittedAttempts =
                 attemptRepository.findByStudentIdAndStatusOrderBySubmittedAtAsc(studentId, AttemptStatus.SUBMITTED);
@@ -380,11 +648,22 @@ public class GapAnalysisService {
             List<Answer> answers = answerRepository.findByAttempt(attempt);
             Map<Long, Answer> answerMap = answers.stream()
                     .collect(Collectors.toMap(a -> a.getQuestion().getId(), a -> a, (a1, a2) -> a2));
+            Map<Long, Answer> answerByLineage = answers.stream()
+                    .collect(Collectors.toMap(
+                            a -> a.getQuestion().getLineageId() != null ? a.getQuestion().getLineageId() : a.getQuestion().getId(),
+                            a -> a,
+                            (a1, a2) -> a2
+                    ));
 
             for (AssessmentQuestion aq : assessmentQuestions) {
                 Question q = aq.getQuestion();
+                Long lineageKey = (q.getLineageId() != null) ? q.getLineageId() : q.getId();
                 Answer ans = answerMap.get(q.getId());
-                double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
+                if (ans == null) {
+                    ans = answerByLineage.get(lineageKey);
+                }
+                Question evalQ = (ans != null && ans.getQuestion() != null) ? ans.getQuestion() : q;
+                double points = (evalQ.getPoints() != null) ? evalQ.getPoints() : 1.0;
                 double earned = 0.0;
                 boolean answered = false;
 
@@ -395,7 +674,26 @@ public class GapAnalysisService {
                     }
                 }
 
-                latestByQuestion.put(q.getId(), new QuestionEvaluation(
+                latestByQuestion.put(lineageKey, new QuestionEvaluation(
+                        evalQ,
+                        earned,
+                        points,
+                        answered,
+                        attempt.getSubmittedAt(),
+                        ans
+                ));
+            }
+
+            // Also include any answers directly recorded on the attempt
+            for (Answer ans : answers) {
+                Question q = ans.getQuestion();
+                if (q == null) continue;
+                Long lineageKey = (q.getLineageId() != null) ? q.getLineageId() : q.getId();
+                double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
+                double earned = (ans.getFinalScore() != null) ? ans.getFinalScore() : 0.0;
+                boolean answered = (ans.getSelectedChoice() != null || (ans.getTextAnswer() != null && !ans.getTextAnswer().isBlank()));
+
+                latestByQuestion.put(lineageKey, new QuestionEvaluation(
                         q,
                         earned,
                         points,
@@ -410,8 +708,9 @@ public class GapAnalysisService {
     }
 
     /**
-     * Computes the number of distinct questions asked per topic across all submitted attempts.
+     * Computes the number of distinct question lineages asked per topic across all submitted attempts.
      */
+    @Transactional(readOnly = true)
     public Map<Long, Integer> countDistinctQuestionsEvaluatedPerTopic(Long studentId) {
         List<Attempt> attempts =
                 attemptRepository.findByStudentIdAndStatusOrderBySubmittedAtAsc(studentId, AttemptStatus.SUBMITTED);
@@ -422,7 +721,8 @@ public class GapAnalysisService {
                     assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(attempt.getAssessment());
             for (AssessmentQuestion aq : aqList) {
                 Long topicId = aq.getQuestion().getTopic().getId();
-                questionIdsByTopic.computeIfAbsent(topicId, k -> new HashSet<>()).add(aq.getQuestion().getId());
+                Long lineageKey = (aq.getQuestion().getLineageId() != null) ? aq.getQuestion().getLineageId() : aq.getQuestion().getId();
+                questionIdsByTopic.computeIfAbsent(topicId, k -> new HashSet<>()).add(lineageKey);
             }
         }
 

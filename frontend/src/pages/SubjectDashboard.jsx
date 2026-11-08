@@ -18,6 +18,8 @@ import {
   Target,
   FileQuestion,
   Layers,
+  Link2,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
@@ -33,6 +35,7 @@ export default function SubjectDashboard() {
   const [workspace, setWorkspace] = useState(null);
   const [assessments, setAssessments] = useState([]);
   const [progress, setProgress] = useState(null);
+  const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -66,12 +69,18 @@ export default function SubjectDashboard() {
         return;
       }
 
-      const [assessmentsData, progressData] = await Promise.all([
+      const [assessmentsData, progressData, materialsData] = await Promise.all([
         studentService.getSubjectAssessments(resolvedSubjectId),
-        studentService.getSubjectProgress(resolvedSubjectId).catch(() => null),
+        classId
+          ? studentService.getClassProgress(classId).catch(() => null)
+          : studentService.getSubjectProgress(resolvedSubjectId).catch(() => null),
+        classId
+          ? studentService.getClassStudyMaterials(classId).catch(() => [])
+          : Promise.resolve([]),
       ]);
-      setAssessments(assessmentsData);
+      setAssessments(assessmentsData || []);
       setProgress(progressData);
+      setMaterials(materialsData || []);
     } catch (err) {
       if (err.status === 401 || err.message?.includes('authentication is required')) {
         logout();
@@ -135,6 +144,19 @@ export default function SubjectDashboard() {
     ...topicQuizzes.filter((q) => q.latestAttemptStatus === 'SUBMITTED'),
   ];
 
+  const progressUrl = classId
+    ? `/student/classes/${classId}/progress`
+    : effectiveSubjectId
+    ? `/student/subjects/${effectiveSubjectId}/progress`
+    : '/student/progress';
+
+  const getTopicProgressUrl = (topicId) =>
+    classId
+      ? `/student/classes/${classId}/progress/topics/${topicId}`
+      : effectiveSubjectId
+      ? `/student/subjects/${effectiveSubjectId}/progress/topics/${topicId}`
+      : `/student/progress/topics/${topicId}`;
+
   return (
     <PortalShell
       portalSubtitle="Student Learning Notebook"
@@ -162,15 +184,13 @@ export default function SubjectDashboard() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>My Classes</span>
           </Link>
-          {effectiveSubjectId && (
-            <Link
-              to={`/student/subjects/${effectiveSubjectId}/progress`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
-            >
-              <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
-              <span>Gap Analysis</span>
-            </Link>
-          )}
+          <Link
+            to={progressUrl}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
+          >
+            <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
+            <span>Gap Analysis</span>
+          </Link>
         </div>
       }
     >
@@ -254,7 +274,34 @@ export default function SubjectDashboard() {
               {/* ---------------------------------------------------------------------
                   HERO BLOCK: Dynamic State-Aware Action Card (Taped Index Card Motif)
               --------------------------------------------------------------------- */}
-              {!isDiagnosticSubmitted && diagnostic ? (
+              {assessments.length === 0 ? (
+                /* STATE 0 HERO: Teacher Still Setting Up Class */
+                <div className="relative pt-3">
+                  <div className="absolute -top-1 left-8 z-10">
+                    <WashiTape
+                      colorClass="bg-highlighter-yellow/90 dark:bg-yellow-500/50"
+                      rotate="-rotate-1"
+                    />
+                  </div>
+                  <NotebookCard
+                    pattern="grid"
+                    borderStyle="sketch"
+                    className="p-8 text-center space-y-4 bg-paper-warm dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-notebook-sm"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-highlighter-yellow/30 border border-ink/20 flex items-center justify-center mx-auto text-redpen dark:text-highlighter-yellow">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-xl sm:text-2xl font-extrabold text-ink dark:text-chalkboard-chalk">
+                        Your teacher is still setting up this class
+                      </h2>
+                      <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted max-w-md mx-auto leading-relaxed">
+                        No published quizzes or diagnostics are currently available for this section. Check back soon or explore the study materials below!
+                      </p>
+                    </div>
+                  </NotebookCard>
+                </div>
+              ) : !isDiagnosticSubmitted && diagnostic ? (
                 /* STATE 1 HERO: Diagnostic Required / First Step */
                 <div className="relative pt-3">
                   <div className="absolute -top-1 left-8 z-10">
@@ -431,9 +478,7 @@ export default function SubjectDashboard() {
                                 size="lg"
                                 className="font-bold"
                                 onClick={() =>
-                                  navigate(
-                                    `/student/subjects/${effectiveSubjectId}/progress/topics/${targetTopic.topicId}`
-                                  )
+                                  navigate(getTopicProgressUrl(targetTopic.topicId))
                                 }
                               >
                                 <span>Study This Topic & Review Misses</span>
@@ -460,7 +505,7 @@ export default function SubjectDashboard() {
                             variant="secondary"
                             size="md"
                             onClick={() =>
-                              navigate(`/student/subjects/${effectiveSubjectId}/progress`)
+                              navigate(progressUrl)
                             }
                           >
                             <span>View Full Learning Journey</span>
@@ -705,6 +750,61 @@ export default function SubjectDashboard() {
                     )}
                   </div>
                 )}
+
+                {/* ---------------------------------------------------------------------
+                    CLASS STUDY MATERIALS (General Link Resources)
+                --------------------------------------------------------------------- */}
+                {materials.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
+                        <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
+                          Study Materials
+                        </h2>
+                      </div>
+                      <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                        {materials.length} resource{materials.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {materials.map((res) => (
+                        <NotebookCard
+                          key={res.id}
+                          pattern="ruled"
+                          className="p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between space-y-3 hover:shadow-notebook-sm transition-shadow"
+                        >
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-highlighter-mint/30 text-ink border border-ink/20 inline-block">
+                              {res.domain || 'External Link'}
+                            </span>
+                            <h3 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
+                              {res.title}
+                            </h3>
+                            {res.description && (
+                              <p className="text-xs text-ink-muted dark:text-chalkboard-muted line-clamp-2">
+                                {res.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
+                            <a
+                              href={res.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-redpen hover:underline"
+                            >
+                              <span>Open Resource</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </NotebookCard>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -788,9 +888,7 @@ export default function SubjectDashboard() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    navigate(
-                                      `/student/subjects/${effectiveSubjectId}/progress/topics/${gap.topicId}`
-                                    )
+                                    navigate(getTopicProgressUrl(gap.topicId))
                                   }
                                   className="font-mono text-xs font-bold text-redpen-dark dark:text-red-300 hover:underline flex items-center gap-0.5"
                                 >
@@ -820,7 +918,7 @@ export default function SubjectDashboard() {
                         {[...masteredTopics, ...developingTopics].map((t) => (
                           <Link
                             key={t.topicId}
-                            to={`/student/subjects/${effectiveSubjectId}/progress/topics/${t.topicId}`}
+                            to={getTopicProgressUrl(t.topicId)}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellow/30 transition-colors"
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
@@ -836,7 +934,7 @@ export default function SubjectDashboard() {
                     {/* 3. Link to Full Gap Analysis */}
                     <div className="pt-2">
                       <Link
-                        to={`/student/subjects/${effectiveSubjectId}/progress`}
+                        to={progressUrl}
                         className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-ink/25 dark:border-chalkboard-borderSubtle text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk bg-paper-warm dark:bg-chalkboard-surface hover:bg-highlighter-yellow/30 transition-colors shadow-xs text-center"
                       >
                         <Compass className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />

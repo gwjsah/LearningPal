@@ -23,6 +23,14 @@ public class Subject {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private SubjectStatus status = SubjectStatus.ACTIVE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -33,6 +41,16 @@ public class Subject {
         this.code = code;
         this.name = name;
         this.description = description;
+        this.status = SubjectStatus.ACTIVE;
+        this.createdAt = Instant.now();
+    }
+
+    public Subject(String code, String name, String description, User owner) {
+        this.code = code;
+        this.name = name;
+        this.description = description;
+        this.owner = owner;
+        this.status = SubjectStatus.ACTIVE;
         this.createdAt = Instant.now();
     }
 
@@ -40,6 +58,9 @@ public class Subject {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
+        }
+        if (this.status == null) {
+            this.status = SubjectStatus.ACTIVE;
         }
     }
 
@@ -73,6 +94,22 @@ public class Subject {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
+    public SubjectStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(SubjectStatus status) {
+        this.status = status;
     }
 }
 

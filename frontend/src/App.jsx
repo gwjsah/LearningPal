@@ -14,6 +14,8 @@ import AttemptResult from './pages/AttemptResult';
 import StudentProgress from './pages/StudentProgress';
 import TopicProgressDetail from './pages/TopicProgressDetail';
 import TeacherHome from './pages/TeacherHome';
+import TeacherSubjects from './pages/TeacherSubjects';
+import TeacherSubjectDetail from './pages/TeacherSubjectDetail';
 import TeacherClassDetail from './pages/TeacherClassDetail';
 import TeacherStudentDetail from './pages/TeacherStudentDetail';
 import TeacherAttemptReview from './pages/TeacherAttemptReview';
@@ -59,6 +61,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRole="STUDENT">
                   <SubjectDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/classes/:classId/progress"
+              element={
+                <ProtectedRoute allowedRole="STUDENT">
+                  <StudentProgress />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/classes/:classId/progress/topics/:id"
+              element={
+                <ProtectedRoute allowedRole="STUDENT">
+                  <TopicProgressDetail />
                 </ProtectedRoute>
               }
             />
@@ -144,6 +162,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRole="TEACHER">
                   <TeacherHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/subjects"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherSubjects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teacher/subjects/:subjectId"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherSubjectDetail />
                 </ProtectedRoute>
               }
             />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   BookOpenCheck,
+  BookOpen,
   Users,
   Plus,
   Copy,
@@ -27,6 +28,7 @@ export default function TeacherHome() {
 
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [surveyDismissed, setSurveyDismissed] = useState(() => {
@@ -38,9 +40,9 @@ export default function TeacherHome() {
     setSurveyDismissed(true);
   };
 
-  // Creation Modal State
+  // Creation Modal State (Exactly two text fields: Subject Name & Class Name)
   const [showModal, setShowModal] = useState(false);
-  const [subjectId, setSubjectId] = useState('');
+  const [subjectName, setSubjectName] = useState('');
   const [name, setName] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -53,15 +55,12 @@ export default function TeacherHome() {
     setLoading(true);
     setError('');
     try {
-      const [classesData, subjectsData] = await Promise.all([
+      const [classesData, suggestionsData] = await Promise.all([
         teacherService.getClasses(),
-        teacherService.getSubjects(),
+        teacherService.getSubjectSuggestions().catch(() => []),
       ]);
       setClasses(classesData);
-      setSubjects(subjectsData);
-      if (subjectsData.length > 0 && !subjectId) {
-        setSubjectId(subjectsData[0].id.toString());
-      }
+      setSubjectSuggestions(suggestionsData || []);
     } catch (err) {
       if (err.status === 401) {
         logout();
@@ -90,17 +89,22 @@ export default function TeacherHome() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    const trimmedSubj = subjectName.trim();
     const trimmedName = name.trim();
-    if (!subjectId) {
-      setCreateError('Please select a subject.');
+    if (!trimmedSubj) {
+      setCreateError('Please enter a subject name.');
+      return;
+    }
+    if (trimmedSubj.length > 120) {
+      setCreateError('Subject name cannot exceed 120 characters.');
       return;
     }
     if (!trimmedName) {
-      setCreateError('Please provide a section name (e.g. "Section A").');
+      setCreateError('Please provide a class/section name (e.g. "Section A").');
       return;
     }
     if (trimmedName.length > 60) {
-      setCreateError('Section name cannot exceed 60 characters.');
+      setCreateError('Class name cannot exceed 60 characters.');
       return;
     }
 
@@ -108,16 +112,19 @@ export default function TeacherHome() {
     setCreateError('');
     try {
       const newClass = await teacherService.createClass({
-        subjectId: Number(subjectId),
+        subjectName: trimmedSubj,
         name: trimmedName,
       });
 
       // Insert at the front of the list
       setClasses((prev) => [newClass, ...prev]);
       setShowModal(false);
+      setSubjectName('');
       setName('');
       setSuccessToast(`Class "${newClass.name}" created! Share code ${newClass.joinCode} with your students.`);
       setTimeout(() => setSuccessToast(''), 5000);
+      // Refresh suggestions
+      teacherService.getSubjectSuggestions().then(setSubjectSuggestions).catch(() => {});
     } catch (err) {
       setCreateError(err.message || 'Failed to create class section.');
     } finally {
@@ -140,18 +147,29 @@ export default function TeacherHome() {
       title={`Welcome, ${user?.fullName || 'Teacher'}!`}
       subtitle="Manage your class sections, distribute student join codes, and view class rosters."
       headerRight={
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => {
-            setCreateError('');
-            setShowModal(true);
-          }}
-          className="flex items-center gap-1.5 shadow-notebook"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Class</span>
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            to="/teacher/subjects"
+            variant="secondary"
+            size="md"
+            className="flex items-center gap-1.5 shadow-notebook-sm"
+          >
+            <BookOpen className="w-4 h-4 text-ink-muted dark:text-chalkboard-muted" />
+            <span>My Subjects</span>
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => {
+              setCreateError('');
+              setShowModal(true);
+            }}
+            className="flex items-center gap-1.5 shadow-notebook"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Class</span>
+          </Button>
+        </div>
       }
     >
       <div className="w-full space-y-8">
@@ -479,24 +497,31 @@ export default function TeacherHome() {
               <form onSubmit={handleCreateSubmit} className="space-y-4">
                 <div>
                   <label
-                    htmlFor="subject-select"
+                    htmlFor="subject-name-input"
                     className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1.5"
                   >
-                    Subject <span className="text-redpen">*</span>
+                    Subject Name <span className="text-redpen">*</span>
                   </label>
-                  <select
-                    id="subject-select"
-                    value={subjectId}
-                    onChange={(e) => setSubjectId(e.target.value)}
+                  <input
+                    id="subject-name-input"
+                    list="teacher-subject-suggestions"
+                    type="text"
                     required
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk font-mono text-sm focus:outline-none focus:border-redpen"
-                  >
-                    {subjects.map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name} ({sub.code})
-                      </option>
+                    maxLength={120}
+                    value={subjectName}
+                    onChange={(e) => setSubjectName(e.target.value)}
+                    placeholder="e.g. Data Structures, Web Development, Discrete Math"
+                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen"
+                  />
+                  <datalist id="teacher-subject-suggestions">
+                    {subjectSuggestions.map((sug) => (
+                      <option key={sug} value={sug} />
                     ))}
-                  </select>
+                  </datalist>
+                  <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1">
+                    <span>Reuse existing subject questions, or create new.</span>
+                    <span>{subjectName.length}/120</span>
+                  </div>
                 </div>
 
                 <div>
@@ -504,7 +529,7 @@ export default function TeacherHome() {
                     htmlFor="section-name"
                     className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1.5"
                   >
-                    Section / Class Name <span className="text-redpen">*</span>
+                    Class / Section Name <span className="text-redpen">*</span>
                   </label>
                   <input
                     id="section-name"

@@ -274,8 +274,12 @@ public class StudentAssessmentService {
 
         gradingService.gradeAndSubmit(attempt, request.answers());
 
-        // Automatically update topic mastery & diagnostic gap analysis
-        gapAnalysisService.recalculateForStudent(student.getId());
+        // Automatically update topic mastery & diagnostic gap analysis for this class
+        if (attempt.getClassId() != null) {
+            gapAnalysisService.recalculateForStudentInClass(student.getId(), attempt.getClassId());
+        } else {
+            gapAnalysisService.recalculateForStudent(student.getId());
+        }
 
         return new SubmitAttemptResponse(attempt.getId(), "Attempt submitted and graded successfully.");
     }

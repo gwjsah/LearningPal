@@ -23,21 +23,31 @@ public class StudentResourceController {
 
     /**
      * Marks an educational resource as completed for the authenticated student.
+     * Optionally scoped by classId via request param.
      */
     @PostMapping("/{resourceId}/complete")
     public ResponseEntity<ResourceCompletionResponseDto> markComplete(
             @PathVariable Long resourceId,
+            @RequestParam(required = false) Long classId,
             Principal principal) {
+        if (classId != null) {
+            return ResponseEntity.ok(studentResourceService.markCompleteInClass(classId, resourceId, principal.getName()));
+        }
         return ResponseEntity.ok(studentResourceService.markComplete(resourceId, principal.getName()));
     }
 
     /**
      * Unmarks completion for an educational resource for the authenticated student.
+     * Optionally scoped by classId via request param.
      */
     @DeleteMapping("/{resourceId}/complete")
     public ResponseEntity<ResourceCompletionResponseDto> markIncomplete(
             @PathVariable Long resourceId,
+            @RequestParam(required = false) Long classId,
             Principal principal) {
+        if (classId != null) {
+            return ResponseEntity.ok(studentResourceService.markIncompleteInClass(classId, resourceId, principal.getName()));
+        }
         return ResponseEntity.ok(studentResourceService.markIncomplete(resourceId, principal.getName()));
     }
 }

@@ -24,6 +24,11 @@ export const studentService = {
   getClassWorkspace: (classId) => apiRequest(`/student/classes/${classId}`),
 
   /**
+   * Fetches general link study materials for a class.
+   */
+  getClassStudyMaterials: (classId) => apiRequest(`/student/classes/${classId}/materials`),
+
+  /**
    * Resolves a student's classId for a given subjectId (for URL backwards compatibility).
    */
   resolveClassForSubject: (subjectId) => apiRequest(`/student/classes/resolve-by-subject/${subjectId}`),
@@ -37,6 +42,17 @@ export const studentService = {
    * Fetches published assessments scoped to a subject.
    */
   getSubjectAssessments: (subjectId) => apiRequest(`/student/subjects/${subjectId}/assessments`),
+
+  /**
+   * Fetches diagnostic progress scoped to a classroom.
+   */
+  getClassProgress: (classId) => apiRequest(`/student/classes/${classId}/progress`),
+
+  /**
+   * Fetches detailed topic progress scoped to a classroom.
+   */
+  getClassTopicProgress: (classId, topicId) =>
+    apiRequest(`/student/classes/${classId}/progress/topics/${topicId}`),
 
   /**
    * Fetches diagnostic progress scoped to a subject.
@@ -81,20 +97,28 @@ export const studentService = {
   getTopicProgress: (topicId) => apiRequest(`/student/progress/topics/${topicId}`),
 
   /**
-   * Marks an educational resource as completed.
+   * Marks an educational resource as completed (optionally class-scoped).
    */
-  completeResource: (resourceId) =>
-    apiRequest(`/student/resources/${resourceId}/complete`, {
-      method: 'POST',
-    }),
+  completeResource: (resourceId, classId) =>
+    classId
+      ? apiRequest(`/student/classes/${classId}/resources/${resourceId}/complete`, {
+          method: 'POST',
+        })
+      : apiRequest(`/student/resources/${resourceId}/complete`, {
+          method: 'POST',
+        }),
 
   /**
-   * Removes completion status for an educational resource.
+   * Removes completion status for an educational resource (optionally class-scoped).
    */
-  uncompleteResource: (resourceId) =>
-    apiRequest(`/student/resources/${resourceId}/complete`, {
-      method: 'DELETE',
-    }),
+  uncompleteResource: (resourceId, classId) =>
+    classId
+      ? apiRequest(`/student/classes/${classId}/resources/${resourceId}/complete`, {
+          method: 'DELETE',
+        })
+      : apiRequest(`/student/resources/${resourceId}/complete`, {
+          method: 'DELETE',
+        }),
 
   /**
    * Submits or updates helpfulness rating for topic diagnostic feedback.
