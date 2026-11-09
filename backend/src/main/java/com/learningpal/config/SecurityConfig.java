@@ -60,6 +60,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public authentication endpoints
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
+                        // Hardened download, preview, and AI routes (service enforces 404 for unauthorized roles)
+                        .requestMatchers(
+                                "/api/teacher/files/*/download",
+                                "/api/teacher/files/*/text-preview",
+                                "/api/student/classes/*/files/*/download",
+                                "/api/teacher/ai/**",
+                                "/api/teacher/subjects/*/files/*/ai/generate"
+                        ).authenticated()
                         // Role-specific protected paths
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
                         .requestMatchers("/api/teacher/**").hasRole("TEACHER")

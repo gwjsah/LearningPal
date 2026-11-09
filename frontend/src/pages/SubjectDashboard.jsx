@@ -20,12 +20,23 @@ import {
   Layers,
   Link2,
   ExternalLink,
+  Download,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 import { WashiTape } from '../components/Doodles';
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
 
 export default function SubjectDashboard() {
   const { subjectId, classId } = useParams();
@@ -41,6 +52,26 @@ export default function SubjectDashboard() {
 
   // Tab filter for quizzes: 'active' | 'completed'
   const [quizFilter, setQuizFilter] = useState('active');
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadError, setDownloadError] = useState('');
+
+  const handleDownloadFile = async (res) => {
+    const effectiveClassId = classId || workspace?.id;
+    if (!effectiveClassId) return;
+    setDownloadingId(res.id);
+    setDownloadError('');
+    try {
+      await studentService.downloadClassFile(
+        effectiveClassId,
+        res.id,
+        res.fileName || `${res.title}.${res.fileContentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ? 'docx' : 'pdf'}`
+      );
+    } catch (err) {
+      setDownloadError(err.message || 'Failed to download file. Please try again.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -752,56 +783,127 @@ export default function SubjectDashboard() {
                 )}
 
                 {/* ---------------------------------------------------------------------
-                    CLASS STUDY MATERIALS (General Link Resources)
+                    CLASS STUDY MATERIALS (Documents & Link Resources)
                 --------------------------------------------------------------------- */}
                 {materials.length > 0 && (
                   <div className="space-y-4 pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Link2 className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
+                        <BookOpen className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
                         <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
-                          Study Materials
+                          Study Materials & Resources
                         </h2>
                       </div>
                       <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                        {materials.length} resource{materials.length === 1 ? '' : 's'}
+                        {materials.length} item{materials.length === 1 ? '' : 's'}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {materials.map((res) => (
-                        <NotebookCard
-                          key={res.id}
-                          pattern="ruled"
-                          className="p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between space-y-3 hover:shadow-notebook-sm transition-shadow"
+                    {downloadError && (
+                      <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span>{downloadError}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setDownloadError('')}
+                          className="font-bold underline"
                         >
-                          <div className="space-y-1.5">
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-highlighter-mint/30 text-ink border border-ink/20 inline-block">
-                              {res.domain || 'External Link'}
-                            </span>
-                            <h3 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
-                              {res.title}
-                            </h3>
-                            {res.description && (
-                              <p className="text-xs text-ink-muted dark:text-chalkboard-muted line-clamp-2">
-                                {res.description}
-                              </p>
-                            )}
-                          </div>
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
 
-                          <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
-                            <a
-                              href={res.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-redpen hover:underline"
-                            >
-                              <span>Open Resource</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        </NotebookCard>
-                      ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {materials.map((res) => {
+                        const isFile = res.type === 'FILE';
+                        const isDocx = res.fileName?.toLowerCase().endsWith('.docx') ||
+                          res.fileContentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+                        return (
+                          <NotebookCard
+                            key={res.id}
+                            pattern="ruled"
+                            className="p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between space-y-3 hover:shadow-notebook-sm transition-shadow"
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                {isFile ? (
+                                  <span
+                                    className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border inline-flex items-center gap-1 ${
+                                      isDocx
+                                        ? 'bg-blue-100 text-blue-900 border-blue-400 dark:bg-blue-950 dark:text-blue-300'
+                                        : 'bg-red-100 text-red-900 border-red-400 dark:bg-red-950 dark:text-red-300'
+                                    }`}
+                                  >
+                                    <FileText className="w-3 h-3" />
+                                    <span>{isDocx ? 'DOCX' : 'PDF'}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-highlighter-mint/30 text-ink border border-ink/20 inline-flex items-center gap-1">
+                                    <Link2 className="w-3 h-3" />
+                                    <span>{res.domain || 'External Link'}</span>
+                                  </span>
+                                )}
+
+                                {isFile && res.fileSizeBytes > 0 && (
+                                  <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                                    {formatBytes(res.fileSizeBytes)}
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
+                                {res.title}
+                              </h3>
+                              {res.description && (
+                                <p className="text-xs text-ink-muted dark:text-chalkboard-muted line-clamp-2">
+                                  {res.description}
+                                </p>
+                              )}
+                              {isFile && res.fileName && (
+                                <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted truncate">
+                                  {res.fileName}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
+                              {isFile ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadFile(res)}
+                                  disabled={downloadingId === res.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellow/30 transition-colors cursor-pointer"
+                                >
+                                  {downloadingId === res.id ? (
+                                    <>
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      <span>Downloading…</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Download className="w-3.5 h-3.5 text-redpen" />
+                                      <span>Download Document</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <a
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-redpen hover:underline"
+                                >
+                                  <span>Open Resource</span>
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
+                          </NotebookCard>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

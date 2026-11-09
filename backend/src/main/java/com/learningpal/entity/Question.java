@@ -62,6 +62,10 @@ public class Question {
     @Column(name = "origin", nullable = false, length = 20)
     private QuestionOrigin origin = QuestionOrigin.MANUAL;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_file_id")
+    private ResourceFile sourceFile;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -215,6 +219,14 @@ public class Question {
 
     public void setOrigin(QuestionOrigin origin) {
         this.origin = origin;
+    }
+
+    public ResourceFile getSourceFile() {
+        return sourceFile;
+    }
+
+    public void setSourceFile(ResourceFile sourceFile) {
+        this.sourceFile = sourceFile;
     }
 }
 

@@ -22,5 +22,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     long countByTopicId(Long topicId);
     long countBySubject(Subject subject);
     long countBySubjectAndStatus(Subject subject, QuestionStatus status);
+    boolean existsBySourceFile(com.learningpal.entity.ResourceFile sourceFile);
 }
 

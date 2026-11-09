@@ -80,6 +80,18 @@ public class IsolationMatrixTests {
     @Autowired
     private GapValidationLabelRepository gapValidationLabelRepository;
 
+    @Autowired
+    private ResourceRepository resourceRepository;
+
+    @Autowired
+    private ResourceFileRepository resourceFileRepository;
+
+    @Autowired
+    private com.learningpal.service.TeacherFileService teacherFileService;
+
+    @Autowired
+    private com.learningpal.service.StudentClassService studentClassService;
+
     private Institution instA;
     private Institution instB;
 
@@ -110,6 +122,8 @@ public class IsolationMatrixTests {
 
     @BeforeEach
     void setUp() {
+        resourceFileRepository.deleteAll();
+        resourceRepository.deleteAll();
         gapValidationLabelRepository.deleteAll();
         studentTopicMasteryRepository.deleteAll();
         interventionRepository.deleteAll();
@@ -484,5 +498,159 @@ public class IsolationMatrixTests {
         mockMvc.perform(get("/api/admin/survey/summary")
                         .header("Authorization", "Bearer " + tokenAdminA))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("File Resources Multi-Tenant & Role Security Isolation")
+    void testFileResourcesSecurityAndIsolation() throws Exception {
+        // Additional JWT tokens for role isolation testing
+        String tokenTeacherA2 = jwtService.generateToken(teacherA2);
+        String tokenTeacherB1 = jwtService.generateToken(teacherB1);
+        String tokenStudentA2 = jwtService.generateToken(studentA2);
+        String tokenStudentB1 = jwtService.generateToken(studentB1);
+        User superAdmin = userRepository.findByEmail("superadmin@learningpal.edu").orElseGet(() ->
+                userRepository.save(new User("Super Admin", "superadmin@learningpal.edu", "pass", Role.SUPER_ADMIN, UserStatus.ACTIVE, null))
+        );
+        String tokenSuperAdmin = jwtService.generateToken(superAdmin);
+
+        // Subject owned by Teacher A1
+        Subject teacherA1Subject = subjectRepository.save(
+                new Subject("Teacher A1 Private Subject", "TA101", "Private Notes", teacherA1)
+        );
+
+        // Active class for Teacher A1
+        ClassEntity activeClassA1 = classEntityRepository.save(
+                new ClassEntity(instA, teacherA1Subject, teacherA1, "Section A1 Active", "ACTV01")
+        );
+        enrollmentRepository.save(new Enrollment(studentA1, activeClassA1));
+
+        // Archived class for Teacher A1
+        ClassEntity archivedClassA1 = classEntityRepository.save(
+                new ClassEntity(instA, teacherA1Subject, teacherA1, "Section A1 Archived", "ARCH01")
+        );
+        archivedClassA1.setStatus(ClassStatus.ARCHIVED);
+        classEntityRepository.save(archivedClassA1);
+        enrollmentRepository.save(new Enrollment(studentA1, archivedClassA1));
+
+        // Active file resource belonging to Teacher A1's subject
+        Resource activeResource = resourceRepository.save(new Resource(
+                teacherA1Subject,
+                null,
+                "Lecture Guide",
+                "Study notes",
+                ResourceType.FILE,
+                "notes.pdf",
+                null,
+                DifficultyLevel.EASY,
+                teacherA1
+        ));
+        ResourceFile activeFile = resourceFileRepository.save(new ResourceFile(
+                activeResource,
+                "uuid-storage-active.pdf",
+                "notes.pdf",
+                "application/pdf",
+                1024L,
+                "sha256-active-file",
+                ExtractionStatus.READY,
+                "Sample text",
+                100,
+                1,
+                "Extracted successfully"
+        ));
+
+        // Archived file resource belonging to Teacher A1's subject
+        Resource archivedResource = new Resource(
+                teacherA1Subject,
+                null,
+                "Archived Guide",
+                "Old notes",
+                ResourceType.FILE,
+                "old_notes.pdf",
+                null,
+                DifficultyLevel.EASY,
+                teacherA1
+        );
+        archivedResource.setStatus(ResourceStatus.ARCHIVED);
+        archivedResource = resourceRepository.save(archivedResource);
+        ResourceFile archivedFile = resourceFileRepository.save(new ResourceFile(
+                archivedResource,
+                "uuid-storage-archived.pdf",
+                "old_notes.pdf",
+                "application/pdf",
+                512L,
+                "sha256-archived-file",
+                ExtractionStatus.READY,
+                "Old text",
+                50,
+                1,
+                "Extracted successfully"
+        ));
+
+        // 1. Student token calling teacher files list -> 403 Forbidden
+        mockMvc.perform(get("/api/teacher/subjects/" + teacherA1Subject.getId() + "/files")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        // 2. Admin token calling teacher files list -> 403 Forbidden
+        mockMvc.perform(get("/api/teacher/subjects/" + teacherA1Subject.getId() + "/files")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isForbidden());
+
+        // 3. Teacher token calling student class download endpoint -> 404 Not Found
+        mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isNotFound());
+
+        // 4. Download access returns 404 for: another teacher in same institution (Teacher A2)
+        mockMvc.perform(get("/api/teacher/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenTeacherA2))
+                .andExpect(status().isNotFound());
+
+        // 5. Download access returns 404 for: teacher in another institution (Teacher B1)
+        mockMvc.perform(get("/api/teacher/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenTeacherB1))
+                .andExpect(status().isNotFound());
+
+        // 6. Download access returns 404 for: unenrolled student (Student A2)
+        mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenStudentA2))
+                .andExpect(status().isNotFound());
+
+        // 7. Download access returns 404 for: cross-institution student (Student B1)
+        mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isNotFound());
+
+        // 8. Download access returns 404 for: student in an ARCHIVED class
+        mockMvc.perform(get("/api/student/classes/" + archivedClassA1.getId() + "/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isNotFound());
+
+        // 9. Download access returns 404 for: student requesting an ARCHIVED file
+        mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + archivedFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isNotFound());
+
+        // 10. STEP 0: Download and text-preview endpoints return 404 for ADMIN & SUPER_ADMIN at the HTTP level (same as nonexistent ID, not 403)
+        mockMvc.perform(get("/api/teacher/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/teacher/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/teacher/files/" + activeFile.getId() + "/text-preview")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/teacher/files/" + activeFile.getId() + "/text-preview")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + activeFile.getId() + "/download")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isNotFound());
     }
 }

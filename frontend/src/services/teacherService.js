@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, apiDownload } from './api';
 
 /**
  * Service client for educator classroom management operations.
@@ -258,7 +258,7 @@ export const teacherService = {
    */
   archiveSubject: (id) =>
     apiRequest(`/teacher/subjects/${id}/archive`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   /**
@@ -292,7 +292,7 @@ export const teacherService = {
 
   archiveTopic: (subjectId, topicId) =>
     apiRequest(`/teacher/subjects/${subjectId}/topics/${topicId}/archive`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   deleteTopic: (subjectId, topicId) =>
@@ -328,7 +328,7 @@ export const teacherService = {
 
   retireQuestion: (subjectId, id) =>
     apiRequest(`/teacher/subjects/${subjectId}/questions/${id}/retire`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   deleteQuestion: (subjectId, id) =>
@@ -356,12 +356,12 @@ export const teacherService = {
 
   publishQuiz: (subjectId, id) =>
     apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/publish`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   unpublishQuiz: (subjectId, id) =>
     apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/unpublish`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   duplicateQuiz: (subjectId, id) =>
@@ -371,7 +371,7 @@ export const teacherService = {
 
   archiveQuiz: (subjectId, id) =>
     apiRequest(`/teacher/subjects/${subjectId}/quizzes/${id}/archive`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   deleteQuiz: (subjectId, id) =>
@@ -399,13 +399,50 @@ export const teacherService = {
 
   archiveResource: (subjectId, id) =>
     apiRequest(`/teacher/subjects/${subjectId}/resources/${id}/archive`, {
-      method: 'POST',
+      method: 'PUT',
     }),
 
   deleteResource: (subjectId, id) =>
     apiRequest(`/teacher/subjects/${subjectId}/resources/${id}`, {
       method: 'DELETE',
     }),
+
+  // Files (PDF & DOCX)
+  getFiles: (subjectId) =>
+    apiRequest(`/teacher/subjects/${subjectId}/files`),
+
+  uploadFile: (subjectId, formData) =>
+    apiRequest(`/teacher/subjects/${subjectId}/files`, {
+      method: 'POST',
+      body: formData,
+    }),
+
+  updateFile: (fileId, data) =>
+    apiRequest(`/teacher/files/${fileId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  archiveFile: (fileId) =>
+    apiRequest(`/teacher/files/${fileId}/archive`, {
+      method: 'PUT',
+    }),
+
+  unarchiveFile: (fileId) =>
+    apiRequest(`/teacher/files/${fileId}/unarchive`, {
+      method: 'PUT',
+    }),
+
+  deleteFile: (fileId) =>
+    apiRequest(`/teacher/files/${fileId}`, {
+      method: 'DELETE',
+    }),
+
+  getFileTextPreview: (fileId) =>
+    apiRequest(`/teacher/files/${fileId}/text-preview`),
+
+  downloadFile: (fileId, filename) =>
+    apiDownload(`/teacher/files/${fileId}/download`, filename),
 };
 
 

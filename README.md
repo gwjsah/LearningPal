@@ -6,10 +6,11 @@ LearningPal is a data-driven educational support platform that diagnoses student
 
 ## Tech Stack & Requirements
 
-- **Backend**: Java 17+, Spring Boot 3.3.4, Spring Security 6 (JWT HS256), Spring Data JPA, Hibernate, JJWT 0.12.x
+- **Backend**: Java 17+, Spring Boot 3.3.4, Spring Security 6 (JWT HS256), Spring Data JPA, Hibernate, JJWT 0.12.x, Apache POI 5.4.0, Apache PDFBox 3.0.4
 - **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, React Router 6
 - **Database**: MySQL 8.x
 - **Build Tool**: **Maven Wrapper included (`mvnw` / `mvnw.cmd`)** — you do **not** need Maven installed on your machine!
+- **Local LLM (Optional for AI Question Drafting)**: LM Studio (or any OpenAI-compatible server) running on `http://localhost:1234` (see [docs/AI_SETUP.md](docs/AI_SETUP.md))
 
 ### Prerequisites Checklist
 - [x] **Java Development Kit (JDK) 17 or higher** (`java -version`)
@@ -50,6 +51,12 @@ mysql -u root -p learningpal < database_backup.sql
      ```properties
      spring.datasource.username=root
      spring.datasource.password=YOUR_MYSQL_PASSWORD
+     ```
+   - *(Optional)* If testing Local AI Question Drafting with LM Studio, enable the feature flag:
+     ```properties
+     app.llm.enabled=true
+     app.llm.base-url=http://localhost:1234
+     app.llm.model=qwen/qwen3-14b
      ```
    *(A pre-configured development JWT secret is already included in the example file).*
 
@@ -124,30 +131,47 @@ The imported database includes pre-seeded accounts across all roles so you can t
 
 ## Key Features to Test & Explore
 
-### 1. Teacher Content Tools (Phase A)
+### 1. Teacher Content Tools & Resource Management (Phases A & B)
 - **"My Subjects" Hub** (`/teacher/subjects`):
   - View all teacher-owned subjects with statistics (classes, topics, questions, quizzes).
   - Click **"Copy Sample C Curriculum"** to duplicate the built-in curriculum into a custom, editable subject.
 - **Subject Workspace** (`/teacher/subjects/:id`):
   - **Topics**: Add new topics, rename existing ones, or reorder topics with up/down arrows.
-  - **Question Bank**: Create multiple-choice questions (2–6 choices with explanations). Notice the version badges (e.g. `v1`). If a question has submitted answers, editing it will automatically increment the version (`v2`) and retire the previous one to keep historical student attempts intact!
+  - **Question Bank**: Create multiple-choice questions (2–6 choices with explanations). Notice the version badges (e.g. `v1`). If a question has submitted answers, editing it will automatically increment the version (`v2`) and retire the previous one to keep historical student attempts intact! Provenance tags indicate whether questions are original (`MANUAL`) or drafted by AI (`AI_DRAFT`).
   - **Quizzes**: Build quizzes from question bank items. Toggle Draft vs. Published status.
-  - **Link Resources**: Add external links (topic-tagged or class-wide study materials).
-- **Two-Field Class Creation** (`/teacher`):
-  - Create a new class with just **Subject Name** (with autocomplete from your active subjects) and **Class Name**.
+  - **Link Resources & File Uploads (Phase B)**:
+    - Add external web links or click **"Upload Document"** to attach course files (PDF or DOCX, up to 10 MB).
+    - Hardened background text extraction with defenses against Zip slip and duplicate zip entries (CVE-2025-31672).
+    - Status indicators (`READY`, `PENDING`, `COMPLETED`, `FAILED`), text preview modal, and secure teacher-scoped downloads.
+    - Linked files are automatically accessible as remedial study materials to enrolled students.
+- **Class Creation** (`/teacher`):
+  - Create a new class with an intuitive **Subject dropdown** (populated from your active owned subjects) and **Class Name**.
 
-### 2. Class-Scoped Mastery & Student Loop
+### 2. Local AI Question Drafting with LM Studio (Phase C)
+- **Local LLM Integration** (`/teacher/subjects/:id` -> Link Resources):
+  - Click **"Draft with AI"** next to any uploaded document with extracted text.
+  - Configure target topic, number of questions to draft (1–10), and desired Bloom's taxonomy difficulty level.
+  - Background asynchronous job polling communicates directly with local LM Studio (`http://localhost:1234/v1`). 100% private: zero data leaves your local machine.
+  - **Evidence Verification**: Every draft includes grounded evidence extracted verbatim from the source document.
+  - **Teacher Review & Approval Queue**: Inspect questions, edit prompts/choices/explanations, discard unwanted drafts, or approve selected questions into the subject Question Bank with one click.
+  - Full setup guide: [docs/AI_SETUP.md](docs/AI_SETUP.md).
+
+### 3. Accessible In-App Confirmation Modals
+- All critical actions (publishing/unpublishing quizzes, archiving topics, deleting resources, discarding draft questions) use an accessible in-app confirmation modal (`ConfirmModal`).
+- Features notebook design system tokens, WCAG AA color contrast, full keyboard navigation (`Escape` to cancel, `Enter` to confirm), and focus trapping without raw browser `window.alert` / `window.confirm` pop-ups.
+
+### 4. Class-Scoped Mastery & Student Loop
 - **Student Dashboard** (`/student`): View enrolled classes and join a new class using a 6-character code (e.g., `PILOT1`).
 - **Take Quiz** (`/student/classes/:id`): Live timer, question palette navigation, and instant auto-scoring.
 - **Quiz Results**: Misconception explanations for incorrect choices, personalized feedback cards, and recommended remedial links.
 - **Topic Mastery Breakdown**: Visual progress bars showing `STRENGTH` ($\ge 80\%$), `DEVELOPING` ($60\%\text{--}79\%$), and `GAP` ($< 60\%$).
 
-### 3. Teacher Interventions & Validation Lab
+### 5. Teacher Interventions & Validation Lab
 - **Class Detail & Roster** (`/teacher/classes/:id`): View student scores, diagnostic percentages, topic breakdown bars, and attendance.
 - **Student Detail & Overrides**: Adjust question scores with teacher comments, and log 1-on-1 intervention notes (e.g., Office Hours, Peer Tutoring).
 - **Validation Lab** (`/teacher/classes/:id/validation`): Blind teacher topic labeling workflow and accuracy report measuring agreement with the automated classifier.
 
-### 4. Dark Mode / Theme
+### 6. Dark Mode / Theme
 - Click the moon/sun toggle in the navigation bar to test the dark mode palette across all views.
 
 ---
@@ -168,6 +192,8 @@ LearningPal/
 │   └── tailwind.config.js         # Tailwind configuration & custom design tokens
 ├── database_backup.sql            # MySQL dump with pre-seeded data, classes & accounts
 ├── docs/                          # Architecture, Data Model, and Evaluation docs
+│   ├── AI_SETUP.md                # LM Studio local LLM setup & model guidelines
+│   ├── FILES.md                   # Document upload and extraction architecture
 │   ├── DATA_MODEL.md              # Comprehensive entity relationship documentation
 │   ├── ISOLATION_MATRIX.md        # Multi-tenant security rules and test mappings
 │   ├── DEMO_GUIDE.md              # Realistic cohort walkthrough guide

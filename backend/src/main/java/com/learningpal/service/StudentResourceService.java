@@ -31,6 +31,7 @@ public class StudentResourceService {
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ClassEntityRepository classEntityRepository;
+    private final com.learningpal.repository.ResourceFileRepository resourceFileRepository;
 
     public StudentResourceService(
             ResourceRepository resourceRepository,
@@ -38,13 +39,15 @@ public class StudentResourceService {
             ResourceRatingRepository resourceRatingRepository,
             UserRepository userRepository,
             EnrollmentRepository enrollmentRepository,
-            ClassEntityRepository classEntityRepository) {
+            ClassEntityRepository classEntityRepository,
+            com.learningpal.repository.ResourceFileRepository resourceFileRepository) {
         this.resourceRepository = resourceRepository;
         this.resourceProgressRepository = resourceProgressRepository;
         this.resourceRatingRepository = resourceRatingRepository;
         this.userRepository = userRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.classEntityRepository = classEntityRepository;
+        this.resourceFileRepository = resourceFileRepository;
     }
 
     /**
@@ -157,7 +160,9 @@ public class StudentResourceService {
      */
     @Transactional(readOnly = true)
     public List<RecommendedResourceDto> getRecommendationsForTopic(Topic topic, MasteryStatus status, User student, ClassEntity classroom) {
-        List<Resource> allTopicResources = resourceRepository.findByTopic(topic);
+        List<Resource> allTopicResources = resourceRepository.findByTopic(topic).stream()
+                .filter(r -> r.getStatus() == ResourceStatus.ACTIVE)
+                .toList();
 
         // Fetch student's completed resource IDs in this class
         Set<Long> completedResourceIds;
@@ -185,7 +190,7 @@ public class StudentResourceService {
             case GAP, DEVELOPING -> {
                 filteredAndSorted = allTopicResources.stream()
                         .sorted(Comparator.comparingInt((Resource r) -> {
-                            if (r.getType() == ResourceType.NOTE) return 0;
+                            if (r.getType() == ResourceType.NOTE || r.getType() == ResourceType.FILE) return 0;
                             if (r.getType() == ResourceType.PRACTICE) return 1;
                             return 2;
                         }).thenComparing(Resource::getId))
@@ -199,7 +204,7 @@ public class StudentResourceService {
             }
             case INSUFFICIENT_DATA -> {
                 filteredAndSorted = allTopicResources.stream()
-                        .filter(r -> r.getType() == ResourceType.NOTE)
+                        .filter(r -> r.getType() == ResourceType.NOTE || r.getType() == ResourceType.FILE)
                         .sorted(Comparator.comparing(Resource::getId))
                         .toList();
             }
@@ -208,6 +213,31 @@ public class StudentResourceService {
         return filteredAndSorted.stream()
                 .map(r -> {
                     ResourceRating rating = studentRatings.get(r.getId());
+                    boolean completed = completedResourceIds.contains(r.getId());
+                    if (r.getType() == ResourceType.FILE) {
+                        Optional<ResourceFile> optFile = resourceFileRepository.findByResourceId(r.getId());
+                        if (optFile.isPresent()) {
+                            ResourceFile rf = optFile.get();
+                            String downloadUrl = (classroom != null)
+                                    ? "/api/student/classes/" + classroom.getId() + "/files/" + rf.getId() + "/download"
+                                    : null;
+                            return new RecommendedResourceDto(
+                                    r.getId(),
+                                    r.getTitle(),
+                                    r.getType(),
+                                    r.getDescription(),
+                                    r.getContent(),
+                                    r.getUrl(),
+                                    completed,
+                                    rating != null ? rating.getRating() : null,
+                                    rating != null ? rating.getComment() : null,
+                                    rf.getFileName(),
+                                    rf.getSizeBytes(),
+                                    rf.getContentType(),
+                                    downloadUrl
+                            );
+                        }
+                    }
                     return new RecommendedResourceDto(
                             r.getId(),
                             r.getTitle(),
@@ -215,7 +245,7 @@ public class StudentResourceService {
                             r.getDescription(),
                             r.getContent(),
                             r.getUrl(),
-                            completedResourceIds.contains(r.getId()),
+                            completed,
                             rating != null ? rating.getRating() : null,
                             rating != null ? rating.getComment() : null
                     );
@@ -225,7 +255,8 @@ public class StudentResourceService {
 
     @Transactional(readOnly = true)
     public List<RecommendedResourceDto> getRecommendationsForTopic(Topic topic, MasteryStatus status, User student) {
-        return getRecommendationsForTopic(topic, status, student, null);
+        ClassEntity activeClass = resolveActiveClassForStudentAndSubject(student, topic != null ? topic.getSubject() : null);
+        return getRecommendationsForTopic(topic, status, student, activeClass);
     }
 
     /**

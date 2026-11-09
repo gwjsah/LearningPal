@@ -493,7 +493,8 @@ CREATE TABLE `questions` (
   `created_by` bigint DEFAULT NULL,
   `topic_id` bigint NOT NULL,
   `lineage_id` bigint DEFAULT NULL,
-  `origin` enum('MANUAL') NOT NULL,
+  `origin` enum('MANUAL','AI_DRAFT') NOT NULL DEFAULT 'MANUAL',
+  `origin_file_id` bigint DEFAULT NULL,
   `status` enum('ACTIVE','RETIRED') NOT NULL,
   `version` int NOT NULL,
   `subject_id` bigint DEFAULT NULL,
@@ -600,7 +601,8 @@ CREATE TABLE `resources` (
   `description` text,
   `difficulty` enum('EASY','HARD','MEDIUM') NOT NULL,
   `title` varchar(200) NOT NULL,
-  `type` enum('ARTICLE','LINK','NOTE','PRACTICE','VIDEO') NOT NULL,
+  `type` enum('ARTICLE','LINK','NOTE','PRACTICE','VIDEO','FILE') NOT NULL,
+  `file_id` bigint DEFAULT NULL,
   `url` varchar(2048) DEFAULT NULL,
   `created_by` bigint DEFAULT NULL,
   `subject_id` bigint NOT NULL,
@@ -625,6 +627,102 @@ LOCK TABLES `resources` WRITE;
 INSERT INTO `resources` VALUES (1,'In C, variables represent named memory locations allocated according to their data type. Standard integer types like int store whole numbers, while float and double represent real numbers with varying precision. A critical rule in C arithmetic is that dividing two integers always performs truncation toward zero, discarding any fractional portion regardless of the receiving variable\'s type. For example, writing \'float f = 5 / 2;\' stores 2.0 because the division finishes before assignment. To preserve fractional results, cast at least one operand to a float, such as \'5.0 / 2\'. Characters (char) are stored as small 1-byte integers corresponding to their ASCII encodings.','2026-11-02 06:42:14.278587','Core rules for integer, character, and floating-point variable storage in C.','EASY','Understanding C Data Types, Format Specifiers, and Truncation','NOTE',NULL,NULL,1,1,'ACTIVE'),(2,'A student wrote \'float celsius = (5 / 9) * (fahrenheit - 32);\' to convert temperature, but celsius always evaluates to 0.0 regardless of the input temperature. Identify why this happens and rewrite the expression to compute the accurate Celsius value.\n\nHint: Look closely at 5 / 9. Both 5 and 9 are integer literals. What happens during integer division when the numerator is smaller than the denominator?','2026-11-02 06:42:14.279587','Debug a Fahrenheit to Celsius formula that produces 0.','MEDIUM','Fixing Integer Division in Temperature Conversion','PRACTICE',NULL,NULL,1,1,'ACTIVE'),(3,'C expressions are evaluated based on operator precedence and associativity rules. Multiplicative operators (*, /, %) possess higher precedence than additive operators (+, -), meaning multiplication executes before addition unless overridden by parentheses. Logical operators (&& and ||) exhibit short-circuit evaluation: evaluation halts as soon as the outcome is guaranteed. In \'expr1 && expr2\', if expr1 is false (0), expr2 is never evaluated, which means any increment or function calls inside expr2 will not occur. Additionally, remember that \'=\' performs assignment while \'==\' performs comparison; writing \'if (x = 5)\' assigns 5 to x and evaluates to true.','2026-11-02 06:42:14.280587','How C evaluates mathematical and logical expressions.','MEDIUM','Operator Precedence, Short-Circuiting, and Side Effects in C','NOTE',NULL,NULL,1,2,'ACTIVE'),(4,'Trace the values of variables a, b, and result after executing the following lines:\n```c\nint a = 3;\nint b = 4;\nint result = (++a) * (b--);\n```\nWhat are the final values of a, b, and result?\n\nHint: Prefix ++a increments before producing its value for the multiplication, whereas postfix b-- provides its current value to the multiplication before decrementing.','2026-11-02 06:42:14.281587','Trace variable state through compound expressions.','HARD','Predicting Prefix vs Postfix Increment','PRACTICE',NULL,NULL,1,2,'ACTIVE'),(5,'Standard input and output in C rely on the <stdio.h> library functions printf and scanf. printf formats data for terminal display using format specifiers like %d for integers, %f for floats, and %c for characters. Field widths like %5d right-align numbers within 5 character slots, while precision specifiers like %.2f round decimals. Conversely, scanf reads formatted keyboard input and requires the memory address of destination variables, which is why fundamental types require the & operator (e.g., scanf(\"%d\", &val)). When reading strings with %s, scanf stops reading at the first whitespace character, making fgets() the standard alternative for multi-word input.','2026-11-02 06:42:14.282587','Proper usage of printf and scanf in C programs.','EASY','Mastering Standard I/O: Format Specifiers and Buffer Nuances','NOTE',NULL,NULL,1,3,'ACTIVE'),(6,'When reading an integer followed immediately by a character using \'scanf(\"%d\", &num);\' and \'scanf(\"%c\", &ch);\', the character scanf often seems to be skipped entirely. Explain why this happens and how to fix it.\n\nHint: Pressing the Enter key after typing a number leaves a newline character \'\\n\' sitting in the standard input buffer. How can you tell scanf to ignore leading whitespace before reading a character?','2026-11-02 06:42:14.283587','Preventing common scanf pitfalls with trailing newlines.','MEDIUM','Safe Numeric and Character Input','PRACTICE',NULL,NULL,1,3,'ACTIVE'),(7,'Conditional statements steer program execution based on truth values. In C, there is no separate native boolean type prior to C99\'s <stdbool.h>; the integer value 0 represents false, and any non-zero value represents true. When chaining conditional logic, the \'dangling else\' rule specifies that an else always binds to the nearest unmatched preceding if within the same block scope. Switch statements provide efficient multi-way branching against integer constant expressions. Unlike high-level languages, C switch cases fall through sequentially to following cases unless interrupted by an explicit break; statement, making break essential for isolated branch execution.','2026-11-02 06:42:14.284588','Making decisions with conditionals, switch statements, and fall-through.','MEDIUM','Branching Logic in C: If/Else Ladders and Switch Semantics','NOTE',NULL,NULL,1,4,'ACTIVE'),(8,'Given a status code integer \'code\' ranging from 1 to 4, write a C switch statement that prints \'OK\' for 1, \'WARNING\' for 2 or 3, and \'ERROR\' for 4. Any other code should print \'UNKNOWN\'.\n\nHint: You can intentionally use case fall-through to handle both 2 and 3 with a single block of code before a break statement.','2026-11-02 06:42:14.285588','Rewrite an error code dispatcher cleanly.','EASY','Refactoring Nested Conditions into a Switch','PRACTICE',NULL,NULL,1,4,'ACTIVE'),(9,'Loops enable repeated execution of code blocks while a given condition remains true. A for loop packages initialization, test condition, and step increment into a single readable header, making it ideal for counting iterations. A while loop checks its condition at the entry point; if the condition is initially false, the loop body never executes. In contrast, a do-while loop is exit-controlled and tests its condition after executing the body, ensuring the body runs at least once. Control flow within loops can be altered using break to exit immediately, or continue to skip the remainder of the current iteration and proceed to the next step.','2026-11-02 06:42:14.286587','Choosing between for, while, and do-while loops.','EASY','Iteration in C: Entry-Controlled vs Exit-Controlled Loops','NOTE',NULL,NULL,1,5,'ACTIVE'),(10,'Analyze the following code:\n```c\nfor (unsigned int i = 10; i >= 0; i--) {\n    printf(\"%u \", i);\n}\n```\nWhy does this loop never terminate, and how can you correct it?\n\nHint: An unsigned int can never hold a negative value. What happens when i = 0 and i-- is executed?','2026-11-02 06:42:14.287587','Diagnose a loop that runs forever due to unsigned integer wrapping.','HARD','Fixing an Infinite Loop from Off-by-One Bounds','PRACTICE',NULL,NULL,1,5,'ACTIVE'),(11,'Functions break complex programs into small, testable, and reusable building blocks. In C, all function parameters are passed by value, meaning the function receives independent copies of the caller\'s arguments. As a consequence, modifying a parameter inside a function has no effect on the original argument in the calling function. To allow a function to modify a caller\'s variable, the caller must pass the variable\'s address (a pointer). Function prototypes declare the name, return type, and parameter list before main, enabling the compiler to validate calls. Local variables declared with the static keyword persist across function calls, preserving their state throughout program execution.','2026-11-02 06:42:14.287587','Designing reusable functions and understanding parameter mechanisms.','MEDIUM','Modular C: Pass-by-Value, Function Scope, and Static Lifetime','NOTE',NULL,NULL,1,6,'ACTIVE'),(12,'Write the function prototype and definition for \'void swap(int *a, int *b)\' that correctly interchanges the values stored in two integer variables located in main.\n\nHint: Dereference the pointers using the * operator to read and write the values at the memory addresses passed in from the caller.','2026-11-02 06:42:14.288587','Implement an in-place variable swap using pointers.','MEDIUM','Designing a Safe Swap Function','PRACTICE',NULL,NULL,1,6,'ACTIVE');
 /*!40000 ALTER TABLE `resources` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `resource_files`
+--
+
+DROP TABLE IF EXISTS `resource_files`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `resource_files` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `content_type` varchar(120) NOT NULL,
+  `extracted_char_count` int NOT NULL,
+  `extracted_text` longtext,
+  `extraction_note` varchar(500) DEFAULT NULL,
+  `extraction_status` enum('COMPLETED','FAILED','PENDING','READY') NOT NULL,
+  `file_name` varchar(120) NOT NULL,
+  `page_count` int DEFAULT NULL,
+  `sha256` varchar(64) NOT NULL,
+  `size_bytes` bigint NOT NULL,
+  `storage_key` varchar(64) NOT NULL,
+  `uploaded_at` datetime(6) NOT NULL,
+  `resource_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_resource_files_storage_key` (`storage_key`),
+  UNIQUE KEY `UK_resource_files_resource` (`resource_id`),
+  KEY `idx_resource_files_sha256` (`sha256`),
+  CONSTRAINT `FK_resource_files_resource` FOREIGN KEY (`resource_id`) REFERENCES `resources` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ai_generation_jobs`
+--
+
+DROP TABLE IF EXISTS `ai_generation_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_generation_jobs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `completed_at` datetime(6) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `model_name` varchar(120) DEFAULT NULL,
+  `requested_count` int NOT NULL,
+  `sections_done` int NOT NULL,
+  `sections_total` int NOT NULL,
+  `short_note` varchar(500) DEFAULT NULL,
+  `started_at` datetime(6) DEFAULT NULL,
+  `status` enum('COMPLETED','FAILED','PROCESSING','QUEUED') NOT NULL,
+  `source_file_id` bigint NOT NULL,
+  `subject_id` bigint NOT NULL,
+  `teacher_id` bigint NOT NULL,
+  `topic_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_ai_job_source_file` (`source_file_id`),
+  KEY `FK_ai_job_subject` (`subject_id`),
+  KEY `FK_ai_job_teacher` (`teacher_id`),
+  KEY `FK_ai_job_topic` (`topic_id`),
+  CONSTRAINT `FK_ai_job_source_file` FOREIGN KEY (`source_file_id`) REFERENCES `resource_files` (`id`),
+  CONSTRAINT `FK_ai_job_subject` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`),
+  CONSTRAINT `FK_ai_job_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `FK_ai_job_topic` FOREIGN KEY (`topic_id`) REFERENCES `topics` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ai_question_drafts`
+--
+
+DROP TABLE IF EXISTS `ai_question_drafts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_question_drafts` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `choice_a` text NOT NULL,
+  `choice_b` text NOT NULL,
+  `choice_c` text NOT NULL,
+  `choice_d` text NOT NULL,
+  `correct_index` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `difficulty` enum('EASY','HARD','MEDIUM') NOT NULL,
+  `evidence_quote` text,
+  `evidence_verified` bit(1) NOT NULL,
+  `explanation` text NOT NULL,
+  `question_text` text NOT NULL,
+  `section_index` int NOT NULL,
+  `status` enum('APPROVED','PENDING','REJECTED') NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `approved_question_id` bigint DEFAULT NULL,
+  `job_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_ai_draft_approved_question` (`approved_question_id`),
+  KEY `FK_ai_draft_job` (`job_id`),
+  CONSTRAINT `FK_ai_draft_approved_question` FOREIGN KEY (`approved_question_id`) REFERENCES `questions` (`id`),
+  CONSTRAINT `FK_ai_draft_job` FOREIGN KEY (`job_id`) REFERENCES `ai_generation_jobs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `student_topic_mastery`

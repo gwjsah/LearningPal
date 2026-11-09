@@ -67,6 +67,17 @@ public class StudentClassController {
     }
 
     /**
+     * Downloads an active educational file resource belonging to the enrolled class.
+     */
+    @GetMapping("/{classId}/files/{fileId}/download")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadClassFile(
+            @PathVariable Long classId,
+            @PathVariable Long fileId,
+            Principal principal) {
+        return studentClassService.downloadFileForStudent(principal.getName(), classId, fileId);
+    }
+
+    /**
      * Marks an educational resource as completed within a class.
      */
     @PostMapping("/{classId}/resources/{resourceId}/complete")

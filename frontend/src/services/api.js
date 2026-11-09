@@ -21,11 +21,15 @@ export async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem('learningpal_token');
 
   const headers = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
+
+  // Do not set Content-Type for FormData so the browser automatically sets multipart/form-data with boundary
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   let response;
   try {
@@ -58,5 +62,55 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   return data;
+}
+
+/**
+ * Downloads a binary file stream with auth token and triggers browser save dialog.
+ * Respects Content-Disposition attachment filename when present.
+ *
+ * @param {string} endpoint - Path relative to /api (e.g. '/student/classes/1/files/5/download')
+ * @param {string} fallbackFilename - Fallback filename if header is missing
+ */
+export async function apiDownload(endpoint, fallbackFilename = 'document') {
+  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const token = localStorage.getItem('learningpal_token');
+
+  const response = await fetch(url, {
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    let errorMsg = `Download failed with status ${response.status}`;
+    try {
+      const data = await response.json();
+      if (data?.message) errorMsg = data.message;
+    } catch (_) {
+      // not JSON
+    }
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    throw err;
+  }
+
+  let filename = fallbackFilename;
+  const disposition = response.headers.get('content-disposition');
+  if (disposition && disposition.includes('filename=')) {
+    const match = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']*)['"]?/i);
+    if (match && match[1]) {
+      filename = decodeURIComponent(match[1]);
+    }
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(downloadUrl);
 }
 
