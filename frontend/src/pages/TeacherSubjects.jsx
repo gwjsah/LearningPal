@@ -26,6 +26,7 @@ import {
   NotebookCard,
   PortalShell,
 } from '../components/NotebookPrimitives';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export default function TeacherSubjects() {
   const { user, logout } = useAuth();
@@ -43,6 +44,7 @@ export default function TeacherSubjects() {
   const [description, setDescription] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
+  const [confirmState, setConfirmState] = useState(null);
 
   // Sample copy confirmation
   const [copyingSample, setCopyingSample] = useState(false);
@@ -139,32 +141,58 @@ export default function TeacherSubjects() {
     }
   };
 
-  const handleArchive = async (subject) => {
-    if (!window.confirm(`Are you sure you want to archive "${subject.name}"? Active classes will retain their history.`)) {
+  const handleConfirmAction = async () => {
+    if (!confirmState?.onConfirm) {
+      setConfirmState(null);
       return;
     }
+    setConfirmState((prev) => ({ ...prev, loading: true }));
     try {
-      const updated = await teacherService.archiveSubject(subject.id);
-      setSubjects((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      setSuccessToast(`Subject "${subject.name}" archived.`);
-      setTimeout(() => setSuccessToast(''), 4000);
+      await confirmState.onConfirm();
+      setConfirmState(null);
     } catch (err) {
-      setError(err.message || 'Failed to archive subject.');
+      setConfirmState(null);
     }
   };
 
-  const handleDelete = async (subject) => {
-    if (!window.confirm(`Permanently delete "${subject.name}"? This cannot be undone.`)) {
-      return;
-    }
-    try {
-      await teacherService.deleteSubject(subject.id);
-      setSubjects((prev) => prev.filter((s) => s.id !== subject.id));
-      setSuccessToast(`Subject "${subject.name}" deleted.`);
-      setTimeout(() => setSuccessToast(''), 4000);
-    } catch (err) {
-      setError(err.message || 'Failed to delete subject.');
-    }
+  const handleArchive = (subject) => {
+    setConfirmState({
+      title: 'Archive Subject',
+      message: `Are you sure you want to archive "${subject.name}"? Active classes will retain their history.`,
+      confirmLabel: 'Archive Subject',
+      variant: 'danger',
+      loadingLabel: 'Archiving…',
+      onConfirm: async () => {
+        try {
+          const updated = await teacherService.archiveSubject(subject.id);
+          setSubjects((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+          setSuccessToast(`Subject "${subject.name}" archived.`);
+          setTimeout(() => setSuccessToast(''), 4000);
+        } catch (err) {
+          setError(err.message || 'Failed to archive subject.');
+        }
+      },
+    });
+  };
+
+  const handleDelete = (subject) => {
+    setConfirmState({
+      title: 'Permanently Delete Subject',
+      message: `Permanently delete "${subject.name}"? This cannot be undone.`,
+      confirmLabel: 'Delete Subject',
+      variant: 'danger',
+      loadingLabel: 'Deleting…',
+      onConfirm: async () => {
+        try {
+          await teacherService.deleteSubject(subject.id);
+          setSubjects((prev) => prev.filter((s) => s.id !== subject.id));
+          setSuccessToast(`Subject "${subject.name}" deleted.`);
+          setTimeout(() => setSuccessToast(''), 4000);
+        } catch (err) {
+          setError(err.message || 'Failed to delete subject.');
+        }
+      },
+    });
   };
 
   const activeSubjects = subjects.filter((s) => s.status === 'ACTIVE');
@@ -649,6 +677,24 @@ export default function TeacherSubjects() {
             </div>
           </div>
         )}
+        {/* Confirmation Modal */}
+        <ConfirmModal
+          isOpen={Boolean(confirmState)}
+          title={confirmState?.title || ''}
+          message={confirmState?.message || ''}
+          confirmLabel={confirmState?.confirmLabel || 'Confirm'}
+          cancelLabel={confirmState?.cancelLabel || 'Cancel'}
+          variant={confirmState?.variant || 'primary'}
+          loading={Boolean(confirmState?.loading)}
+          loadingLabel={confirmState?.loadingLabel || 'Processing…'}
+          isAlert={Boolean(confirmState?.isAlert)}
+          onConfirm={handleConfirmAction}
+          onCancel={() => {
+            if (!confirmState?.loading) {
+              setConfirmState(null);
+            }
+          }}
+        />
       </div>
     </PortalShell>
   );

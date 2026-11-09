@@ -32,6 +32,8 @@ public class StudentClassService {
     private final TenantAccess tenantAccess;
     private final ResourceRepository resourceRepository;
     private final ResourceProgressRepository resourceProgressRepository;
+    private final ResourceFileRepository resourceFileRepository;
+    private final TeacherFileService teacherFileService;
 
     public StudentClassService(
             UserRepository userRepository,
@@ -42,7 +44,9 @@ public class StudentClassService {
             ClassJoinRateLimiter rateLimiter,
             TenantAccess tenantAccess,
             ResourceRepository resourceRepository,
-            ResourceProgressRepository resourceProgressRepository) {
+            ResourceProgressRepository resourceProgressRepository,
+            ResourceFileRepository resourceFileRepository,
+            TeacherFileService teacherFileService) {
         this.userRepository = userRepository;
         this.classEntityRepository = classEntityRepository;
         this.enrollmentRepository = enrollmentRepository;
@@ -52,6 +56,8 @@ public class StudentClassService {
         this.tenantAccess = tenantAccess;
         this.resourceRepository = resourceRepository;
         this.resourceProgressRepository = resourceProgressRepository;
+        this.resourceFileRepository = resourceFileRepository;
+        this.teacherFileService = teacherFileService;
     }
 
     /**
@@ -147,7 +153,8 @@ public class StudentClassService {
     }
 
     /**
-     * Retrieves all active study materials (notes, practice, links) for the class.
+     * Retrieves all active study materials (notes, practice, links, and files) for the class.
+     * Untagged resources belong to the general study materials list.
      */
     @Transactional(readOnly = true)
     public List<RecommendedResourceDto> getClassStudyMaterials(String studentEmail, Long classId) {
@@ -155,26 +162,101 @@ public class StudentClassService {
         ClassEntity cls = classEntityRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
 
+        tenantAccess.requireSameInstitution(student, cls.getInstitution());
+
         enrollmentRepository.findByStudentAndClassEntity(student, cls)
                 .orElseThrow(() -> new ResourceNotFoundException("You are not enrolled in class: " + classId));
 
-        List<Resource> resources = resourceRepository.findBySubjectAndStatus(cls.getSubject(), ResourceStatus.ACTIVE);
+        List<Resource> resources = resourceRepository.findBySubjectAndStatus(cls.getSubject(), ResourceStatus.ACTIVE)
+                .stream()
+                .filter(r -> r.getTopic() == null)
+                .toList();
+
         Set<Long> completedIds = resourceProgressRepository.findByStudentAndClassroom(student, cls).stream()
                 .filter(p -> p.getStatus() == ProgressStatus.COMPLETED)
                 .map(p -> p.getResource().getId())
                 .collect(Collectors.toSet());
 
-        return resources.stream().map(r -> new RecommendedResourceDto(
-                r.getId(),
-                r.getTitle(),
-                r.getType(),
-                r.getDescription(),
-                r.getContent(),
-                r.getUrl(),
-                completedIds.contains(r.getId()),
-                null,
-                null
-        )).toList();
+        return resources.stream().map(r -> {
+            boolean isCompleted = completedIds.contains(r.getId());
+            if (r.getType() == ResourceType.FILE) {
+                Optional<ResourceFile> optFile = resourceFileRepository.findByResourceId(r.getId());
+                if (optFile.isPresent()) {
+                    ResourceFile rf = optFile.get();
+                    String downloadUrl = "/api/student/classes/" + classId + "/files/" + rf.getId() + "/download";
+                    return new RecommendedResourceDto(
+                            r.getId(),
+                            r.getTitle(),
+                            r.getType(),
+                            r.getDescription(),
+                            r.getContent(),
+                            r.getUrl(),
+                            isCompleted,
+                            null,
+                            null,
+                            rf.getFileName(),
+                            rf.getSizeBytes(),
+                            rf.getContentType(),
+                            downloadUrl
+                    );
+                }
+            }
+            return new RecommendedResourceDto(
+                    r.getId(),
+                    r.getTitle(),
+                    r.getType(),
+                    r.getDescription(),
+                    r.getContent(),
+                    r.getUrl(),
+                    isCompleted
+            );
+        }).toList();
+    }
+
+    /**
+     * Securely streams an active file resource for an enrolled student.
+     * Accessible only if the student is actively or historically enrolled in the class,
+     * the file belongs to that class's subject, and the file is active.
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.http.ResponseEntity<org.springframework.core.io.InputStreamResource> downloadFileForStudent(
+            String studentEmail,
+            Long classId,
+            Long fileId) {
+        User student = getActiveStudent(studentEmail);
+        ClassEntity cls = classEntityRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+
+        // Enforce institution boundary
+        tenantAccess.requireSameInstitution(student, cls.getInstitution());
+
+        // Enforce active class status (archived classes cannot download files)
+        if (cls.getStatus() != ClassStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Class is archived: " + classId);
+        }
+
+        // Enforce active class enrollment
+        enrollmentRepository.findByStudentAndClassEntity(student, cls)
+                .orElseThrow(() -> new ResourceNotFoundException("Not enrolled in class: " + classId));
+
+        // Locate file by resource_file.id or resource.id
+        ResourceFile rf = resourceFileRepository.findById(fileId)
+                .or(() -> resourceFileRepository.findByResourceId(fileId))
+                .orElseThrow(() -> new ResourceNotFoundException("File not found: " + fileId));
+
+        Resource resource = rf.getResource();
+
+        // Must belong to class's subject
+        if (cls.getSubject() == null || !resource.getSubject().getId().equals(cls.getSubject().getId())) {
+            throw new ResourceNotFoundException("File does not belong to this class: " + fileId);
+        }
+
+        // Must be active (archived files hidden from students)
+        if (resource.getStatus() != ResourceStatus.ACTIVE) {
+            throw new ResourceNotFoundException("File is not active: " + fileId);
+        }
+
+        return teacherFileService.serveFileDownload(rf);
     }
 
     /**
@@ -243,7 +325,7 @@ public class StudentClassService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         if (student.getRole() != Role.STUDENT || student.getStatus() != UserStatus.ACTIVE) {
-            throw new AccessDeniedException("Only active students can access student classroom resources");
+            throw new ResourceNotFoundException("Active student account required");
         }
         return student;
     }

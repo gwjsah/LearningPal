@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, apiDownload } from './api';
 
 /**
  * Service client for student classroom, assessment, and diagnostic operations.
@@ -27,6 +27,12 @@ export const studentService = {
    * Fetches general link study materials for a class.
    */
   getClassStudyMaterials: (classId) => apiRequest(`/student/classes/${classId}/materials`),
+
+  /**
+   * Downloads an educational file resource (PDF/DOCX) for an enrolled class.
+   */
+  downloadClassFile: (classId, fileId, filename) =>
+    apiDownload(`/student/classes/${classId}/files/${fileId}/download`, filename),
 
   /**
    * Resolves a student's classId for a given subjectId (for URL backwards compatibility).

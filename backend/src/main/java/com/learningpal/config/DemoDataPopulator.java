@@ -5,10 +5,7 @@ import com.learningpal.dto.GradeAnswerRequest;
 import com.learningpal.dto.SurveyItemDto;
 import com.learningpal.entity.*;
 import com.learningpal.repository.*;
-import com.learningpal.service.GapAnalysisService;
-import com.learningpal.service.GradingService;
-import com.learningpal.service.MeasurementSurveyService;
-import com.learningpal.service.TeacherClassService;
+import com.learningpal.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +16,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -71,6 +72,8 @@ public class DemoDataPopulator implements CommandLineRunner {
     private final GapAnalysisService gapAnalysisService;
     private final TeacherClassService teacherClassService;
     private final PasswordEncoder passwordEncoder;
+    private final ResourceFileRepository resourceFileRepository;
+    private final TeacherFileService teacherFileService;
 
     public DemoDataPopulator(
             @Value("${app.seed.demo.enabled:false}") boolean enabled,
@@ -103,7 +106,9 @@ public class DemoDataPopulator implements CommandLineRunner {
             GradingService gradingService,
             GapAnalysisService gapAnalysisService,
             TeacherClassService teacherClassService,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            ResourceFileRepository resourceFileRepository,
+            TeacherFileService teacherFileService) {
         this.enabled = enabled;
         this.reset = reset;
         this.demoPassword = demoPassword;
@@ -135,6 +140,8 @@ public class DemoDataPopulator implements CommandLineRunner {
         this.gapAnalysisService = gapAnalysisService;
         this.teacherClassService = teacherClassService;
         this.passwordEncoder = passwordEncoder;
+        this.resourceFileRepository = resourceFileRepository;
+        this.teacherFileService = teacherFileService;
     }
 
     @Override
@@ -272,6 +279,15 @@ public class DemoDataPopulator implements CommandLineRunner {
                 assessmentQuestionRepository.deleteAll(assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(a));
                 assessmentRepository.delete(a);
             }
+            List<ResourceFile> demoFiles = resourceFileRepository.findBySubjectId(webSubj.getId());
+            for (ResourceFile rf : demoFiles) {
+                try {
+                    Path p = teacherFileService.getStorageDirectory().resolve(rf.getStorageKey());
+                    Files.deleteIfExists(p);
+                } catch (Exception ignored) {}
+                resourceFileRepository.delete(rf);
+            }
+            resourceFileRepository.flush();
             resourceRepository.deleteAll(resourceRepository.findBySubjectId(webSubj.getId()));
             List<Topic> topics = topicRepository.findBySubjectOrderByDisplayOrderAsc(webSubj);
             for (Topic t : topics) {
@@ -1110,8 +1126,58 @@ public class DemoDataPopulator implements CommandLineRunner {
             link2.setStatus(ResourceStatus.ACTIVE);
             resourceRepository.save(link2);
 
+            // Phase B: Upload sample C Loops and Functions DOCX study notes
+            String docTitle = "Study Guide: Loops and Functions in C";
+            boolean alreadyUploaded = resourceRepository.findBySubjectAndStatus(privateSubject, ResourceStatus.ACTIVE).stream()
+                    .anyMatch(r -> docTitle.equals(r.getTitle()));
+            if (!alreadyUploaded) {
+                try {
+                    byte[] docxBytes = generateSampleDocxBytes();
+                    ByteArrayMultipartFile multipartFile = new ByteArrayMultipartFile(
+                            "file",
+                            "c_loops_and_functions.docx",
+                            DocumentExtractionService.MIME_DOCX,
+                            docxBytes
+                    );
+                    teacherFileService.uploadFile(
+                            teacher.getEmail(),
+                            privateSubject.getId(),
+                            multipartFile,
+                            docTitle,
+                            "Essential study notes covering while/for loops, boundary conditions, and procedural function modularity in C.",
+                            t1.getId()
+                    );
+                    log.info("DemoDataPopulator: Successfully uploaded sample DOCX study guide to teacher private subject.");
+                } catch (Exception e) {
+                    log.warn("DemoDataPopulator: Unable to seed sample DOCX file: {}", e.getMessage());
+                }
+            }
+
             // Recalculate mastery in class
             gapAnalysisService.recalculateForStudentInClass(studentA.getId(), webClass.getId());
+        }
+    }
+
+    private byte[] generateSampleDocxBytes() throws IOException {
+        try (org.apache.poi.xwpf.usermodel.XWPFDocument doc = new org.apache.poi.xwpf.usermodel.XWPFDocument();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            var p1 = doc.createParagraph();
+            var r1 = p1.createRun();
+            r1.setBold(true);
+            r1.setFontSize(14);
+            r1.setText("Study Guide: Loops and Functions in C");
+
+            var p2 = doc.createParagraph();
+            var r2 = p2.createRun();
+            r2.setText("In C programming, loops allow executing a block of statements repeatedly until a condition evaluates to false. The while loop tests the condition before executing the loop body, making it ideal when the number of iterations is unknown in advance. The for loop combines initialization, condition checking, and increment in a single line, making it concise for index-driven traversals. Be careful with boundary conditions to prevent off-by-one errors.");
+
+            var p3 = doc.createParagraph();
+            var r3 = p3.createRun();
+            r3.setText("Functions provide procedural abstraction and code reuse. In C, arguments are passed by value by default. To modify caller variables, pass pointers containing the variable addresses and dereference them inside the function body. Always declare return types and function prototypes before calling functions across translation units.");
+
+            doc.write(baos);
+            return baos.toByteArray();
         }
     }
 }

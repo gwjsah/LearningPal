@@ -40,9 +40,9 @@ export default function TeacherHome() {
     setSurveyDismissed(true);
   };
 
-  // Creation Modal State (Exactly two text fields: Subject Name & Class Name)
+  // Creation Modal State
   const [showModal, setShowModal] = useState(false);
-  const [subjectName, setSubjectName] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [name, setName] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -55,12 +55,12 @@ export default function TeacherHome() {
     setLoading(true);
     setError('');
     try {
-      const [classesData, suggestionsData] = await Promise.all([
+      const [classesData, subjectsData] = await Promise.all([
         teacherService.getClasses(),
-        teacherService.getSubjectSuggestions().catch(() => []),
+        teacherService.getTeacherSubjects().catch(() => []),
       ]);
       setClasses(classesData);
-      setSubjectSuggestions(suggestionsData || []);
+      setSubjects(subjectsData || []);
     } catch (err) {
       if (err.status === 401) {
         logout();
@@ -87,18 +87,28 @@ export default function TeacherHome() {
     }
   };
 
+  const activeSubjects = subjects.filter((s) => s.status === 'ACTIVE');
+
+  const handleOpenCreateModal = () => {
+    setCreateError('');
+    if (activeSubjects.length > 0 && !selectedSubjectId) {
+      setSelectedSubjectId(activeSubjects[0].id.toString());
+    }
+    setShowModal(true);
+  };
+
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    const trimmedSubj = subjectName.trim();
+    if (!selectedSubjectId) {
+      setCreateError('Please select a subject from your list.');
+      return;
+    }
+    const selectedSubject = activeSubjects.find((s) => s.id.toString() === selectedSubjectId.toString());
+    if (!selectedSubject) {
+      setCreateError('Please select a valid subject from your list.');
+      return;
+    }
     const trimmedName = name.trim();
-    if (!trimmedSubj) {
-      setCreateError('Please enter a subject name.');
-      return;
-    }
-    if (trimmedSubj.length > 120) {
-      setCreateError('Subject name cannot exceed 120 characters.');
-      return;
-    }
     if (!trimmedName) {
       setCreateError('Please provide a class/section name (e.g. "Section A").');
       return;
@@ -112,19 +122,17 @@ export default function TeacherHome() {
     setCreateError('');
     try {
       const newClass = await teacherService.createClass({
-        subjectName: trimmedSubj,
+        subjectId: selectedSubject.id,
+        subjectName: selectedSubject.name,
         name: trimmedName,
       });
 
       // Insert at the front of the list
       setClasses((prev) => [newClass, ...prev]);
       setShowModal(false);
-      setSubjectName('');
       setName('');
       setSuccessToast(`Class "${newClass.name}" created! Share code ${newClass.joinCode} with your students.`);
       setTimeout(() => setSuccessToast(''), 5000);
-      // Refresh suggestions
-      teacherService.getSubjectSuggestions().then(setSubjectSuggestions).catch(() => {});
     } catch (err) {
       setCreateError(err.message || 'Failed to create class section.');
     } finally {
@@ -160,10 +168,7 @@ export default function TeacherHome() {
           <Button
             variant="primary"
             size="md"
-            onClick={() => {
-              setCreateError('');
-              setShowModal(true);
-            }}
+            onClick={handleOpenCreateModal}
             className="flex items-center gap-1.5 shadow-notebook"
           >
             <Plus className="w-4 h-4" />
@@ -244,10 +249,7 @@ export default function TeacherHome() {
                   <Button
                     variant="primary"
                     size="lg"
-                    onClick={() => {
-                      setCreateError('');
-                      setShowModal(true);
-                    }}
+                    onClick={handleOpenCreateModal}
                     className="shadow-notebook"
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -468,15 +470,12 @@ export default function TeacherHome() {
           >
             <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 sm:p-7 shadow-notebook space-y-5">
               <div className="flex items-center justify-between border-b border-ink/15 dark:border-chalkboard-borderSubtle pb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
-                  <h3
-                    id="create-class-title"
-                    className="text-lg font-bold text-ink dark:text-chalkboard-chalk"
-                  >
-                    Create New Class Section
-                  </h3>
-                </div>
+                <h3
+                  id="create-class-title"
+                  className="text-lg font-bold text-ink dark:text-chalkboard-chalk"
+                >
+                  Create New Class Section
+                </h3>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -496,32 +495,56 @@ export default function TeacherHome() {
 
               <form onSubmit={handleCreateSubmit} className="space-y-4">
                 <div>
-                  <label
-                    htmlFor="subject-name-input"
-                    className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1.5"
-                  >
-                    Subject Name <span className="text-redpen">*</span>
-                  </label>
-                  <input
-                    id="subject-name-input"
-                    list="teacher-subject-suggestions"
-                    type="text"
-                    required
-                    maxLength={120}
-                    value={subjectName}
-                    onChange={(e) => setSubjectName(e.target.value)}
-                    placeholder="e.g. Data Structures, Web Development, Discrete Math"
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen"
-                  />
-                  <datalist id="teacher-subject-suggestions">
-                    {subjectSuggestions.map((sug) => (
-                      <option key={sug} value={sug} />
-                    ))}
-                  </datalist>
-                  <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1">
-                    <span>Reuse existing subject questions, or create new.</span>
-                    <span>{subjectName.length}/120</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label
+                      htmlFor="subject-select"
+                      className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk"
+                    >
+                      Subject <span className="text-redpen">*</span>
+                    </label>
+                    <Link
+                      to="/teacher/subjects"
+                      className="text-xs text-redpen hover:underline font-mono"
+                    >
+                      + New Subject
+                    </Link>
                   </div>
+
+                  {activeSubjects.length === 0 ? (
+                    <div className="p-3.5 rounded-xl border-2 border-dashed border-ink/20 dark:border-chalkboard-border bg-paper-warm/50 dark:bg-chalkboard-surface space-y-2">
+                      <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
+                        You have not created any course subjects yet. Create a subject in Course Authoring before setting up a class section.
+                      </p>
+                      <Link
+                        to="/teacher/subjects"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-redpen hover:underline"
+                      >
+                        <span>Go to My Subjects to create one</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        id="subject-select"
+                        required
+                        value={selectedSubjectId}
+                        onChange={(e) => setSelectedSubjectId(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen cursor-pointer"
+                      >
+                        <option value="" disabled>-- Select a Subject --</option>
+                        {activeSubjects.map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.name} ({sub.code})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1">
+                        <span>Select from your owned course subjects.</span>
+                        <span>{activeSubjects.length} subject{activeSubjects.length === 1 ? '' : 's'} available</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -561,7 +584,7 @@ export default function TeacherHome() {
                     type="submit"
                     variant="primary"
                     size="md"
-                    disabled={createLoading}
+                    disabled={createLoading || activeSubjects.length === 0}
                     className="shadow-notebook"
                   >
                     {createLoading ? 'Creating…' : 'Create Class'}

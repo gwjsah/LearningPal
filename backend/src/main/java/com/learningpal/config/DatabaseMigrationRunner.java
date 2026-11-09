@@ -78,8 +78,9 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
     public void run(String... args) {
         log.info("Starting Multi-Institution & Classroom migration check...");
 
-        // 1. Guarded schema migration: relax legacy subject_id column if present in database
+        // 1. Guarded schema migration: relax legacy subject_id and topic_id columns if present in database
         relaxLegacySubjectColumnIfPresent();
+        relaxLegacyTopicColumnOnResourcesIfPresent();
 
         // 2. Ensure default "Pilot University" exists
         Institution pilot = institutionRepository.findByCode("PILOT-2026")
@@ -199,6 +200,8 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
                 executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS supersedes_id BIGINT");
                 executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS origin VARCHAR(20) DEFAULT 'MANUAL'");
                 executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS subject_id BIGINT");
+                executeSilently("ALTER TABLE questions ADD COLUMN IF NOT EXISTS source_file_id BIGINT");
+                executeSilently("UPDATE questions SET origin = 'MANUAL' WHERE origin IS NULL");
                 executeSilently("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS kind VARCHAR(20) DEFAULT 'QUIZ'");
                 executeSilently("ALTER TABLE resources ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'");
 
@@ -219,6 +222,8 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
                 executeSilently("ALTER TABLE questions ADD COLUMN supersedes_id BIGINT NULL");
                 executeSilently("ALTER TABLE questions ADD COLUMN origin VARCHAR(20) NOT NULL DEFAULT 'MANUAL'");
                 executeSilently("ALTER TABLE questions ADD COLUMN subject_id BIGINT NULL");
+                executeSilently("ALTER TABLE questions ADD COLUMN source_file_id BIGINT NULL");
+                executeSilently("UPDATE questions SET origin = 'MANUAL' WHERE origin IS NULL");
                 executeSilently("ALTER TABLE assessments ADD COLUMN kind VARCHAR(20) NOT NULL DEFAULT 'QUIZ'");
                 executeSilently("ALTER TABLE resources ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
 
@@ -311,6 +316,29 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.debug("Database metadata inspection skipped: {}", e.getMessage());
+        }
+    }
+
+    private void relaxLegacyTopicColumnOnResourcesIfPresent() {
+        try {
+            String dbProduct = jdbcTemplate.execute((java.sql.Connection conn) -> conn.getMetaData().getDatabaseProductName());
+            if ("H2".equalsIgnoreCase(dbProduct)) {
+                try {
+                    jdbcTemplate.execute("ALTER TABLE resources ALTER COLUMN topic_id SET NULL");
+                    log.info("Migration: Relaxed resources.topic_id column in H2 database.");
+                } catch (Exception ignored) {
+                    // Column already relaxed or does not exist
+                }
+            } else {
+                try {
+                    jdbcTemplate.execute("ALTER TABLE resources MODIFY COLUMN topic_id BIGINT NULL");
+                    log.info("Migration: Relaxed resources.topic_id column in MySQL database.");
+                } catch (Exception ignored) {
+                    // Column already relaxed or does not exist
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Database metadata inspection skipped for resources.topic_id: {}", e.getMessage());
         }
     }
 }

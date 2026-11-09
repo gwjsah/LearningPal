@@ -210,6 +210,9 @@ public class TeacherContentService {
         // Copy text resources
         List<Resource> sampleResources = resourceRepository.findBySubjectId(sample.getId());
         for (Resource sr : sampleResources) {
+            if (sr.getType() == ResourceType.FILE) {
+                continue; // File resources are teacher-uploaded artifacts with physical storage, not copied from sample
+            }
             Topic targetTopic = sr.getTopic() != null ? topicMap.get(sr.getTopic().getId()) : null;
             Resource nr = new Resource(
                     savedSubject, targetTopic, sr.getTitle(), sr.getDescription(),
@@ -414,6 +417,16 @@ public class TeacherContentService {
     }
 
     public TeacherQuestionDto createQuestion(String teacherEmail, Long subjectId, CreateQuestionRequest request) {
+        return createQuestion(teacherEmail, subjectId, request, QuestionOrigin.MANUAL, null);
+    }
+
+    public TeacherQuestionDto createQuestion(
+            String teacherEmail,
+            Long subjectId,
+            CreateQuestionRequest request,
+            QuestionOrigin origin,
+            com.learningpal.entity.ResourceFile sourceFile
+    ) {
         User teacher = getActiveTeacher(teacherEmail);
         Subject subject = tenantAccess.requireOwnedSubject(teacher, subjectId, subjectRepository);
 
@@ -436,7 +449,8 @@ public class TeacherContentService {
         question.setSubject(subject);
         question.setStatus(QuestionStatus.ACTIVE);
         question.setVersion(1);
-        question.setOrigin(QuestionOrigin.MANUAL);
+        question.setOrigin(origin != null ? origin : QuestionOrigin.MANUAL);
+        question.setSourceFile(sourceFile);
 
         Question saved = questionRepository.save(question);
         saved.setLineageId(saved.getId());
@@ -501,7 +515,8 @@ public class TeacherContentService {
             newVersion.setVersion(existing.getVersion() + 1);
             newVersion.setLineageId(existing.getLineageId());
             newVersion.setSupersedes(existing);
-            newVersion.setOrigin(QuestionOrigin.MANUAL);
+            newVersion.setOrigin(existing.getOrigin() != null ? existing.getOrigin() : QuestionOrigin.MANUAL);
+            newVersion.setSourceFile(existing.getSourceFile());
 
             Question savedNew = questionRepository.save(newVersion);
             saveChoices(savedNew, request.choices());

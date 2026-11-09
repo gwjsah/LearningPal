@@ -35,6 +35,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 export default function TeacherClassDetail() {
   const { id } = useParams();
@@ -1635,84 +1636,36 @@ export default function TeacherClassDetail() {
         )}
 
         {/* Modal: Regenerate Join Code */}
-        {showRegenModal && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="regen-title"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
-          >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
-              <div className="flex items-center gap-3 text-redpen">
-                <RotateCcw className="w-6 h-6" />
-                <h3 id="regen-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
-                  Regenerate Join Code?
-                </h3>
-              </div>
-              <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                A new 6-character code will be generated. The current code (<strong>{classDetail?.joinCode}</strong>) will immediately stop working for new joins. Existing enrolled students will remain in the class.
-              </p>
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowRegenModal(false)}
-                  disabled={actionLoading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleRegenerateCode}
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? 'Generating…' : 'Yes, Generate New Code'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmModal
+          isOpen={showRegenModal}
+          title="Regenerate Join Code?"
+          message={
+            <span>
+              A new 6-character code will be generated. The current code (<strong>{classDetail?.joinCode}</strong>) will immediately stop working for new joins. Existing enrolled students will remain in the class.
+            </span>
+          }
+          confirmLabel="Yes, Generate New Code"
+          cancelLabel="Cancel"
+          variant="primary"
+          loading={actionLoading}
+          loadingLabel="Generating…"
+          onConfirm={handleRegenerateCode}
+          onCancel={() => setShowRegenModal(false)}
+        />
 
         {/* Modal: Archive Class */}
-        {showArchiveModal && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="archive-title"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
-          >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
-              <div className="flex items-center gap-3 text-redpen">
-                <ShieldAlert className="w-6 h-6" />
-                <h3 id="archive-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
-                  Archive Class Section?
-                </h3>
-              </div>
-              <p className="text-xs text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                Archiving this class will stop students from starting new quiz attempts. Enrolled students can still review their past work, feedback, and learning gaps. This action cannot be undone.
-              </p>
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowArchiveModal(false)}
-                  disabled={actionLoading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={handleArchive}
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? 'Archiving…' : 'Yes, Archive Class'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmModal
+          isOpen={showArchiveModal}
+          title="Archive Class Section?"
+          message="Archiving this class will stop students from starting new quiz attempts. Enrolled students can still review their past work, feedback, and learning gaps. This action cannot be undone."
+          confirmLabel="Yes, Archive Class"
+          cancelLabel="Cancel"
+          variant="danger"
+          loading={actionLoading}
+          loadingLabel="Archiving…"
+          onConfirm={handleArchive}
+          onCancel={() => setShowArchiveModal(false)}
+        />
 
         {/* Modal: Edit Assessment Schedule & Retake Rules */}
         {editingAssessment && (

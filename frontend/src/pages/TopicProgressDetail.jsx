@@ -20,9 +20,11 @@ import {
   Star,
   Check,
   Loader2,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
+import { apiDownload } from '../services/api';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 
@@ -33,6 +35,14 @@ const RATING_LABELS = {
   4: 'Very helpful',
   5: 'Extremely helpful',
 };
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
 
 /**
  * Expandable rating control for individual learning resources.
@@ -230,6 +240,30 @@ export default function TopicProgressDetail() {
   const [error, setError] = useState('');
   const [completionError, setCompletionError] = useState('');
   const [togglingId, setTogglingId] = useState(null);
+  const [downloadingResourceId, setDownloadingResourceId] = useState(null);
+  const [downloadError, setDownloadError] = useState('');
+
+  const handleDownloadResource = async (res) => {
+    setDownloadingResourceId(res.id);
+    setDownloadError('');
+    try {
+      if (res.downloadUrl) {
+        await apiDownload(res.downloadUrl, res.fileName || `${res.title}.pdf`);
+      } else if (validClassId) {
+        await studentService.downloadClassFile(
+          validClassId,
+          res.id,
+          res.fileName || `${res.title}.pdf`
+        );
+      } else {
+        throw new Error('No enrolled class found to download this file.');
+      }
+    } catch (err) {
+      setDownloadError(err.message || 'Failed to download file. Please try again.');
+    } finally {
+      setDownloadingResourceId(null);
+    }
+  };
 
   // Topic Feedback Helpfulness Rating State
   const [feedbackRatingValue, setFeedbackRatingValue] = useState(0);
@@ -837,6 +871,22 @@ export default function TopicProgressDetail() {
                 </div>
               )}
 
+              {downloadError && (
+                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{downloadError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDownloadError('')}
+                    className="font-bold underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
               {topicDetail.resources?.length === 0 ? (
                 <NotebookCard className="p-8 text-center text-ink-muted dark:text-chalkboard-muted">
                   <p>No recommended resources available for this topic yet.</p>
@@ -846,6 +896,9 @@ export default function TopicProgressDetail() {
                   {topicDetail.resources.map((res) => {
                     const isCompleted = res.completed;
                     const isNote = res.type === 'NOTE';
+                    const isFile = res.type === 'FILE';
+                    const isDocx = isFile && (res.fileName?.toLowerCase().endsWith('.docx') ||
+                      res.fileContentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
                     return (
                       <NotebookCard
@@ -862,18 +915,30 @@ export default function TopicProgressDetail() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span
                               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold border ${
-                                isNote
+                                isFile
+                                  ? isDocx
+                                    ? 'bg-blue-100 text-blue-900 border-blue-400 dark:bg-blue-950 dark:text-blue-300'
+                                    : 'bg-red-100 text-red-900 border-red-400 dark:bg-red-950 dark:text-red-300'
+                                  : isNote
                                   ? 'bg-highlighter-skySoft text-blue-900 dark:text-blue-300 border-blue-400/40'
                                   : 'bg-highlighter-yellowSoft text-amber-900 dark:text-amber-300 border-amber-400/40'
                               }`}
                             >
-                              {isNote ? (
+                              {isFile ? (
+                                <FileText className="w-3.5 h-3.5" />
+                              ) : isNote ? (
                                 <FileText className="w-3.5 h-3.5" />
                               ) : (
                                 <Dumbbell className="w-3.5 h-3.5" />
                               )}
-                              <span>{res.type}</span>
+                              <span>{isFile ? (isDocx ? 'DOCX' : 'PDF') : res.type}</span>
                             </span>
+
+                            {isFile && res.fileSizeBytes > 0 && (
+                              <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                                {formatBytes(res.fileSizeBytes)}
+                              </span>
+                            )}
 
                             <h4 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                               {res.title}
@@ -913,6 +978,12 @@ export default function TopicProgressDetail() {
                           </p>
                         )}
 
+                        {isFile && res.fileName && (
+                          <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                            Attached file: <span className="font-semibold text-ink dark:text-chalkboard-chalk">{res.fileName}</span>
+                          </p>
+                        )}
+
                         {/* Resource Content: Plain text with monospace code blocks */}
                         {res.content && (
                           <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
@@ -920,8 +991,32 @@ export default function TopicProgressDetail() {
                           </div>
                         )}
 
+                        {/* File Download Action */}
+                        {isFile && (
+                          <div className="pt-2 flex items-center justify-start">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadResource(res)}
+                              disabled={downloadingResourceId === res.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellow/30 transition-colors cursor-pointer"
+                            >
+                              {downloadingResourceId === res.id ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Downloading file…</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-3.5 h-3.5 text-redpen" />
+                                  <span>Download {isDocx ? 'DOCX Document' : 'PDF Document'}</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+
                         {/* External Link (if present and valid http/https) */}
-                        {isValidHttpUrl(res.url) && (
+                        {!isFile && isValidHttpUrl(res.url) && (
                           <div className="pt-2 flex items-center justify-end">
                             <a
                               href={res.url}

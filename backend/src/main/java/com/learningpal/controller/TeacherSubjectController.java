@@ -71,7 +71,7 @@ public class TeacherSubjectController {
         return ResponseEntity.ok(teacherContentService.updateSubject(principal.getName(), id, request));
     }
 
-    @PutMapping("/{id}/archive")
+    @RequestMapping(value = "/{id}/archive", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherSubjectDto> archiveSubject(
             @PathVariable Long id,
             Principal principal
@@ -129,7 +129,7 @@ public class TeacherSubjectController {
         return ResponseEntity.ok(teacherContentService.reorderTopics(principal.getName(), subjectId, request));
     }
 
-    @PutMapping("/{subjectId}/topics/{topicId}/archive")
+    @RequestMapping(value = "/{subjectId}/topics/{topicId}/archive", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherTopicDto> archiveTopic(
             @PathVariable Long subjectId,
             @PathVariable Long topicId,
@@ -205,7 +205,7 @@ public class TeacherSubjectController {
                 .body(teacherContentService.duplicateQuestion(principal.getName(), subjectId, questionId));
     }
 
-    @PutMapping("/{subjectId}/questions/{questionId}/retire")
+    @RequestMapping(value = "/{subjectId}/questions/{questionId}/retire", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherQuestionDto> retireQuestion(
             @PathVariable Long subjectId,
             @PathVariable Long questionId,
@@ -265,7 +265,7 @@ public class TeacherSubjectController {
         return ResponseEntity.ok(teacherContentService.updateQuiz(principal.getName(), subjectId, quizId, request));
     }
 
-    @PutMapping("/{subjectId}/quizzes/{quizId}/publish")
+    @RequestMapping(value = "/{subjectId}/quizzes/{quizId}/publish", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherQuizDto> publishQuiz(
             @PathVariable Long subjectId,
             @PathVariable Long quizId,
@@ -274,7 +274,7 @@ public class TeacherSubjectController {
         return ResponseEntity.ok(teacherContentService.publishQuiz(principal.getName(), subjectId, quizId));
     }
 
-    @PutMapping("/{subjectId}/quizzes/{quizId}/unpublish")
+    @RequestMapping(value = "/{subjectId}/quizzes/{quizId}/unpublish", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherQuizDto> unpublishQuiz(
             @PathVariable Long subjectId,
             @PathVariable Long quizId,
@@ -293,7 +293,7 @@ public class TeacherSubjectController {
                 .body(teacherContentService.duplicateQuiz(principal.getName(), subjectId, quizId));
     }
 
-    @PutMapping("/{subjectId}/quizzes/{quizId}/archive")
+    @RequestMapping(value = "/{subjectId}/quizzes/{quizId}/archive", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherQuizDto> archiveQuiz(
             @PathVariable Long subjectId,
             @PathVariable Long quizId,
@@ -348,7 +348,7 @@ public class TeacherSubjectController {
         return ResponseEntity.ok(teacherContentService.updateResource(principal.getName(), subjectId, resourceId, request));
     }
 
-    @PutMapping("/{subjectId}/resources/{resourceId}/archive")
+    @RequestMapping(value = "/{subjectId}/resources/{resourceId}/archive", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<TeacherResourceDto> archiveResource(
             @PathVariable Long subjectId,
             @PathVariable Long resourceId,

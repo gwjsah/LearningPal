@@ -9,6 +9,7 @@ import com.learningpal.repository.*;
 import com.learningpal.service.GapAnalysisService;
 import com.learningpal.service.GradingService;
 import com.learningpal.service.TeacherClassService;
+import com.learningpal.service.TeacherFileService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -122,6 +123,12 @@ public class DemoDataPopulatorTests {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    private ResourceFileRepository resourceFileRepository;
+
+    @Autowired
+    private TeacherFileService teacherFileService;
+
+    @Autowired
     private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
 
     @AfterEach
@@ -170,7 +177,9 @@ public class DemoDataPopulatorTests {
                 gradingService,
                 gapAnalysisService,
                 teacherClassService,
-                passwordEncoder
+                passwordEncoder,
+                resourceFileRepository,
+                teacherFileService
         );
     }
 

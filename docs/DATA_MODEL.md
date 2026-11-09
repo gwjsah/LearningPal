@@ -52,6 +52,12 @@ erDiagram
 
     resources ||--o{ resource_progress : "tracks completion"
     resources ||--o{ resource_ratings : "receives ratings"
+    resources ||--o| resource_files : "stores file metadata and text"
+
+    resource_files ||--o{ ai_generation_jobs : "drafts questions from"
+    resource_files ||--o{ questions : "provenance source for AI questions"
+    ai_generation_jobs ||--o{ ai_question_drafts : "produces drafts"
+    ai_question_drafts ||--o| questions : "publishes to bank on approval"
 
     survey_responses ||--|{ survey_answers : "records item scores"
 ```
@@ -78,8 +84,9 @@ Think of the LearningPal database like a multi-school educational network:
 | `attempts` | **The Student's Exam Booklet:** A student's test session, recording `attempt_number`, timestamps, scores, and the `class_id` context. |
 | `answers` | **The Marked Answers:** Each response given by a student to a question, holding auto score, teacher override, and feedback. |
 | `student_topic_mastery` | **The Diagnostic Report Card:** Section-specific diagnostic mastery for each topic (`STRENGTH`, `DEVELOPING`, `GAP`, or `INSUFFICIENT_DATA`), strictly scoped to `(student_id, class_id, topic_id)`. Each new class begins with a clean slate. |
-| `resources` | **The Study Kit:** Flashcard-style bite-sized study notes and practice challenges designed to close learning gaps. |
-| `resource_progress` | **The Reading Checklist:** Checkmarks recording whether a student has finished reviewing a recommended note or practice problem, strictly scoped to `(student_id, class_id, resource_id)`. |
+| `resources` | **The Study Kit:** Flashcard-style bite-sized study notes, web reference links, and downloadable document files designed to close learning gaps. |
+| `resource_files` | **The Document Archive:** Uploaded PDF and Word (.docx) study documents attached to file resources (`resource_id`, `storage_key`, `file_name`, `sha256`, `extraction_status`, `extracted_text`, `page_count`). Extracted text serves as the private source material for future AI quiz generation and is never exposed in student DTOs. |
+| `resource_progress` | **The Reading Checklist:** Checkmarks recording whether a student has finished reviewing a recommended note, document, or practice problem, strictly scoped to `(student_id, class_id, resource_id)`. |
 | `interventions` | **The Teacher Action Plan:** Action items logged by teachers when they notice a student struggling on a topic. |
 | `gap_validation_labels` | **The Validation Lab Ground Truth:** Teacher blind evaluations (`WEAK`, `NOT_WEAK`, `CANNOT_JUDGE`) or synthetic simulation parameters, with server-side snapshot of system mastery, status, and attempt count for agreement measurement. |
 
@@ -377,13 +384,15 @@ Subjects represent courses authored by teachers or seeded as universal read-only
 | `version` | `INT NOT NULL DEFAULT 1` | 1-based version number |
 | `lineage_id` | `BIGINT NOT NULL` | Root question ID linking all versions of this item |
 | `supersedes_id` | `BIGINT NULL` | Self-referencing FK to previous `questions.id` |
-| `origin` | `VARCHAR(20) NOT NULL` | `MANUAL` (teacher authoring) |
+| `origin` | `VARCHAR(20) NOT NULL` | `MANUAL` (teacher authoring) or `AI` (drafted by local LLM and approved) |
+| `source_file_id` | `BIGINT NULL` | Optional FK to `resource_files` indicating source document for AI-drafted items |
 | `created_by` | `BIGINT NOT NULL` | FK to `users` (authoring teacher) |
 
 - **MCQ Choice Rules:** Each question must have between 2 and 6 choices, with exactly one marked `is_correct = true`.
 - **In-Place vs Versioned Edit:**
   - If a question has **0 student answers**, edits occur in-place (`version` remains 1).
   - If a question has **≥ 1 student answers**, editing sets the existing row to `status = RETIRED`, creates a new active row with `version = previous.version + 1`, same `lineage_id`, and `supersedes_id = previous.id`.
+  - Versioned edits retain the original `origin` (`MANUAL` or `AI`) and `source_file_id`.
   - Retired questions cannot be added to new quizzes.
 - **Lineage-Aware Gap Analysis:** When calculating student mastery across attempts in a class, answers are aggregated by `q.lineage_id` (using the student's most recent answer on that lineage), preventing duplicate question counts or skewing mastery percent.
 
@@ -420,6 +429,68 @@ Subjects represent courses authored by teachers or seeded as universal read-only
   - Topic-tagged link resources appear in student recommendation cards for that topic.
   - Untagged link resources (`topic_id = NULL`) appear in the class workspace under "Study Materials".
   - Strictly validated: rejects `javascript:`, `data:`, `ftp:`, and links exceeding 2000 characters. Opens in new tab with `target="_blank" rel="noopener noreferrer"`. No server-side fetching.
+
+### 11.7 File Resources (`resource_files` - Phase B)
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `resource_id` | `BIGINT NOT NULL` | 1-to-1 FK to parent `resources` row |
+| `storage_path` | `VARCHAR(500) NOT NULL` | UUID-based storage path outside public web folder |
+| `file_name` | `VARCHAR(255) NOT NULL` | Original user-uploaded file name |
+| `content_type` | `VARCHAR(120) NOT NULL` | `application/pdf` or `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| `size_bytes` | `BIGINT NOT NULL` | File size in bytes (max 10 MB) |
+| `sha256` | `VARCHAR(64) NOT NULL` | SHA-256 digest of original byte content |
+| `extraction_status` | `VARCHAR(20) NOT NULL` | `READY`, `EMPTY`, `FAILED` |
+| `extracted_text` | `LONGTEXT NULL` | Plaintext content extracted via PDFBox or POI (private to teacher and AI) |
+| `extracted_char_count` | `INT NOT NULL` | Length of extracted text |
+| `page_count` | `INT NULL` | Page count for PDFs (null for DOCX) |
+| `extraction_note` | `VARCHAR(500) NULL` | Diagnostic note if empty or failed |
+| `uploaded_at` | `DATETIME NOT NULL` | Creation timestamp |
+
+- **File Deletion Guardrail (Phase C Rule):** A file referenced by any approved question (`questions.source_file_id`) cannot be deleted (`409 Conflict`). Archiving remains allowed to hide it from students while preserving question lineage and provenance.
+
+### 11.8 AI Generation Jobs and Question Drafts (`ai_generation_jobs`, `ai_question_drafts` - Phase C)
+
+#### `ai_generation_jobs`
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `teacher_id` | `BIGINT NOT NULL` | FK to `users` (teacher owner) |
+| `subject_id` | `BIGINT NOT NULL` | FK to `subjects` |
+| `topic_id` | `BIGINT NOT NULL` | FK to `topics` |
+| `source_file_id` | `BIGINT NOT NULL` | FK to `resource_files` (exclusive factual source) |
+| `requested_count` | `INT NOT NULL` | Number of questions requested (1-30, default 10) |
+| `status` | `VARCHAR(20) NOT NULL` | `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `CANCELLED` |
+| `sections_done` | `INT NOT NULL` | Count of chunked sections analyzed |
+| `sections_total` | `INT NOT NULL` | Total chunked sections in document |
+| `model_name` | `VARCHAR(120) NULL` | LLM model identifier (e.g. `qwen/qwen3-14b`) |
+| `short_note` | `VARCHAR(500) NULL` | Diagnostic or failure note |
+| `created_at` | `DATETIME NOT NULL` | Enqueued timestamp |
+| `started_at` | `DATETIME NULL` | Worker execution start timestamp |
+| `completed_at` | `DATETIME NULL` | Final completion or cancellation timestamp |
+
+#### `ai_question_drafts`
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `job_id` | `BIGINT NOT NULL` | FK to `ai_generation_jobs` |
+| `section_index` | `INT NOT NULL` | 0-based document section index |
+| `question_text` | `TEXT NOT NULL` | Proposed multiple-choice question |
+| `choice_a` | `TEXT NOT NULL` | Option A |
+| `choice_b` | `TEXT NOT NULL` | Option B |
+| `choice_c` | `TEXT NOT NULL` | Option C |
+| `choice_d` | `TEXT NOT NULL` | Option D |
+| `correct_index` | `INT NOT NULL` | 0-based index of correct option (0-3) |
+| `explanation` | `TEXT NOT NULL` | Pedagogical rationale |
+| `difficulty` | `VARCHAR(20) NOT NULL` | `EASY`, `MEDIUM`, `HARD` |
+| `evidence_quote` | `TEXT NULL` | Verbatim quote from source document section |
+| `evidence_verified` | `BOOLEAN NOT NULL` | True if quote was verified as exact normalized substring |
+| `status` | `VARCHAR(20) NOT NULL` | `PENDING`, `APPROVED`, `REJECTED` |
+| `approved_question_id` | `BIGINT NULL` | FK to `questions` once approved |
+| `created_at` | `DATETIME NOT NULL` | Draft generation timestamp |
+| `reviewed_at` | `DATETIME NULL` | Approval or rejection timestamp |
+
 
 
 

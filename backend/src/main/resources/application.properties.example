@@ -36,6 +36,28 @@ app.jwt.expiration-ms=86400000
 app.cors.allowed-origins=http://localhost:5173
 
 # -------------------------------------------------------------------
+# File Upload & Text Extraction Configuration (Phase B)
+# -------------------------------------------------------------------
+# Storage directory for uploaded documents (must be outside web root/classpath)
+app.files.storage-dir=./storage/resources
+# Maximum individual file size in bytes (default 10 MB = 10485760 bytes)
+app.files.max-file-size=10485760
+# Hard cap on PDF page count
+app.files.max-pages=300
+# Hard cap on extracted text character count
+app.files.max-extracted-chars=500000
+# Maximum cumulative storage quota per teacher in bytes (default 200 MB = 209715200 bytes)
+app.files.teacher-storage-quota-bytes=209715200
+# Maximum active file resources permitted per subject
+app.files.max-active-files-per-subject=25
+# In-memory hourly upload rate limit per teacher
+app.files.max-uploads-per-hour=20
+
+# Spring standard multipart limits (aligned with 10 MB file ceiling)
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=12MB
+
+# -------------------------------------------------------------------
 # Initial Admin Seed Credentials
 # On application startup, if no admin exists, this account will be created automatically.
 # -------------------------------------------------------------------
@@ -84,6 +106,31 @@ app.seed.demo.reset=false
 app.seed.demo.password=REPLACE_WITH_STRONG_PASSWORD
 # Safety guard: refuse to run on remote/production databases unless explicitly permitted (default: false)
 app.seed.demo.allow-remote=false
+
+# -------------------------------------------------------------------
+# Local LLM Question Drafting Configuration (Phase C)
+# Connects to a local OpenAI-compatible server (e.g. LM Studio on localhost:1234).
+# No document text, prompts, or drafts are ever sent to external clouds.
+# -------------------------------------------------------------------
+# Master feature flag enabling AI question drafting (default: false)
+app.llm.enabled=false
+# Base URL of the local LM Studio OpenAI-compatible server
+app.llm.base-url=http://localhost:1234
+# Target model identifier (e.g. qwen/qwen3-14b)
+app.llm.model=qwen/qwen3-14b
+# Request timeout per LLM call in seconds (default: 60)
+app.llm.request-timeout-seconds=60
+# Character limit per document text chunk analyzed (default: 5000)
+app.llm.chunk-chars=5000
+# Maximum drafts generated per job (hard limit 30)
+app.llm.max-drafts-per-job=30
+# Hourly generation limit per teacher (default: 5)
+app.llm.max-jobs-per-teacher-per-hour=5
+# Sampling temperature for factual extraction (default: 0.2)
+app.llm.temperature=0.2
+# Suffix appended to user prompt (e.g. /no_think to suppress verbose reasoning blocks)
+app.llm.user-suffix=/no_think
+
 
 
 

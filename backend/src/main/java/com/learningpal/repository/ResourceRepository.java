@@ -21,5 +21,6 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
     long countByTopic(Topic topic);
     long countBySubject(Subject subject);
     long countBySubjectAndStatus(Subject subject, ResourceStatus status);
+    long countBySubjectAndTypeAndStatus(Subject subject, com.learningpal.entity.ResourceType type, ResourceStatus status);
 }
 

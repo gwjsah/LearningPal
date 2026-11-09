@@ -105,7 +105,10 @@ public class TeacherClassService {
         }
 
         Subject subject;
-        if (request.subjectName() != null && !request.subjectName().trim().isBlank()) {
+        if (request.subjectId() != null) {
+            subject = subjectRepository.findById(request.subjectId())
+                    .orElseThrow(() -> new BadRequestException("Subject not found: " + request.subjectId()));
+        } else if (request.subjectName() != null && !request.subjectName().trim().isBlank()) {
             String trimmedSubj = request.subjectName().trim();
             if (trimmedSubj.length() > 80) {
                 throw new BadRequestException("Subject name must be 80 characters or fewer");
@@ -120,9 +123,6 @@ public class TeacherClassService {
                         newSubj.setStatus(SubjectStatus.ACTIVE);
                         return subjectRepository.save(newSubj);
                     });
-        } else if (request.subjectId() != null) {
-            subject = subjectRepository.findById(request.subjectId())
-                    .orElseThrow(() -> new BadRequestException("Subject not found: " + request.subjectId()));
         } else {
             throw new BadRequestException("Subject name is required");
         }
