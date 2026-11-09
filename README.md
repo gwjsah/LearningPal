@@ -1,306 +1,191 @@
-# LearningPal — Full-Stack Learning Support System
+# LearningPal 🎓 — Full-Stack Learning Support System
 
-A data-driven learning support platform where students identify strengths and topic gaps, and teachers review assessments to provide targeted interventions.
+LearningPal is a data-driven educational support platform that diagnoses student topic weaknesses through quizzes, provides targeted remedial resources, and empowers teachers with automated gap analysis, class rosters, grade adjustments, and custom curriculum tools.
 
 ---
 
-## 1. Project File Structure
+## 🛠️ Tech Stack & Requirements
+
+- **Backend**: Java 17+, Spring Boot 3.3.4, Spring Security 6 (JWT HS256), Spring Data JPA, Hibernate, JJWT 0.12.x
+- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, React Router 6
+- **Database**: MySQL 8.x
+- **Build Tool**: **Maven Wrapper included (`mvnw` / `mvnw.cmd`)** — you do **not** need Maven installed on your machine!
+
+### Prerequisites Checklist
+- [x] **Java Development Kit (JDK) 17 or higher** (`java -version`)
+- [x] **Node.js 18 or higher and npm** (`node -v` and `npm -v`)
+- [x] **MySQL Server 8.x** running locally on port 3306
+
+---
+
+## 🚀 Quick Start Guide (3 Simple Steps)
+
+### Step 1: Database Setup & Import
+
+1. Start your local MySQL service.
+2. Create the `learningpal` database and import the included database backup:
+
+```bash
+# Option A: From terminal / command prompt
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS learningpal;"
+mysql -u root -p learningpal < database_backup.sql
+
+# Option B: In MySQL Workbench / HeidiSQL / DBeaver
+# 1. Execute: CREATE DATABASE learningpal;
+# 2. Open `database_backup.sql` and run the script into the `learningpal` schema.
+```
+
+---
+
+### Step 2: Backend Setup & Run
+
+1. Navigate to the `backend` folder:
+   ```bash
+   cd backend
+   ```
+
+2. Create your local `application.properties` configuration:
+   - Copy `src/main/resources/application.properties.example` to `src/main/resources/application.properties`.
+   - Update your MySQL credentials:
+     ```properties
+     spring.datasource.username=root
+     spring.datasource.password=YOUR_MYSQL_PASSWORD
+     ```
+   *(A pre-configured development JWT secret is already included in the example file).*
+
+3. Run the backend using the **Maven Wrapper** (no local Maven install needed):
+   - **On Windows (PowerShell / CMD)**:
+     ```powershell
+     .\mvnw.cmd spring-boot:run
+     ```
+   - **On macOS / Linux**:
+     ```bash
+     ./mvnw spring-boot:run
+     ```
+
+4. The backend will start on **`http://localhost:8080`**.
+
+---
+
+### Step 3: Frontend Setup & Run
+
+1. In a **new terminal window**, navigate to the `frontend` folder:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Launch the Vite development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser at **`http://localhost:5173`**.
+
+---
+
+## 🔑 Login Accounts & Credentials
+
+The imported database includes pre-seeded accounts across all roles so you can test immediately:
+
+### 1. Teacher Portal (Recommended for testing)
+- **Email**: `teacher.pilot1@demo.learningpal.local` (Dr. Alan Turing)
+- **Password**: `DemoPassword123!`
+- **Role**: `TEACHER` (Pilot University)
+- **What to test**: Classes roster, student detail, My Subjects workspace, Question Bank versioning, Quiz builder, Validation Lab.
+
+### 2. Student Portal
+- **Email**: `showcase@demo.learningpal.local` (Alex Rivera)
+- **Password**: `DemoPassword123!`
+- **Role**: `STUDENT`
+- **What to test**: Enrolled classes, taking quizzes, instant diagnostic results, topic mastery dashboard, targeted study links, and usability survey.
+
+### 3. Institution Admin Portal
+- **Email**: `admin.pilot@demo.learningpal.local` (Pilot Admin)
+- **Password**: `DemoPassword123!`
+- **Role**: `ADMIN`
+- **What to test**: Teacher approval queue, institution evaluation metrics, validation agreement reports, usability survey summary.
+
+### 4. Platform Super Admin
+- **Email**: `superadmin@learningpal.edu`
+- **Password**: `SuperSecretPassword123!`
+- **Role**: `SUPER_ADMIN`
+- **What to test**: Multi-institution provisioning, creating tenant institutions and institution admins.
+
+### 5. Alternative Accounts
+- Teacher: `carlos.mendoza@school.edu` / `DemoPassword123!`
+- Student: `allen.kalbo@school.edu` / `DemoPassword123!`
+
+---
+
+## 🧪 Key Features to Test & Explore
+
+### 1. Teacher Content Tools (Phase A)
+- **"My Subjects" Hub** (`/teacher/subjects`):
+  - View all teacher-owned subjects with statistics (classes, topics, questions, quizzes).
+  - Click **"Copy Sample C Curriculum"** to duplicate the built-in curriculum into a custom, editable subject.
+- **Subject Workspace** (`/teacher/subjects/:id`):
+  - **Topics**: Add new topics, rename existing ones, or reorder topics with up/down arrows.
+  - **Question Bank**: Create multiple-choice questions (2–6 choices with explanations). Notice the version badges (e.g. `v1`). If a question has submitted answers, editing it will automatically increment the version (`v2`) and retire the previous one to keep historical student attempts intact!
+  - **Quizzes**: Build quizzes from question bank items. Toggle Draft vs. Published status.
+  - **Link Resources**: Add external links (topic-tagged or class-wide study materials).
+- **Two-Field Class Creation** (`/teacher`):
+  - Create a new class with just **Subject Name** (with autocomplete from your active subjects) and **Class Name**.
+
+### 2. Class-Scoped Mastery & Student Loop
+- **Student Dashboard** (`/student`): View enrolled classes and join a new class using a 6-character code (e.g., `PILOT1`).
+- **Take Quiz** (`/student/classes/:id`): Live timer, question palette navigation, and instant auto-scoring.
+- **Quiz Results**: Misconception explanations for incorrect choices, personalized feedback cards, and recommended remedial links.
+- **Topic Mastery Breakdown**: Visual progress bars showing `STRENGTH` ($\ge 80\%$), `DEVELOPING` ($60\%\text{--}79\%$), and `GAP` ($< 60\%$).
+
+### 3. Teacher Interventions & Validation Lab
+- **Class Detail & Roster** (`/teacher/classes/:id`): View student scores, diagnostic percentages, topic breakdown bars, and attendance.
+- **Student Detail & Overrides**: Adjust question scores with teacher comments, and log 1-on-1 intervention notes (e.g., Office Hours, Peer Tutoring).
+- **Validation Lab** (`/teacher/classes/:id/validation`): Blind teacher topic labeling workflow and accuracy report measuring agreement with the automated classifier.
+
+### 4. Dark Mode / Theme
+- Click the moon/sun toggle in the navigation bar to test the dark mode palette across all views.
+
+---
+
+## 📁 Repository Structure
 
 ```text
 LearningPal/
-├── backend/                                   # Java 17 + Spring Boot 3.3.4 REST API
-│   ├── pom.xml                                # Maven project definition (Spring Boot, Security, JPA, JJWT 0.12.x)
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/learningpal/
-│       │   │   ├── LearningPalApplication.java# Spring Boot application entry point
-│       │   │   ├── config/
-│       │   │   │   ├── AdminUserSeeder.java   # CommandLineRunner: Seeds initial admin if none exists
-│       │   │   │   ├── JwtAuthFilter.java     # OncePerRequestFilter extracting Bearer JWT & populating SecurityContext
-│       │   │   │   ├── JwtService.java        # JJWT 0.12.x HS256 token generation, claims & validation
-│       │   │   │   ├── RestAccessDeniedHandler.java # Returns 403 { "message": "..." } on forbidden access
-│       │   │   │   ├── RestAuthenticationEntryPoint.java # Returns 401 { "message": "..." } on unauthorized access
-│       │   │   │   └── SecurityConfig.java    # Stateless filter chain, CORS, password encoder & route rules
-│       │   │   ├── controller/
-│       │   │   │   ├── AdminController.java   # /api/admin/teachers/pending, /approve, /reject
-│       │   │   │   ├── AuthController.java    # /api/auth/signup, /api/auth/login, /api/auth/me
-│       │   │   │   └── TestPingController.java# [DELETABLE] /api/student/ping and /api/teacher/ping role verifiers
-│       │   │   ├── dto/
-│       │   │   │   ├── AuthResponse.java      # { token, user, message }
-│       │   │   │   ├── ErrorResponse.java     # { message } standard error envelope
-│       │   │   │   ├── LoginRequest.java      # { email, password }
-│       │   │   │   ├── MessageResponse.java   # { message }
-│       │   │   │   ├── PendingTeacherDto.java # { id, fullName, email, createdAt }
-│       │   │   │   ├── SignupRequest.java     # { fullName, email, password, role } with validation
-│       │   │   │   └── UserDto.java           # Sanitized user entity representation (no hashes)
-│       │   │   ├── entity/
-│       │   │   │   ├── Role.java              # STUDENT, TEACHER, ADMIN
-│       │   │   │   ├── User.java              # JPA entity mapped to 'users' table
-│       │   │   │   └── UserStatus.java        # ACTIVE, PENDING, REJECTED
-│       │   │   ├── exception/
-│       │   │   │   ├── AccountStatusException.java      # HTTP 403 for PENDING or REJECTED accounts
-│       │   │   │   ├── BadRequestException.java         # HTTP 400
-│       │   │   │   ├── DuplicateEmailException.java     # HTTP 409
-│       │   │   │   ├── GlobalExceptionHandler.java      # Standardizes ALL errors into { "message": "..." }
-│       │   │   │   ├── InvalidCredentialsException.java # HTTP 401
-│       │   │   │   └── ResourceNotFoundException.java   # HTTP 404
-│       │   │   ├── repository/
-│       │   │   │   └── UserRepository.java    # Spring Data JPA repository for User
-│       │   │   └── service/
-│       │   │       ├── AdminService.java      # Teacher verification and approval workflows
-│       │   │       └── AuthService.java       # User registration, authentication and session retrieval
-│       │   └── resources/
-│       │       └── application.properties     # MySQL DB config, JWT secret/expiry, admin seed properties
-│       └── test/
-│           ├── java/com/learningpal/
-│           │   └── LearningPalApplicationTests.java # Full 7-scenario integration test suite
-│           └── resources/
-│               └── application-test.properties# In-memory H2 MySQL-mode test configuration
-│
-├── frontend/                                  # React (Vite) + Tailwind CSS + React Router
-│   ├── index.html                             # Single page container
-│   ├── package.json                           # Frontend scripts & dependencies (framer-motion, lucide-react, react-router-dom)
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── src/
-│       ├── main.jsx                           # React DOM mount point
-│       ├── App.jsx                            # Router configuration & protected routes
-│       ├── index.css                          # Pure CSS notebook textures, ruled lines, red margins
-│       ├── components/
-│       │   ├── Doodles.jsx                    # Hand-drawn SVGs, pins, binder holes, logos
-│       │   ├── Navbar.jsx                     # Sticky navigation bar with direct Login / Signup links
-│       │   ├── Hero.jsx                       # Notebook hero section with CTAs linked to auth
-│       │   ├── FinalCTA.jsx                   # Bottom perforated notebook sheet linked to auth
-│       │   ├── ProtectedRoute.jsx             # Role-based route guard & redirector
-│       │   └── ...                            # Existing landing page components
-│       ├── context/
-│       │   └── AuthContext.jsx                # Global authentication provider with localStorage & /auth/me restore
-│       ├── pages/
-│       │   ├── AdminHome.jsx                  # /admin: Gradebook-style table for approving pending teachers
-│       │   ├── LandingPage.jsx                # /: Notebook-inspired landing page
-│       │   ├── Login.jsx                      # /login: Notebook page form with red margin & error alerts
-│       │   ├── Signup.jsx                     # /signup: Student/Teacher toggle, password rule UX, approval screen
-│       │   ├── StudentHome.jsx                # /student: Student portal with /api/student/ping verification
-│       │   └── TeacherHome.jsx                # /teacher: Teacher portal with /api/teacher/ping verification
-│       └── services/
-│           ├── adminService.js                # getPendingTeachers, approveTeacher, rejectTeacher
-│           ├── api.js                         # Fetch wrapper with Bearer token & { message } parsing
-│           └── authService.js                 # signup, login, me
-│
-├── .gitignore
-├── package.json                               # Root workspace scripts
-└── README.md
+├── backend/                       # Spring Boot 3 Java Application
+│   ├── mvnw                       # Linux/macOS Maven Wrapper script
+│   ├── mvnw.cmd                   # Windows Maven Wrapper script
+│   ├── .mvn/wrapper/              # Maven Wrapper properties & config
+│   ├── pom.xml                    # Maven dependencies & build configuration
+│   └── src/                       # Application source code & integration tests
+├── frontend/                      # React 18 + Vite SPA
+│   ├── package.json               # Frontend dependencies & scripts
+│   ├── src/                       # React components, pages, context, and API clients
+│   └── tailwind.config.js         # Tailwind configuration & custom design tokens
+├── database_backup.sql            # MySQL dump with pre-seeded data, classes & accounts
+├── docs/                          # Architecture, Data Model, and Evaluation docs
+│   ├── DATA_MODEL.md              # Comprehensive entity relationship documentation
+│   ├── ISOLATION_MATRIX.md        # Multi-tenant security rules and test mappings
+│   ├── DEMO_GUIDE.md              # Realistic cohort walkthrough guide
+│   └── USER_TESTING_PLAN.md       # User testing script & observer templates
+├── PRODUCT.md                     # High-level product vision & feature scope
+├── DESIGN.md                      # UI/UX design language & token documentation
+└── README.md                      # Setup & testing guide (this file)
 ```
 
 ---
 
-## 2. Setup and Run Instructions
+## ❓ Troubleshooting & FAQs
 
-### Prerequisites
-- **Java 17+** (JDK 17 or higher)
-- **Apache Maven 3.8+**
-- **Node.js 18+** & **npm 9+**
-- **MySQL 8.x** running locally on port 3306
-
-### Step A: Configure MySQL Database
-Make sure MySQL is running on `localhost:3306`. The application automatically creates the `learningpal` database on startup:
-```sql
-CREATE DATABASE IF NOT EXISTS learningpal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-If your MySQL credentials differ from `root` / `root`, edit `backend/src/main/resources/application.properties`:
-```properties
-spring.datasource.username=YOUR_MYSQL_USER
-spring.datasource.password=YOUR_MYSQL_PASSWORD
-```
-
-### Step B: Run the Backend
-> **Setup Note:** Copy application.properties.example to application.properties in backend/src/main/resources/, fill in your MySQL credentials, JWT secret, and admin credentials, then run the backend.
-
-```bash
-cd backend
-mvn spring-boot:run
-```
-The Spring Boot backend will start on **http://localhost:8080**.
-On initial launch, `AdminUserSeeder` automatically provisions the seed administrator:
-- **Email:** `admin@learningpal.edu`
-- **Password:** `AdminPass123`
-- *Note:* Change these credentials in `application.properties` before deploying to production.
-
-To run the automated 7-scenario integration test suite independently:
-```bash
-cd backend
-mvn test
-```
-
-### Step C: Run the Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-The React + Vite frontend will start on **http://localhost:5173**.
-
----
-
-## 3. Direct cURL Commands (Backend Verification Without React)
-
-### Scenario 1: Student signup returns a token (HTTP 201)
-```bash
-curl -X POST http://localhost:8080/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "Alex Rivera",
-    "email": "alex.student@learningpal.edu",
-    "password": "Password123",
-    "role": "STUDENT"
-  }'
-```
-**Expected Response:** HTTP `201 Created` with a populated `"token"`, `user.status: "ACTIVE"`, and `user.role: "STUDENT"`.
-
----
-
-### Scenario 2: Weak password (letters only) is rejected with 400
-```bash
-curl -X POST http://localhost:8080/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "Weak Password User",
-    "email": "weak@learningpal.edu",
-    "password": "passwordonly",
-    "role": "STUDENT"
-  }'
-```
-**Expected Response:** HTTP `400 Bad Request`
-```json
-{
-  "message": "Password needs at least one letter and one number"
-}
-```
-
----
-
-### Scenario 3: Teacher signup returns NO token (HTTP 201, PENDING status)
-```bash
-curl -X POST http://localhost:8080/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fullName": "Maria Santos",
-    "email": "maria.teacher@learningpal.edu",
-    "password": "TeacherPass123",
-    "role": "TEACHER"
-  }'
-```
-**Expected Response:** HTTP `201 Created` with `user.status: "PENDING"` and no token:
-```json
-{
-  "user": {
-    "fullName": "Maria Santos",
-    "email": "maria.teacher@learningpal.edu",
-    "role": "TEACHER",
-    "status": "PENDING"
-  },
-  "message": "Request sent. An admin needs to approve your teacher account before you can log in."
-}
-```
-
----
-
-### Scenario 4: Teacher login before approval returns 403
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "maria.teacher@learningpal.edu",
-    "password": "TeacherPass123"
-  }'
-```
-**Expected Response:** HTTP `403 Forbidden`
-```json
-{
-  "message": "Your teacher account is awaiting admin approval"
-}
-```
-
----
-
-### Scenario 5: Admin login, list pending teachers, and approve teacher
-
-#### Step 5A: Admin logs in using seed credentials
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@learningpal.edu",
-    "password": "AdminPass123"
-  }'
-```
-*(Copy the `token` from this response as `ADMIN_TOKEN`)*
-
-#### Step 5B: List pending teachers
-```bash
-curl -X GET http://localhost:8080/api/admin/teachers/pending \
-  -H "Authorization: Bearer <ADMIN_TOKEN>"
-```
-**Expected Response:** HTTP `200 OK` returning an array containing `Maria Santos` with ID (e.g. `2`).
-
-#### Step 5C: Approve teacher with ID 2
-```bash
-curl -X POST http://localhost:8080/api/admin/teachers/2/approve \
-  -H "Authorization: Bearer <ADMIN_TOKEN>"
-```
-**Expected Response:** HTTP `200 OK`
-```json
-{
-  "message": "Teacher account approved successfully"
-}
-```
-
----
-
-### Scenario 6: Teacher login after approval succeeds (HTTP 200)
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "maria.teacher@learningpal.edu",
-    "password": "TeacherPass123"
-  }'
-```
-**Expected Response:** HTTP `200 OK` returning `{ "token": "<TEACHER_TOKEN>", "user": { "status": "ACTIVE", ... } }`.
-
-Verify role endpoint access:
-```bash
-curl -X GET http://localhost:8080/api/teacher/ping \
-  -H "Authorization: Bearer <TEACHER_TOKEN>"
-```
-**Expected Response:** HTTP `200 OK`
-```json
-{
-  "message": "Teacher role authorization confirmed. Active session email: maria.teacher@learningpal.edu"
-}
-```
-
----
-
-### Scenario 7: Student token calling an admin endpoint returns 403
-```bash
-curl -X GET http://localhost:8080/api/admin/teachers/pending \
-  -H "Authorization: Bearer <STUDENT_TOKEN>"
-```
-**Expected Response:** HTTP `403 Forbidden`
-```json
-{
-  "message": "You do not have permission to access this resource"
-}
-```
-
----
-
-## 4. Key Engineering Assumptions
-
-1. **Database dialect & local defaults**: Configured standard MySQL 8.x with `createDatabaseIfNotExist=true` and credentials `root`/`root`. For automated Maven tests (`mvn test`), an in-memory H2 database running in MySQL compatibility mode is configured under `@ActiveProfiles("test")` so test suites can run hermetically without requiring a local MySQL daemon.
-2. **Password length upper bound**: Validated as 8 to 72 characters (72 characters matches the BCrypt password truncation limit standard). The regex `^(?=.*[A-Za-z])(?=.*\d).{8,72}$` ensures at least one alphabetical letter and one numeral.
-3. **Admin account registration**: Rejects any signup attempt with `role: "ADMIN"` or invalid values, protecting administrative privileges from public endpoints. The admin account is initialized via `AdminUserSeeder` only when no admin exists in the database.
-4. **Session restoration**: The frontend stores the token in `localStorage` under `learningpal_token` and restores session state asynchronously on load through `GET /api/auth/me`. If the token is invalid or expired, it is automatically cleared and the user is kept in anonymous state.
-5. **Notebook aesthetic consistency**: Auth forms, dashboards, and admin screens use CSS-only styling (`bg-ruled-paper`, `notebook-margin-line`, hole-punch indicators, red margin dividers, and index-card tables) to maintain continuous brand consistency with the existing landing page without rebuilding it.
+- **Backend fails to start with `Access denied for user 'root'@'localhost'`**:
+  Double check `spring.datasource.password` in `backend/src/main/resources/application.properties` matches your local MySQL root password.
+- **Backend fails to start with `Unknown database 'learningpal'`**:
+  Make sure you ran `CREATE DATABASE learningpal;` before starting the backend or importing the SQL dump.
+- **Permission denied on `./mvnw` (macOS/Linux)**:
+  Run `chmod +x ./mvnw` in the `backend/` directory once.
+- **Frontend port 5173 or Backend port 8080 in use**:
+  Kill any lingering background processes or specify an alternative port in `application.properties` (`server.port=8081`) or Vite (`npm run dev -- --port 5174`).

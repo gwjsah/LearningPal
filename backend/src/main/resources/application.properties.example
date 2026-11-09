@@ -25,8 +25,9 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
 # JWT Security Configuration
 # -------------------------------------------------------------------
 # 256-bit secret key used to sign and verify HS256 JWT tokens.
-# Generate one with: openssl rand -base64 32 (must be base64 and at least 32 bytes).
-app.jwt.secret=REPLACE_WITH_BASE64_SECRET
+# A safe default dev secret is provided below for local testing.
+# For production, generate a fresh key with: openssl rand -base64 32
+app.jwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
 # 24 hours in milliseconds (24 * 60 * 60 * 1000)
 app.jwt.expiration-ms=86400000
 
@@ -74,14 +75,15 @@ app.analysis.min-questions=3
 # Realistic Demo Data Populator (Opt-in)
 # Deterministically seeds realistic demo accounts, classes, attempts,
 # overrides, interventions, and synthetic validation labels.
-# Safe: isolated to *@demo.learningpal.local and DEMO-2026.
+# NOTE: If you import `database_backup.sql`, all realistic demo data is
+# ALREADY included! Keep enabled=false when using database_backup.sql.
 # -------------------------------------------------------------------
-# Set to true to populate realistic demo data on startup (default: false)
+# Set to true only if starting with a clean/empty DB and wanting auto-generated demo data:
 app.seed.demo.enabled=false
 # When true, cleans up any existing demo data before re-populating (default: false)
 app.seed.demo.reset=false
-# Shared password for all demo accounts (minimum 8 characters, at least 1 letter and 1 number)
-app.seed.demo.password=REPLACE_WITH_STRONG_PASSWORD
+# Shared password for demo accounts if auto-populating (minimum 8 characters, at least 1 letter and 1 number)
+app.seed.demo.password=DemoPassword123!
 # Safety guard: refuse to run on remote/production databases unless explicitly permitted (default: false)
 app.seed.demo.allow-remote=false
 
