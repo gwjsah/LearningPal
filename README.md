@@ -1,10 +1,10 @@
-# LearningPal 🎓 — Full-Stack Learning Support System
+# LearningPal — Full-Stack Learning Support System
 
 LearningPal is a data-driven educational support platform that diagnoses student topic weaknesses through quizzes, provides targeted remedial resources, and empowers teachers with automated gap analysis, class rosters, grade adjustments, and custom curriculum tools.
 
 ---
 
-## 🛠️ Tech Stack & Requirements
+## Tech Stack & Requirements
 
 - **Backend**: Java 17+, Spring Boot 3.3.4, Spring Security 6 (JWT HS256), Spring Data JPA, Hibernate, JJWT 0.12.x
 - **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, React Router 6
@@ -18,7 +18,7 @@ LearningPal is a data-driven educational support platform that diagnoses student
 
 ---
 
-## 🚀 Quick Start Guide (3 Simple Steps)
+## Quick Start Guide (3 Simple Steps)
 
 ### Step 1: Database Setup & Import
 
@@ -88,7 +88,7 @@ mysql -u root -p learningpal < database_backup.sql
 
 ---
 
-## 🔑 Login Accounts & Credentials
+## Login Accounts & Credentials
 
 The imported database includes pre-seeded accounts across all roles so you can test immediately:
 
@@ -122,7 +122,7 @@ The imported database includes pre-seeded accounts across all roles so you can t
 
 ---
 
-## 🧪 Key Features to Test & Explore
+## Key Features to Test & Explore
 
 ### 1. Teacher Content Tools (Phase A)
 - **"My Subjects" Hub** (`/teacher/subjects`):
@@ -152,7 +152,7 @@ The imported database includes pre-seeded accounts across all roles so you can t
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 LearningPal/
@@ -179,7 +179,7 @@ LearningPal/
 
 ---
 
-## ❓ Troubleshooting & FAQs
+## Troubleshooting & FAQs
 
 - **Backend fails to start with `Access denied for user 'root'@'localhost'`**:
   Double check `spring.datasource.password` in `backend/src/main/resources/application.properties` matches your local MySQL root password.
