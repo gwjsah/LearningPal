@@ -47,3 +47,8 @@ STUDENT_PAGE_AUDIT.md
 DEMO_VS_REAL_AUDIT.md
 FEATURE_GUIDE.md
 
+# Database dumps & local database files
+*.sql
+*.mv.db
+data/
+

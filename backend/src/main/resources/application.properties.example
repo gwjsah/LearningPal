@@ -25,9 +25,9 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
 # JWT Security Configuration
 # -------------------------------------------------------------------
 # 256-bit secret key used to sign and verify HS256 JWT tokens.
-# A safe default dev secret is provided below for local testing.
-# For production, generate a fresh key with: openssl rand -base64 32
-app.jwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+# Must be at least 256 bits (32 bytes) when base64/hex decoded.
+# Generate a fresh secure key with: openssl rand -base64 32
+app.jwt.secret=CHANGE_ME_BASE64_256_BIT
 # 24 hours in milliseconds (24 * 60 * 60 * 1000)
 app.jwt.expiration-ms=86400000
 
