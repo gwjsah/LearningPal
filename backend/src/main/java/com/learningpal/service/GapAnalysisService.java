@@ -188,10 +188,10 @@ public class GapAnalysisService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         ClassEntity classroom = classEntityRepository.findById(classId)
-                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         if (!enrollmentRepository.existsByStudentAndClassEntity(student, classroom)) {
-            throw new AccessDeniedException("Student is not enrolled in class: " + classroom.getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         List<Topic> topics;
@@ -226,10 +226,17 @@ public class GapAnalysisService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subject not found: " + subjectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
+
+        Institution studentInst = student.getInstitution();
+        if (subject.getOwner() != null && subject.getOwner().getInstitution() != null) {
+            if (studentInst == null || !subject.getOwner().getInstitution().getId().equals(studentInst.getId())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
+        }
 
         if (!enrollmentRepository.existsByStudentAndSubject(student, subject)) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + subject.getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         ClassEntity activeClass = null;
@@ -327,10 +334,10 @@ public class GapAnalysisService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         ClassEntity classroom = classEntityRepository.findById(classId)
-                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         if (!enrollmentRepository.existsByStudentAndClassEntity(student, classroom)) {
-            throw new AccessDeniedException("Student is not enrolled in class: " + classroom.getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         Topic topic = topicRepository.findById(topicId)
@@ -455,10 +462,18 @@ public class GapAnalysisService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         Topic topic = topicRepository.findById(topicId)
-                .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
-        if (topic.getSubject() != null && !enrollmentRepository.existsByStudentAndSubject(student, topic.getSubject())) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + topic.getSubject().getName());
+        if (topic.getSubject() != null) {
+            Institution studentInst = student.getInstitution();
+            if (topic.getSubject().getOwner() != null && topic.getSubject().getOwner().getInstitution() != null) {
+                if (studentInst == null || !topic.getSubject().getOwner().getInstitution().getId().equals(studentInst.getId())) {
+                    throw new ResourceNotFoundException("Resource not found");
+                }
+            }
+            if (!enrollmentRepository.existsByStudentAndSubject(student, topic.getSubject())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
         }
 
         ClassEntity activeClass = null;

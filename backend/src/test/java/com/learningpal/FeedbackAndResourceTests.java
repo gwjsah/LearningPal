@@ -404,7 +404,7 @@ public class FeedbackAndResourceTests {
         mockMvc.perform(get("/api/student/subjects/999999/progress")
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", containsString("Subject not found: 999999")));
+                .andExpect(jsonPath("$.message", is("Resource not found")));
 
         // 3. Topic progress detail endpoint returns subjectId matching topic.getSubject().getId()
         mockMvc.perform(get("/api/student/progress/topics/" + topic1.getId())

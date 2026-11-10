@@ -41,10 +41,10 @@ This document defines the strict multi-tenant and ownership isolation rules acro
 | `GET /api/admin/validation/report` | `ADMIN` | Scoped strictly to caller's institution | `testValidationLabSecurityAndIsolation` |
 | `GET /api/student/classes` | `STUDENT` | Scoped strictly to caller's enrolled classes | `testCollectionEndpointsDoNotLeakForeignTenantRecords` |
 | `GET /api/student/classes/{id}` | `STUDENT` | Student must be enrolled in target class in same institution (404 if not enrolled or foreign institution) | `testStudentEndpointsRefuseForeignIds` |
-| `GET /api/student/classes/{classId}/progress` | `STUDENT` | Student must be enrolled in target class (403 if not enrolled) | `testFreshMasteryOnNewClass` |
-| `GET /api/student/classes/{classId}/progress/topics/{topicId}` | `STUDENT` | Student must be enrolled in target class and topic must match class subject (403 if not enrolled, 404 if topic invalid) | `testFreshMasteryOnNewClass` |
-| `POST /api/student/classes/{classId}/resources/{resourceId}/complete` | `STUDENT` | Student must be enrolled in target class (403 if not enrolled) | `testResourceProgressPerClass` |
-| `DELETE /api/student/classes/{classId}/resources/{resourceId}/complete` | `STUDENT` | Student must be enrolled in target class (403 if not enrolled) | `testResourceProgressPerClass` |
+| `GET /api/student/classes/{classId}/progress` | `STUDENT` | Student must be enrolled in target class (404 if not enrolled) | `testFreshMasteryOnNewClass` |
+| `GET /api/student/classes/{classId}/progress/topics/{topicId}` | `STUDENT` | Student must be enrolled in target class and topic must match class subject (404 if not enrolled, 404 if topic invalid) | `testFreshMasteryOnNewClass` |
+| `POST /api/student/classes/{classId}/resources/{resourceId}/complete` | `STUDENT` | Student must be enrolled in target class (404 if not enrolled) | `testResourceProgressPerClass` |
+| `DELETE /api/student/classes/{classId}/resources/{resourceId}/complete` | `STUDENT` | Student must be enrolled in target class (404 if not enrolled) | `testResourceProgressPerClass` |
 | `GET /api/student/classes/resolve-by-subject/{subjectId}` | `STUDENT` | Resolves student's active class for subject; returns 404 if not enrolled in that subject | `testStudentEndpointsRefuseForeignIds` |
 | `GET /api/student/attempts/{attemptId}/result` | `STUDENT` | Attempt must belong to calling student (404 on another student's attempt) | `testStudentEndpointsRefuseForeignIds` |
 | `POST /api/student/attempts/{attemptId}/submit` | `STUDENT` | Attempt must belong to calling student (404 on another student's attempt) | `testStudentEndpointsRefuseForeignIds` |
@@ -108,4 +108,19 @@ This document defines the strict multi-tenant and ownership isolation rules acro
 | `PATCH /api/teacher/ai/drafts/{id}` | `TEACHER` | Draft's job must be owned by calling teacher; allows editing prior to approval (404 for unauthorized callers) | `testApproveDraftIdempotencyAndVersioningLinkage` |
 | `POST /api/teacher/ai/drafts/{id}/approve` | `TEACHER` | Draft's job must be owned by calling teacher; publishes to question bank with origin AI and sourceFile link; idempotent (404 for unauthorized callers) | `testApproveDraftIdempotencyAndVersioningLinkage` |
 | `POST /api/teacher/ai/drafts/{id}/reject` | `TEACHER` | Draft's job must be owned by calling teacher; marks draft REJECTED (404 for unauthorized callers) | `testMultiTenantAndRoleIsolationReturns404` |
-| `POST /api/teacher/ai/jobs/{id}/approve-selected` | `TEACHER` | Job must be owned by calling teacher; all selected drafts must have evidenceVerified = true (400 if any unverified); 404 for unauthorized callers | `testEvidenceQuoteVerificationAndBulkApprovalConstraint` |
+| `POST /api/teacher/ai/approve-selected` | `TEACHER` | Job must be owned by calling teacher; all selected drafts must have evidenceVerified = true (400 if any unverified); 404 for unauthorized callers | `testEvidenceQuoteVerificationAndBulkApprovalConstraint` |
+| `POST /api/teacher/classes` | `TEACHER` | Subject must belong to caller in same institution or be platform seed subject (404 on foreign teacher, foreign institution, or nonexistent subject) | `testCreateClassSubjectIsolation` |
+| `GET /api/student/assessments` | `STUDENT` | Scoped strictly to published assessments of subjects where student has active class enrollment in their institution (200; foreign institution or unenrolled assessments excluded) | `testStudentAssessmentCatalogIsolation` |
+| `POST /api/student/assessments/{id}/attempts` | `STUDENT` | Student must have active enrollment in assessment's subject in same institution (404 if unenrolled, foreign institution, or unpublished) | `testStudentAssessmentAttemptIsolation` |
+| `GET /api/student/subjects/{subjectId}/assessments` | `STUDENT` | Student must be enrolled in subject in same institution (404 if unenrolled, foreign institution, or nonexistent subject) | `testStudentSubjectAssessmentsIsolation` |
+| `GET /api/student/progress` | `STUDENT` | Scoped strictly to caller's learning progress across curriculum (200) | `testStudentProgressScopedToCaller` |
+| `GET /api/student/subjects/{subjectId}/progress` | `STUDENT` | Student must be enrolled in subject in same institution (404 if unenrolled, foreign institution, or nonexistent subject) | `testStudentSubjectProgressIsolation` |
+| `GET /api/student/progress/topics/{topicId}` | `STUDENT` | Student must be enrolled in topic's subject in same institution (404 if unenrolled, foreign institution, or nonexistent topic) | `testStudentTopicProgressIsolation` |
+| `POST /api/student/resources/{id}/complete` | `STUDENT` | Resource must belong to student's institution; marks complete in active class (404 if nonexistent or foreign institution) | `testUnscopedResourceCompletionIsolation` |
+| `DELETE /api/student/resources/{id}/complete` | `STUDENT` | Resource must belong to student's institution; removes completion in active class (404 if nonexistent or foreign institution) | `testUnscopedResourceCompletionIsolation` |
+| `GET /api/student/subjects` | `STUDENT` | Scoped strictly to caller's enrolled subjects in their institution (200) | `testStudentEnrolledSubjectsScoped` |
+| `POST /api/super/institutions` | `SUPER_ADMIN` | Platform SuperAdmin only (403 for non-SUPER_ADMIN: Teacher, Student, Admin; 201 for SuperAdmin) | `testSuperAdminRoleIsolation` |
+| `GET /api/super/institutions` | `SUPER_ADMIN` | Platform SuperAdmin only (403 for non-SUPER_ADMIN; 200 for SuperAdmin) | `testSuperAdminRoleIsolation` |
+| `POST /api/super/admins` | `SUPER_ADMIN` | Platform SuperAdmin only (403 for non-SUPER_ADMIN) | `testSuperAdminRoleIsolation` |
+| `GET /api/teacher/subjects/{id}/questions/{qId}` | `TEACHER` | Subject must be owned by caller in same institution (404 on foreign teacher, foreign institution, or nonexistent question) | `testTeacherSubjectContentIsolation` |
+| `GET /api/teacher/subjects/{id}/quizzes/{quizId}` | `TEACHER` | Subject must be owned by caller in same institution (404 on foreign teacher, foreign institution, or nonexistent quiz) | `testTeacherSubjectContentIsolation` |

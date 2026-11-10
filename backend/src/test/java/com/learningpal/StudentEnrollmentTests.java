@@ -122,32 +122,32 @@ public class StudentEnrollmentTests {
     }
 
     @Test
-    @DisplayName("Taking assessment in non-enrolled subject is refused with 403 Forbidden")
+    @DisplayName("Taking assessment in non-enrolled subject is refused with 404 Not Found without leaking subject name")
     void testStartAttemptInNonEnrolledSubjectRefused() throws Exception {
         assertFalse(enrollmentRepository.existsByStudentAndSubject(student, cSubject));
 
         mockMvc.perform(post("/api/student/assessments/" + cAssessment.getId() + "/attempts")
                         .header("Authorization", "Bearer " + studentToken))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message", containsString("not enrolled")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
     }
 
     @Test
-    @DisplayName("Viewing progress or topic detail in non-enrolled subject is refused with 403 Forbidden")
+    @DisplayName("Viewing progress or topic detail in non-enrolled subject is refused with 404 Not Found without leaking subject name")
     void testViewingProgressInNonEnrolledSubjectRefused() throws Exception {
         assertFalse(enrollmentRepository.existsByStudentAndSubject(student, cSubject));
 
         // Subject progress endpoint
         mockMvc.perform(get("/api/student/subjects/" + cSubject.getId() + "/progress")
                         .header("Authorization", "Bearer " + studentToken))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message", containsString("not enrolled")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
 
         // Topic detail endpoint
         mockMvc.perform(get("/api/student/progress/topics/" + cTopic.getId())
                         .header("Authorization", "Bearer " + studentToken))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message", containsString("not enrolled")));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
     }
 
     @Test

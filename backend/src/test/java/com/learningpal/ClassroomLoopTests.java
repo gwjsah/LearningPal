@@ -222,12 +222,13 @@ public class ClassroomLoopTests {
                         .content(objectMapper.writeValueAsString(new CreateClassRequest(pilotSubject.getId(), longName))))
                 .andExpect(status().isBadRequest());
 
-        // Invalid subject ID
+        // Invalid subject ID (returns 404 Resource not found)
         mockMvc.perform(post("/api/teacher/classes")
                         .header("Authorization", "Bearer " + teacherA1Token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateClassRequest(999999L, "Valid Section"))))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
 
         // Create initial class
         mockMvc.perform(post("/api/teacher/classes")

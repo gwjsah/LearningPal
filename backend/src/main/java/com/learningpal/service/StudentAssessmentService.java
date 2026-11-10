@@ -66,23 +66,62 @@ public class StudentAssessmentService {
     public List<StudentAssessmentDto> getAvailableAssessmentsBySubject(Long subjectId, String studentEmail) {
         User student = getStudentByEmail(studentEmail);
         Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subject not found: " + subjectId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
+
+        Institution studentInst = student.getInstitution();
+        if (subject.getOwner() != null && subject.getOwner().getInstitution() != null) {
+            if (studentInst == null || !subject.getOwner().getInstitution().getId().equals(studentInst.getId())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
+        }
 
         if (!enrollmentRepository.existsByStudentAndSubject(student, subject)) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + subject.getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         List<Assessment> published = assessmentRepository.findBySubjectAndStatus(subject, AssessmentStatus.PUBLISHED);
+        if (studentInst != null) {
+            published = published.stream()
+                    .filter(a -> a.getCreatedBy() == null || a.getCreatedBy().getInstitution() == null
+                            || a.getCreatedBy().getInstitution().getId().equals(studentInst.getId()))
+                    .toList();
+        }
         return mapToAssessmentDtos(student, published);
     }
 
     /**
      * Lists all published assessments with the student's latest attempt status.
+     * Scoped strictly to subjects with active class enrollments in the caller's institution.
      */
     @Transactional(readOnly = true)
     public List<StudentAssessmentDto> getAvailableAssessments(String studentEmail) {
         User student = getStudentByEmail(studentEmail);
-        List<Assessment> published = assessmentRepository.findByStatus(AssessmentStatus.PUBLISHED);
+        Institution institution = student.getInstitution();
+        if (institution == null) {
+            return Collections.emptyList();
+        }
+
+        List<Enrollment> enrollments = enrollmentRepository.findByStudent(student);
+        Set<Long> activeSubjectIds = new HashSet<>();
+        for (Enrollment e : enrollments) {
+            ClassEntity cls = e.getClassEntity();
+            if (cls != null && cls.getStatus() == ClassStatus.ACTIVE &&
+                    cls.getInstitution() != null && cls.getInstitution().getId().equals(institution.getId()) &&
+                    cls.getSubject() != null) {
+                activeSubjectIds.add(cls.getSubject().getId());
+            }
+        }
+
+        if (activeSubjectIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Assessment> published = assessmentRepository.findByStatus(AssessmentStatus.PUBLISHED).stream()
+                .filter(a -> a.getSubject() != null && activeSubjectIds.contains(a.getSubject().getId()))
+                .filter(a -> a.getCreatedBy() == null || a.getCreatedBy().getInstitution() == null
+                        || a.getCreatedBy().getInstitution().getId().equals(institution.getId()))
+                .toList();
+
         return mapToAssessmentDtos(student, published);
     }
 
@@ -161,10 +200,22 @@ public class StudentAssessmentService {
         User student = getStudentByEmail(studentEmail);
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .filter(a -> a.getStatus() == AssessmentStatus.PUBLISHED)
-                .orElseThrow(() -> new ResourceNotFoundException("Published assessment not found: " + assessmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
+
+        Institution studentInst = student.getInstitution();
+        if (assessment.getCreatedBy() != null && assessment.getCreatedBy().getInstitution() != null) {
+            if (studentInst == null || !assessment.getCreatedBy().getInstitution().getId().equals(studentInst.getId())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
+        }
+        if (assessment.getSubject() != null && assessment.getSubject().getOwner() != null && assessment.getSubject().getOwner().getInstitution() != null) {
+            if (studentInst == null || !assessment.getSubject().getOwner().getInstitution().getId().equals(studentInst.getId())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
+        }
 
         if (!enrollmentRepository.existsByStudentAndSubject(student, assessment.getSubject())) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + assessment.getSubject().getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         Optional<ClassEntity> activeClassOpt = enrollmentRepository.findActiveClassByStudentAndSubject(student, assessment.getSubject());
@@ -264,12 +315,12 @@ public class StudentAssessmentService {
 
         // Ownership enforcement
         if (!attempt.getStudent().getId().equals(student.getId())) {
-            throw new ResourceNotFoundException("Attempt not found: " + attemptId);
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         // Enrollment enforcement
         if (!enrollmentRepository.existsByStudentAndSubject(student, attempt.getAssessment().getSubject())) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + attempt.getAssessment().getSubject().getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         gradingService.gradeAndSubmit(attempt, request.answers());
@@ -291,16 +342,16 @@ public class StudentAssessmentService {
     public AttemptResultDto getAttemptResult(Long attemptId, String studentEmail) {
         User student = getStudentByEmail(studentEmail);
         Attempt attempt = attemptRepository.findById(attemptId)
-                .orElseThrow(() -> new ResourceNotFoundException("Attempt not found: " + attemptId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         // Ownership enforcement
         if (!attempt.getStudent().getId().equals(student.getId())) {
-            throw new ResourceNotFoundException("Attempt not found: " + attemptId);
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         // Enrollment enforcement
         if (!enrollmentRepository.existsByStudentAndSubject(student, attempt.getAssessment().getSubject())) {
-            throw new AccessDeniedException("Student is not enrolled in subject: " + attempt.getAssessment().getSubject().getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         if (attempt.getStatus() != AttemptStatus.SUBMITTED) {

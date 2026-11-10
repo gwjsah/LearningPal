@@ -282,13 +282,13 @@ public class StudentAssessmentApiTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"answers\": []}"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", containsString("Attempt not found")));
+                .andExpect(jsonPath("$.message", is("Resource not found")));
 
         // Student B tries to view Student A's result
         mockMvc.perform(get("/api/student/attempts/" + attemptIdA + "/result")
                         .header("Authorization", "Bearer " + tokenB))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", containsString("Attempt not found")));
+                .andExpect(jsonPath("$.message", is("Resource not found")));
     }
 
     @Test
@@ -485,6 +485,6 @@ public class StudentAssessmentApiTests {
         mockMvc.perform(get("/api/student/attempts/" + attemptId + "/result")
                         .header("Authorization", "Bearer " + student2Token))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", containsString("Attempt not found")));
+                .andExpect(jsonPath("$.message", is("Resource not found")));
     }
 }

@@ -107,7 +107,20 @@ public class TeacherClassService {
         Subject subject;
         if (request.subjectId() != null) {
             subject = subjectRepository.findById(request.subjectId())
-                    .orElseThrow(() -> new BadRequestException("Subject not found: " + request.subjectId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
+
+            // Allow only if subject belongs to current teacher or is a platform seed subject (owner == null)
+            if (subject.getOwner() != null) {
+                if (!subject.getOwner().getId().equals(teacher.getId())) {
+                    throw new ResourceNotFoundException("Resource not found");
+                }
+                // Confirm subject owner belongs to the same institution as teacher
+                Institution teacherInst = teacher.getInstitution();
+                Institution ownerInst = subject.getOwner().getInstitution();
+                if (teacherInst == null || ownerInst == null || !teacherInst.getId().equals(ownerInst.getId())) {
+                    throw new ResourceNotFoundException("Resource not found");
+                }
+            }
         } else if (request.subjectName() != null && !request.subjectName().trim().isBlank()) {
             String trimmedSubj = request.subjectName().trim();
             if (trimmedSubj.length() > 80) {

@@ -2,6 +2,7 @@ package com.learningpal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learningpal.config.JwtService;
+import com.learningpal.dto.CreateClassRequest;
 import com.learningpal.dto.ReassignTeacherRequest;
 import com.learningpal.dto.SubmitAttemptRequest;
 import com.learningpal.entity.*;
@@ -82,6 +83,12 @@ public class IsolationMatrixTests {
 
     @Autowired
     private ResourceRepository resourceRepository;
+
+    @Autowired
+    private TopicRepository topicRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
 
     @Autowired
     private ResourceFileRepository resourceFileRepository;
@@ -651,6 +658,299 @@ public class IsolationMatrixTests {
                 .andExpect(status().isNotFound());
         mockMvc.perform(get("/api/student/classes/" + activeClassA1.getId() + "/files/" + activeFile.getId() + "/download")
                         .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isNotFound());
+    }
+
+    // =========================================================================
+    // Part 7: Audit Fix & Isolation Matrix Regression Tests
+    // =========================================================================
+
+    @Test
+    @DisplayName("FINDING-001 / Matrix: POST /api/teacher/classes enforces subject ownership and institution boundaries")
+    void testCreateClassSubjectIsolation() throws Exception {
+        // Teacher A1 creates private subject
+        Subject privateSubjA = subjectRepository.save(new Subject("PRIV_A1_" + System.nanoTime(), "Private A1", "Desc", teacherA1));
+        Subject privateSubjB = subjectRepository.save(new Subject("PRIV_B1_" + System.nanoTime(), "Private B1", "Desc", teacherB1));
+
+        String tokenTeacherA2 = jwtService.generateToken(teacherA2);
+        String tokenTeacherB1 = jwtService.generateToken(teacherB1);
+
+        CreateClassRequest reqA1 = new CreateClassRequest(privateSubjA.getId(), "Sec A1 New");
+
+        // 1. Teacher A2 (same institution, different owner) gets 404
+        mockMvc.perform(post("/api/teacher/classes")
+                        .header("Authorization", "Bearer " + tokenTeacherA2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reqA1)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // 2. Teacher B1 (foreign institution) gets 404
+        mockMvc.perform(post("/api/teacher/classes")
+                        .header("Authorization", "Bearer " + tokenTeacherB1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reqA1)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // 3. Nonexistent subject id gets 404 with identical message
+        CreateClassRequest reqNonExistent = new CreateClassRequest(999999L, "Sec Phantom");
+        mockMvc.perform(post("/api/teacher/classes")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reqNonExistent)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // 4. Owner teacher (Teacher A1) succeeds with 201 Created
+        mockMvc.perform(post("/api/teacher/classes")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reqA1)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Sec A1 New")));
+
+        // 5. Seed subject (owner == null) succeeds for teacher in any institution
+        CreateClassRequest reqSeed = new CreateClassRequest(subject.getId(), "Sec Seed Subj");
+        mockMvc.perform(post("/api/teacher/classes")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reqSeed)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Sec Seed Subj")));
+    }
+
+    @Test
+    @DisplayName("FINDING-002 / Matrix: GET /api/student/assessments returns only published assessments for active enrolled classes")
+    void testStudentAssessmentCatalogIsolation() throws Exception {
+        String tokenStudentB1 = jwtService.generateToken(studentB1);
+
+        // Student A1 is enrolled in Active Class A1 (which has `subject` with `assessment`)
+        mockMvc.perform(get("/api/student/assessments")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(assessment.getId().intValue())));
+
+        // Create an assessment in Institution B for subject B
+        Subject subjB = subjectRepository.save(new Subject("SUBJ_B_" + System.nanoTime(), "Subj B", "Desc", teacherB1));
+        Assessment assmB = assessmentRepository.save(new Assessment(subjB, "Assessment B", "Desc", AssessmentStatus.PUBLISHED, teacherB1));
+
+        // Student A1 must NOT see Assessment B (cross-institution & unenrolled)
+        mockMvc.perform(get("/api/student/assessments")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", not(hasItem(assmB.getId().intValue()))));
+
+        // Create a private subject and assessment for Teacher A1 in Institution A
+        Subject privateSubjA1 = subjectRepository.save(new Subject("PRIV_A1_CAT_" + System.nanoTime(), "Priv Subj A1", "Desc", teacherA1));
+        Assessment assmPrivA1 = assessmentRepository.save(new Assessment(privateSubjA1, "Private Assessment A1", "Desc", AssessmentStatus.PUBLISHED, teacherA1));
+        ClassEntity activeClassPrivA1 = classEntityRepository.save(new ClassEntity(instA, privateSubjA1, teacherA1, "Sec Priv A1", "SEC_PA1"));
+        enrollmentRepository.save(new Enrollment(studentA1, activeClassPrivA1));
+
+        // Student A1 can see assmPrivA1
+        mockMvc.perform(get("/api/student/assessments")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem(assmPrivA1.getId().intValue())));
+
+        // Student B1 (Institution B) must NOT see assmPrivA1
+        mockMvc.perform(get("/api/student/assessments")
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", not(hasItem(assmPrivA1.getId().intValue()))));
+
+        // Archived class enrollment does not qualify:
+        ClassEntity archivedClass = classEntityRepository.save(new ClassEntity(instA, subjB, teacherA1, "Archived Sec", "ARCH1"));
+        archivedClass.setStatus(ClassStatus.ARCHIVED);
+        classEntityRepository.save(archivedClass);
+        enrollmentRepository.save(new Enrollment(studentA1, archivedClass));
+
+        Assessment assmArch = assessmentRepository.save(new Assessment(subjB, "Archived Quiz", "Desc", AssessmentStatus.PUBLISHED, teacherA1));
+        mockMvc.perform(get("/api/student/assessments")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", not(hasItem(assmArch.getId().intValue()))));
+    }
+
+    @Test
+    @DisplayName("FINDING-003 / Matrix: Student assessment attempt and subject endpoints return 404 without leaking subject name")
+    void testStudentAssessmentAttemptAndSubjectIsolation() throws Exception {
+        String tokenStudentB1 = jwtService.generateToken(studentB1);
+
+        Subject privateSubjA = subjectRepository.save(new Subject("PRIV_SUBJ_A_" + System.nanoTime(), "Private A", "Desc", teacherA1));
+        Assessment privateAssmA = assessmentRepository.save(new Assessment(privateSubjA, "Private Quiz A", "Desc", AssessmentStatus.PUBLISHED, teacherA1));
+
+        // Foreign institution or unenrolled attempt start returns 404 Resource not found
+        mockMvc.perform(post("/api/student/assessments/" + privateAssmA.getId() + "/attempts")
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // Nonexistent assessment returns 404 with identical message
+        mockMvc.perform(post("/api/student/assessments/999999/attempts")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // Subject assessments: foreign student gets 404
+        mockMvc.perform(get("/api/student/subjects/" + privateSubjA.getId() + "/assessments")
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // Subject progress: foreign student gets 404
+        mockMvc.perform(get("/api/student/subjects/" + privateSubjA.getId() + "/progress")
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        // Topic progress: create topic on private subject
+        Topic topicOnPriv = topicRepository.save(new Topic(privateSubjA, "Topic On Priv", "Desc", 1));
+        mockMvc.perform(get("/api/student/progress/topics/" + topicOnPriv.getId())
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+    }
+
+    @Test
+    @DisplayName("Matrix: Student progress and subjects list scoped strictly to caller")
+    void testStudentProgressAndSubjectsScoped() throws Exception {
+        // GET /api/student/progress -> 200
+        mockMvc.perform(get("/api/student/progress")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk());
+
+        // GET /api/student/subjects -> 200
+        mockMvc.perform(get("/api/student/subjects")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Matrix: Unscoped resource completion enforces institution boundaries and returns 404 on invalid ID")
+    void testUnscopedResourceCompletionIsolation() throws Exception {
+        Topic topicA = topicRepository.findBySubjectOrderByDisplayOrderAsc(subject).get(0);
+        Resource resA = resourceRepository.save(new Resource(subject, topicA, "Res A " + System.nanoTime(), "Desc", ResourceType.LINK, null, "https://example.com/resA", DifficultyLevel.EASY, teacherA1));
+
+        // Student A1 completes resource
+        mockMvc.perform(post("/api/student/resources/" + resA.getId() + "/complete")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk());
+
+        // Student A1 un-completes resource
+        mockMvc.perform(delete("/api/student/resources/" + resA.getId() + "/complete")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk());
+
+        // Nonexistent resource -> 404
+        mockMvc.perform(post("/api/student/resources/999999/complete")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+
+        mockMvc.perform(delete("/api/student/resources/999999/complete")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", is("Resource not found")));
+    }
+
+    @Test
+    @DisplayName("Matrix: SuperAdmin endpoints require ROLE_SUPER_ADMIN (403 for non-superadmin)")
+    void testSuperAdminRoleIsolation() throws Exception {
+        User superAdmin = userRepository.findByEmail("superadmin@learningpal.edu").orElseGet(() ->
+                userRepository.save(new User("Super Admin", "superadmin@learningpal.edu", passwordEncoder.encode("pass"), Role.SUPER_ADMIN, UserStatus.ACTIVE, null))
+        );
+        String tokenSuperAdmin = jwtService.generateToken(superAdmin);
+
+        // Student, Teacher, Admin tokens -> 403
+        mockMvc.perform(get("/api/super/institutions")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/super/institutions")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/super/institutions")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isForbidden());
+
+        // Super Admin succeeds
+        mockMvc.perform(get("/api/super/institutions")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isOk());
+
+        // POST /api/super/institutions: Student/Teacher/Admin -> 403
+        long suffix = System.nanoTime();
+        String instPayload = "{\"name\":\"New Inst " + suffix + "\",\"code\":\"INST_" + suffix + "\",\"adminFullName\":\"Adm Full Name\",\"adminEmail\":\"adm_" + suffix + "@inst.edu\",\"adminPassword\":\"Password123!\"}";
+        mockMvc.perform(post("/api/super/institutions")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(instPayload))
+                .andExpect(status().isForbidden());
+
+        // Super Admin succeeds -> 201
+        mockMvc.perform(post("/api/super/institutions")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(instPayload))
+                .andExpect(status().isCreated());
+
+        // POST /api/super/admins non-superadmin -> 403
+        mockMvc.perform(post("/api/super/admins")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Matrix: GET teacher subject question and quiz endpoints enforce subject ownership and institution")
+    void testTeacherSubjectContentIsolation() throws Exception {
+        Subject subjA = subjectRepository.save(new Subject("SUBJ_CONT_" + System.nanoTime(), "Content Subj", "Desc", teacherA1));
+        Topic topicA = topicRepository.save(new Topic(subjA, "Content Topic", "Desc", 1));
+        Question questionA = questionRepository.save(new Question(topicA, QuestionType.MCQ, "What is X?", "Explanation", DifficultyLevel.EASY, 1.0, teacherA1));
+        Assessment quizA = assessmentRepository.save(new Assessment(subjA, "Content Quiz", "Quiz Desc", AssessmentStatus.DRAFT, teacherA1));
+
+        String tokenTeacherB1 = jwtService.generateToken(teacherB1);
+        String tokenTeacherA2 = jwtService.generateToken(teacherA2);
+
+        // 1. Teacher A1 (owner) can view question and quiz -> 200
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/questions/" + questionA.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(questionA.getId().intValue())));
+
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/quizzes/" + quizA.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(quizA.getId().intValue())));
+
+        // 2. Teacher A2 (same institution, different owner) -> 404
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/questions/" + questionA.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherA2))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/quizzes/" + quizA.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherA2))
+                .andExpect(status().isNotFound());
+
+        // 3. Teacher B1 (foreign institution) -> 404
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/questions/" + questionA.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherB1))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/quizzes/" + quizA.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherB1))
+                .andExpect(status().isNotFound());
+
+        // 4. Nonexistent question or quiz -> 404
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/questions/999999")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/quizzes/999999")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
                 .andExpect(status().isNotFound());
     }
 }

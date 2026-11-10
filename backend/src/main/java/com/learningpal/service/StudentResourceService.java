@@ -60,10 +60,10 @@ public class StudentResourceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         ClassEntity classroom = classEntityRepository.findById(classId)
-                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         if (!enrollmentRepository.existsByStudentAndClassEntity(student, classroom)) {
-            throw new AccessDeniedException("Student is not enrolled in class: " + classroom.getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         Resource resource = resourceRepository.findById(resourceId)
@@ -88,9 +88,15 @@ public class StudentResourceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         Resource resource = resourceRepository.findById(resourceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found: " + resourceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         Subject subject = resource.getTopic() != null ? resource.getTopic().getSubject() : null;
+        if (subject != null && subject.getOwner() != null && subject.getOwner().getInstitution() != null) {
+            Institution studentInst = student.getInstitution();
+            if (studentInst == null || !subject.getOwner().getInstitution().getId().equals(studentInst.getId())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
+        }
         ClassEntity activeClass = resolveActiveClassForStudentAndSubject(student, subject);
 
         if (activeClass != null) {
@@ -116,10 +122,10 @@ public class StudentResourceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         ClassEntity classroom = classEntityRepository.findById(classId)
-                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         if (!enrollmentRepository.existsByStudentAndClassEntity(student, classroom)) {
-            throw new AccessDeniedException("Student is not enrolled in class: " + classroom.getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         Resource resource = resourceRepository.findById(resourceId)
@@ -140,9 +146,15 @@ public class StudentResourceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentEmail));
 
         Resource resource = resourceRepository.findById(resourceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found: " + resourceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
         Subject subject = resource.getTopic() != null ? resource.getTopic().getSubject() : null;
+        if (subject != null && subject.getOwner() != null && subject.getOwner().getInstitution() != null) {
+            Institution studentInst = student.getInstitution();
+            if (studentInst == null || !subject.getOwner().getInstitution().getId().equals(studentInst.getId())) {
+                throw new ResourceNotFoundException("Resource not found");
+            }
+        }
         ClassEntity activeClass = resolveActiveClassForStudentAndSubject(student, subject);
 
         if (activeClass != null) {
