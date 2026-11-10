@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
-import { aiService } from '../services/aiService';
+import { aiService, AI_QUESTION_RULES } from '../services/aiService';
 import {
   Button,
   NotebookCard,
@@ -123,7 +123,7 @@ export default function TeacherSubjectDetail() {
   const [aiStatus, setAiStatus] = useState({ enabled: false, available: false, model: 'qwen/qwen3-14b', note: '' });
   const [aiSetupModal, setAiSetupModal] = useState(null); // { file }
   const [aiTopicId, setAiTopicId] = useState('');
-  const [aiQuestionCount, setAiQuestionCount] = useState(10);
+  const [aiQuestionCount, setAiQuestionCount] = useState(AI_QUESTION_RULES.DEFAULT);
   const [aiSetupLoading, setAiSetupLoading] = useState(false);
   const [aiSetupError, setAiSetupError] = useState('');
 
@@ -967,7 +967,7 @@ export default function TeacherSubjectDetail() {
     if (f.extractionStatus !== 'READY') return;
     setAiSetupModal({ file: f });
     setAiTopicId(f.topicId ? f.topicId.toString() : (topics[0]?.id?.toString() || ''));
-    setAiQuestionCount(10);
+    setAiQuestionCount(AI_QUESTION_RULES.DEFAULT);
     setAiSetupError('');
   };
 
@@ -983,7 +983,7 @@ export default function TeacherSubjectDetail() {
     try {
       const payload = {
         topicId: Number(aiTopicId),
-        requestedCount: Number(aiQuestionCount) || 10,
+        count: Number(aiQuestionCount) || AI_QUESTION_RULES.DEFAULT,
       };
       const job = await aiService.createJob(subjectId, aiSetupModal.file.id, payload);
       setAiSetupModal(null);
@@ -3360,24 +3360,49 @@ export default function TeacherSubjectDetail() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
-                      Number of Questions to Draft: <span className="font-mono font-bold text-ink dark:text-chalkboard-chalk px-1.5 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-border ml-1">{aiQuestionCount}</span>
+                    <label
+                      htmlFor="ai-question-count-slider"
+                      className="text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2"
+                    >
+                      <span>Number of Questions to Draft:</span>
+                      <span
+                        aria-live="polite"
+                        aria-atomic="true"
+                        className="font-mono font-bold text-ink dark:text-chalkboard-chalk px-2 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-border text-sm shadow-xs"
+                      >
+                        {aiQuestionCount}
+                      </span>
                     </label>
-                    <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">1 to 30</span>
+                    <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                      {AI_QUESTION_RULES.MIN} to {AI_QUESTION_RULES.MAX}
+                    </span>
                   </div>
+
                   <input
+                    id="ai-question-count-slider"
                     type="range"
-                    min="1"
-                    max="30"
+                    min={AI_QUESTION_RULES.MIN}
+                    max={AI_QUESTION_RULES.MAX}
+                    step="1"
                     value={aiQuestionCount}
                     onChange={(e) => setAiQuestionCount(Number(e.target.value))}
-                    className="w-full accent-ink dark:accent-chalkboard-chalk cursor-pointer"
+                    aria-label="Number of Questions to Draft"
+                    aria-valuemin={AI_QUESTION_RULES.MIN}
+                    aria-valuemax={AI_QUESTION_RULES.MAX}
+                    aria-valuenow={aiQuestionCount}
+                    aria-valuetext={`${aiQuestionCount} questions`}
+                    className="w-full accent-ink dark:accent-chalkboard-chalk cursor-pointer focus:outline-none focus:ring-2 focus:ring-ink/30 dark:focus:ring-chalkboard-chalk/30 rounded"
                   />
-                  <div className="flex justify-between text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1">
-                    <span>5</span>
-                    <span>10 (Default)</span>
-                    <span>20</span>
-                    <span>30</span>
+
+                  <div className="flex justify-between text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1.5 px-0.5">
+                    {AI_QUESTION_RULES.TICK_MARKS.map((tick) => (
+                      <span
+                        key={tick.value}
+                        className={aiQuestionCount === tick.value ? 'font-bold text-ink dark:text-chalkboard-chalk underline decoration-ink/40 dark:decoration-chalkboard-chalk/40' : ''}
+                      >
+                        {tick.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
 

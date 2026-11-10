@@ -135,7 +135,12 @@ public class TeacherAiService {
             throw new RateLimitException("Hourly generation limit reached (" + aiConfig.getMaxJobsPerTeacherPerHour() + " jobs/hour). Please try again later.");
         }
 
-        int count = request.count() != null ? Math.min(request.count(), aiConfig.getMaxDraftsPerJob()) : 10;
+        // Enforce strict question count rules (no silent clamping)
+        int count = request.count() != null ? request.count() : CreateAiJobRequest.DEFAULT_QUESTIONS;
+        int maxAllowed = Math.min(CreateAiJobRequest.MAX_QUESTIONS, aiConfig.getMaxDraftsPerJob());
+        if (count < CreateAiJobRequest.MIN_QUESTIONS || count > maxAllowed) {
+            throw new BadRequestException("Question count must be between " + CreateAiJobRequest.MIN_QUESTIONS + " and " + maxAllowed);
+        }
 
         AiGenerationJob job = new AiGenerationJob(
                 teacher,

@@ -1,6 +1,21 @@
 import { apiRequest } from './api';
 
 /**
+ * Single source of truth for AI question drafting rules and bounds.
+ */
+export const AI_QUESTION_RULES = {
+  MIN: 5,
+  DEFAULT: 10,
+  MAX: 30,
+  TICK_MARKS: [
+    { value: 5, label: '5 min' },
+    { value: 10, label: '10 (default)' },
+    { value: 20, label: '20' },
+    { value: 30, label: '30 max' },
+  ],
+};
+
+/**
  * Client service for local LLM question generation, progress polling, and teacher review/approval.
  */
 export const aiService = {

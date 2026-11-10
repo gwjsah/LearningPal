@@ -245,7 +245,7 @@ public class AiGenerationTests {
     void testValidLlmOutputCreatesDraftsAndStripsThinkBlock() {
         fakeLlm.setPrependThinkBlock(true);
 
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 2);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto jobDto = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
 
         // Await job completion asynchronously
@@ -269,7 +269,7 @@ public class AiGenerationTests {
     void testMalformedJsonTriggersExactlyOneRepairRetry() {
         fakeLlm.setSimulateMalformedOnFirstAttempt(true);
 
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 2);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto jobDto = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
 
         workerService.awaitJobCompletion(jobDto.id(), 5000);
@@ -322,7 +322,7 @@ public class AiGenerationTests {
 
         fakeLlm.setCustomResponse(invalidDraftsJson);
 
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 3);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto jobDto = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
 
         workerService.awaitJobCompletion(jobDto.id(), 5000);
@@ -375,7 +375,7 @@ public class AiGenerationTests {
 
         fakeLlm.setCustomResponse(dualQuestionsJson);
 
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 2);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto jobDto = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
 
         workerService.awaitJobCompletion(jobDto.id(), 5000);
@@ -425,7 +425,7 @@ public class AiGenerationTests {
                 ExtractionStatus.READY, injectionText, injectionText.length(), 1, "Extracted"
         ));
 
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 1);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto jobDto = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), fileInjection.getId(), req);
 
         workerService.awaitJobCompletion(jobDto.id(), 5000);
@@ -508,7 +508,7 @@ public class AiGenerationTests {
     @Test
     @DisplayName("Approving a draft creates question with origin AI and sourceFile link; idempotent; editing saves before approval")
     void testApproveDraftIdempotencyAndVersioningLinkage() {
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 1);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto job = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
         workerService.awaitJobCompletion(job.id(), 5000);
 
@@ -574,7 +574,7 @@ public class AiGenerationTests {
     @DisplayName("File referenced by approved AI question cannot be deleted (409); archiving is allowed; drafts-only file deletes cleanly")
     void testFileDeleteRuleApprovedAiQuestionReturns409() {
         // Generate and approve draft for file
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 1);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto job = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
         workerService.awaitJobCompletion(job.id(), 5000);
 
@@ -620,7 +620,7 @@ public class AiGenerationTests {
     @Test
     @DisplayName("No student-facing endpoint ever exposes drafts, job data, extracted text, or evidence quotes")
     void testStudentResponsesNeverContainDraftsJobDataOrEvidence() throws Exception {
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 1);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto job = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
         workerService.awaitJobCompletion(job.id(), 5000);
 
@@ -643,7 +643,7 @@ public class AiGenerationTests {
     @Test
     @DisplayName("Multi-tenant and role isolation: all AI endpoints return 404 for unauthorized callers")
     void testMultiTenantAndRoleIsolationReturns404() throws Exception {
-        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 1);
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5);
         AiGenerationJobDto job = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
         workerService.awaitJobCompletion(job.id(), 5000);
 
@@ -691,5 +691,56 @@ public class AiGenerationTests {
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isNotFound());
         }
+    }
+
+    @Test
+    @DisplayName("Question count validation: rejects 4 and 31 with 400, accepts 5, 10, and 30, and stores exact requested count")
+    void testQuestionCountBoundsValidationAndStorage() throws Exception {
+        String teacherToken = jwtService.generateToken(teacherA1);
+
+        // 1. Rejects count < 5 (e.g. 4) via HTTP API with 400 Bad Request
+        CreateAiJobRequest req4 = new CreateAiJobRequest(topicA1.getId(), 4);
+        mockMvc.perform(post("/api/teacher/subjects/" + subjectA1.getId() + "/files/" + resourceFileReady.getId() + "/ai/generate")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req4)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Question count must be between 5 and 30")));
+
+        // 2. Rejects count > 30 (e.g. 31) via HTTP API with 400 Bad Request
+        CreateAiJobRequest req31 = new CreateAiJobRequest(topicA1.getId(), 31);
+        mockMvc.perform(post("/api/teacher/subjects/" + subjectA1.getId() + "/files/" + resourceFileReady.getId() + "/ai/generate")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req31)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("Question count must be between 5 and 30")));
+
+        // 3. Direct service call validation also rejects 4 and 31 with BadRequestException
+        assertThrows(BadRequestException.class, () ->
+                teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req4));
+        assertThrows(BadRequestException.class, () ->
+                teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req31));
+
+        // 4. Accepts 5 and stores exact count
+        AiGenerationJobDto job5 = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), new CreateAiJobRequest(topicA1.getId(), 5));
+        assertEquals(5, job5.requestedCount());
+        AiGenerationJob entity5 = jobRepository.findById(job5.id()).orElseThrow();
+        assertEquals(5, entity5.getRequestedCount());
+        workerService.awaitJobCompletion(job5.id(), 5000);
+
+        // 5. Accepts 10 and stores exact count
+        AiGenerationJobDto job10 = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), new CreateAiJobRequest(topicA1.getId(), 10));
+        assertEquals(10, job10.requestedCount());
+        AiGenerationJob entity10 = jobRepository.findById(job10.id()).orElseThrow();
+        assertEquals(10, entity10.getRequestedCount());
+        workerService.awaitJobCompletion(job10.id(), 5000);
+
+        // 6. Accepts 30 and stores exact count
+        AiGenerationJobDto job30 = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), new CreateAiJobRequest(topicA1.getId(), 30));
+        assertEquals(30, job30.requestedCount());
+        AiGenerationJob entity30 = jobRepository.findById(job30.id()).orElseThrow();
+        assertEquals(30, entity30.getRequestedCount());
+        workerService.awaitJobCompletion(job30.id(), 5000);
     }
 }
