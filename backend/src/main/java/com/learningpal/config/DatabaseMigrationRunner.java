@@ -82,6 +82,7 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         relaxLegacySubjectColumnIfPresent();
         relaxLegacyTopicColumnOnResourcesIfPresent();
         migrateEnumsAndColumnsIfPresent();
+        ensureValidationAssignmentTableIfPresent();
 
         // 2. Ensure default "Pilot University" exists
         Institution pilot = institutionRepository.findByCode("PILOT-2026")
@@ -372,6 +373,23 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.debug("Database enum and column migration skipped: {}", e.getMessage());
+        }
+    }
+
+    private void ensureValidationAssignmentTableIfPresent() {
+        try {
+            executeSilently("CREATE TABLE IF NOT EXISTS student_validation_assignments (" +
+                    "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
+                    "student_id BIGINT NOT NULL, " +
+                    "class_id BIGINT NOT NULL, " +
+                    "topic_id BIGINT NOT NULL, " +
+                    "assigned_at TIMESTAMP NOT NULL, " +
+                    "assigned_order INT, " +
+                    "seed VARCHAR(64), " +
+                    "CONSTRAINT uk_val_assign_student_class_topic UNIQUE (student_id, class_id, topic_id)" +
+                    ")");
+        } catch (Exception e) {
+            log.debug("Validation assignments table migration notice: {}", e.getMessage());
         }
     }
 }

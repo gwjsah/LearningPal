@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CheckCircle2,
   AlertCircle,
@@ -65,7 +65,11 @@ export default function ValidationReportView({
     thresholdSensitivity = [],
     disagreements = [],
     simulated = false,
+    pooledClassesCount = null,
+    classBreakdowns = [],
   } = report;
+
+  const [showKappaInfo, setShowKappaInfo] = useState(false);
 
   // Cohen's Kappa qualitative interpretation
   const getKappaInterpretation = (k) => {
@@ -165,12 +169,22 @@ export default function ValidationReportView({
         </div>
       )}
 
-      {/* SECTION 1: TARGET CHECK BANNER */}
+      {/* SECTION 1: TARGET CHECK BANNER (DECISIONS 5, 6, 7) */}
       <NotebookCard
         ruled
         marginLine
         lifted
-        className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
+        className={`p-6 bg-paper-card dark:bg-chalkboard-card border-2 ${
+          targetCheck.bannerType === 'MET'
+            ? 'border-emerald-600 dark:border-emerald-500'
+            : targetCheck.bannerType === 'NOT_MET'
+            ? 'border-redpen'
+            : targetCheck.bannerType === 'SMALL_CLASS_COMPLETE'
+            ? 'border-blue-600 dark:border-blue-500'
+            : targetCheck.bannerType === 'NO_ELIGIBLE_STUDENTS'
+            ? 'border-ink/20 dark:border-chalkboard-border'
+            : 'border-amber-500 dark:border-amber-400'
+        } space-y-4`}
       >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-2">
@@ -180,22 +194,32 @@ export default function ValidationReportView({
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-extrabold uppercase border ${
-                  targetCheck.status === 'MET'
+                  targetCheck.bannerType === 'MET'
                     ? 'bg-highlighter-mint text-ink border-ink/20'
-                    : targetCheck.status === 'NOT_MET'
+                    : targetCheck.bannerType === 'NOT_MET'
                     ? 'bg-redpen-soft text-redpen-dark border-redpen/30'
-                    : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20'
+                    : targetCheck.bannerType === 'SMALL_CLASS_COMPLETE'
+                    ? 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/60 dark:text-blue-200'
+                    : targetCheck.bannerType === 'NO_ELIGIBLE_STUDENTS'
+                    ? 'bg-paper-warm text-ink-muted border-ink/20 dark:bg-chalkboard-surface dark:text-chalkboard-muted'
+                    : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200'
                 }`}
               >
-                {targetCheck.status === 'MET' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                {targetCheck.status === 'NOT_MET' && <AlertCircle className="w-3.5 h-3.5" />}
-                {targetCheck.status === 'NOT_ENOUGH_RECORDS' && <Clock className="w-3.5 h-3.5" />}
+                {targetCheck.bannerType === 'MET' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                {targetCheck.bannerType === 'NOT_MET' && <AlertCircle className="w-3.5 h-3.5" />}
+                {targetCheck.bannerType === 'SMALL_CLASS_COMPLETE' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                {targetCheck.bannerType === 'NO_ELIGIBLE_STUDENTS' && <Clock className="w-3.5 h-3.5" />}
+                {targetCheck.bannerType === 'PRELIMINARY' && <Clock className="w-3.5 h-3.5" />}
                 <span>
-                  {targetCheck.status === 'MET'
-                    ? 'Target Met'
-                    : targetCheck.status === 'NOT_MET'
-                    ? 'Target Not Met'
-                    : 'Not Enough Records'}
+                  {targetCheck.bannerType === 'MET'
+                    ? `Target Met (${metrics.accuracyPercent}% vs 85%)`
+                    : targetCheck.bannerType === 'NOT_MET'
+                    ? `Target Not Met (${metrics.accuracyPercent}% vs 85%)`
+                    : targetCheck.bannerType === 'SMALL_CLASS_COMPLETE'
+                    ? 'Complete (Small Class)'
+                    : targetCheck.bannerType === 'NO_ELIGIBLE_STUDENTS'
+                    ? 'No Eligible Students'
+                    : `Preliminary (${targetCheck.studentsEvaluated || 0} of 30 Labeled)`}
                 </span>
               </span>
             </div>
@@ -203,13 +227,19 @@ export default function ValidationReportView({
             <p className="text-base sm:text-lg font-bold text-ink dark:text-chalkboard-chalk leading-snug">
               {targetCheck.sentence}
             </p>
+
+            {targetCheck.warningMessage && (
+              <p className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/40">
+                ⚠️ {targetCheck.warningMessage}
+              </p>
+            )}
           </div>
 
           {/* Quick Dual Meters: Agreement & Sample */}
           <div className="flex items-center gap-4 bg-paper-warm dark:bg-chalkboard-surface p-4 rounded-xl border border-ink/15 dark:border-chalkboard-border">
             <div className="text-center px-2">
               <span className="text-[10px] font-mono uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted block">
-                Accuracy Target
+                Accuracy (vs 85%)
               </span>
               <span className="text-2xl font-extrabold font-mono text-ink dark:text-chalkboard-chalk">
                 {metrics.accuracyPercent != null ? `${metrics.accuracyPercent}%` : '—'}
@@ -223,13 +253,13 @@ export default function ValidationReportView({
 
             <div className="text-center px-2">
               <span className="text-[10px] font-mono uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted block">
-                Sample Size
+                Students Evaluated
               </span>
               <span className="text-2xl font-extrabold font-mono text-ink dark:text-chalkboard-chalk">
-                {sampleSize.usableStudents || 0}
+                {targetCheck.studentsEvaluated || 0}
               </span>
               <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted block">
-                Target: ≥ 30 students
+                Gate: 30 students
               </span>
             </div>
           </div>
@@ -296,16 +326,34 @@ export default function ValidationReportView({
           </div>
 
           {/* Cohen's Kappa */}
-          <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm">
-            <span className="text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
-              Cohen's Kappa (κ)
-            </span>
+          <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm relative">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
+                Cohen&apos;s Kappa (κ)
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowKappaInfo(!showKappaInfo)}
+                className="text-ink-muted hover:text-ink dark:hover:text-chalkboard-chalk"
+                title="What is Cohen's Kappa?"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <span className="text-2xl font-extrabold text-ink-blue dark:text-highlighter-mint font-mono mt-1 block">
               {metrics.cohensKappa != null ? metrics.cohensKappa.toFixed(3) : '—'}
             </span>
             <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted block mt-0.5 truncate" title={getKappaInterpretation(metrics.cohensKappa)}>
               {getKappaInterpretation(metrics.cohensKappa)}
             </span>
+            {showKappaInfo && (
+              <div className="absolute z-20 bottom-full left-0 mb-2 w-64 p-3 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-xl shadow-notebook-lg text-[11px] text-ink dark:text-chalkboard-chalk space-y-1">
+                <p className="font-bold">What is Cohen&apos;s Kappa?</p>
+                <p className="text-ink-muted dark:text-chalkboard-muted">
+                  Cohen&apos;s kappa measures agreement between two raters (teacher and system) after accounting for the agreement that could happen purely by chance. A score above 0.60 indicates strong agreement beyond random luck.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Student Exact Match */}
@@ -319,6 +367,40 @@ export default function ValidationReportView({
             <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted block mt-0.5">
               {metrics.studentExactMatchCount || 0} / {metrics.studentTotalUsableCount || 0} students
             </span>
+          </div>
+        </div>
+
+        {/* PLAIN-LANGUAGE METRIC DEFINITIONS (DECISION 10) */}
+        <div className="p-4 rounded-xl border border-ink/15 dark:border-chalkboard-border bg-paper-warm/60 dark:bg-chalkboard-surface/60 space-y-2">
+          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted flex items-center gap-1.5">
+            <HelpCircle className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted" />
+            <span>Understanding the Validation Metrics in Plain Language</span>
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div>
+              <span className="font-bold text-ink dark:text-chalkboard-chalk">Agreement (Accuracy):</span>
+              <p className="text-ink-muted dark:text-chalkboard-muted mt-0.5">
+                How often the system&apos;s gap assessment matched the teacher&apos;s judgment.
+              </p>
+            </div>
+            <div>
+              <span className="font-bold text-ink dark:text-chalkboard-chalk">Precision (Weak):</span>
+              <p className="text-ink-muted dark:text-chalkboard-muted mt-0.5">
+                When the system flagged a gap, how often the teacher confirmed it was a real gap.
+              </p>
+            </div>
+            <div>
+              <span className="font-bold text-ink dark:text-chalkboard-chalk">Recall (Weak):</span>
+              <p className="text-ink-muted dark:text-chalkboard-muted mt-0.5">
+                Of all the learning gaps identified by the teacher, how many the system caught.
+              </p>
+            </div>
+            <div>
+              <span className="font-bold text-ink dark:text-chalkboard-chalk">Cohen&apos;s Kappa:</span>
+              <p className="text-ink-muted dark:text-chalkboard-muted mt-0.5">
+                Agreement beyond chance. Scores &gt; 0.60 indicate strong agreement not explained by luck.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -675,6 +757,89 @@ export default function ValidationReportView({
           </div>
         )}
       </NotebookCard>
+
+      {/* SECTION 7: ADMIN PER-CLASS BREAKDOWN TABLE (DECISION 9) */}
+      {classBreakdowns && classBreakdowns.length > 0 && (
+        <NotebookCard
+          borderStyle="sketch"
+          className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2">
+                <Users className="w-4 h-4 text-redpen dark:text-highlighter-yellow" />
+                <span>Classroom Validation Breakdown</span>
+              </h3>
+              <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
+                Per-class sample progress and empirical agreement across sections in your institution.
+              </p>
+            </div>
+            {pooledClassesCount != null && (
+              <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 text-ink dark:text-chalkboard-chalk self-start sm:self-auto">
+                Pooled across {pooledClassesCount} classes
+              </span>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs font-mono border-collapse border border-ink/20 dark:border-chalkboard-border">
+              <thead>
+                <tr className="bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk text-left">
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border">Class Name</th>
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border">Teacher</th>
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Students Labeled</th>
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Status</th>
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Agreement %</th>
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Target Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {classBreakdowns.map((cb) => (
+                  <tr
+                    key={cb.classId}
+                    className="border-b border-ink/10 dark:border-chalkboard-borderSubtle hover:bg-paper-warm/40 dark:hover:bg-chalkboard-surface/40"
+                  >
+                    <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border font-bold text-ink dark:text-chalkboard-chalk">
+                      {cb.className}
+                    </td>
+                    <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-ink-muted dark:text-chalkboard-muted">
+                      {cb.teacherName || '—'}
+                    </td>
+                    <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center font-bold">
+                      {cb.studentsLabeled} / {cb.totalStudents}
+                    </td>
+                    <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        cb.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300' :
+                        cb.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300' :
+                        'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15'
+                      }`}>
+                        {cb.status}
+                      </span>
+                    </td>
+                    <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center font-bold">
+                      {cb.agreementPercent != null ? `${cb.agreementPercent}%` : '—'}
+                    </td>
+                    <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        cb.targetStatus === 'MET' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300' :
+                        cb.targetStatus === 'NOT_MET' ? 'bg-redpen-soft text-redpen-dark border border-redpen/30' :
+                        cb.targetStatus === 'SMALL_CLASS_COMPLETE' ? 'bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300' :
+                        'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15'
+                      }`}>
+                        {cb.targetStatus === 'MET' ? 'Target Met (≥85%)' :
+                         cb.targetStatus === 'NOT_MET' ? 'Target Not Met (<85%)' :
+                         cb.targetStatus === 'SMALL_CLASS_COMPLETE' ? 'Small Class Complete' :
+                         'Preliminary'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </NotebookCard>
+      )}
     </div>
   );
 }

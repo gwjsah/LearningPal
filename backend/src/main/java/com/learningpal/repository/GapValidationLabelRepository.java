@@ -30,7 +30,7 @@ public interface GapValidationLabelRepository extends JpaRepository<GapValidatio
 
     long countBySource(ValidationSource source);
 
-    @Query("SELECT g FROM GapValidationLabel g WHERE (g.classroom.id = :classId OR (g.student IN (SELECT e.student FROM Enrollment e WHERE e.classEntity.id = :classId) AND g.topic.subject = (SELECT c.subject FROM ClassEntity c WHERE c.id = :classId))) AND g.source = :source")
+    @Query("SELECT g FROM GapValidationLabel g WHERE (g.classroom.id = :classId OR (g.classroom IS NULL AND g.student IN (SELECT e.student FROM Enrollment e WHERE e.classEntity.id = :classId) AND g.topic.subject = (SELECT c.subject FROM ClassEntity c WHERE c.id = :classId))) AND g.source = :source")
     List<GapValidationLabel> findByClassIdAndSource(@Param("classId") Long classId, @Param("source") ValidationSource source);
 
     @Query("SELECT g FROM GapValidationLabel g WHERE g.student.institution.id = :institutionId AND g.source = :source")

@@ -19,6 +19,7 @@ erDiagram
     users ||--o{ resource_progress : "completes"
     users ||--o{ interventions : "student / teacher"
     users ||--o{ gap_validation_labels : "labeled student / teacher"
+    users ||--o{ student_validation_assignments : "assigned topics"
     users ||--o{ assessment_access : "student / reopenedBy"
     users ||--o{ classes : "teaches"
     users ||--o{ enrollments : "student joins"
@@ -89,6 +90,7 @@ Think of the LearningPal database like a multi-school educational network:
 | `resource_progress` | **The Reading Checklist:** Checkmarks recording whether a student has finished reviewing a recommended note, document, or practice problem, strictly scoped to `(student_id, class_id, resource_id)`. |
 | `interventions` | **The Teacher Action Plan:** Action items logged by teachers when they notice a student struggling on a topic. |
 | `gap_validation_labels` | **The Validation Lab Ground Truth:** Teacher blind evaluations (`WEAK`, `NOT_WEAK`, `CANNOT_JUDGE`) or synthetic simulation parameters, with server-side snapshot of system mastery, status, and attempt count for agreement measurement. |
+| `student_validation_assignments` | **The Balanced Validation Sampling Ledger:** Deterministic assignments of 3 topics per student (scoped to class), sampled from eligible topics ($\ge 3$ distinct questions attempted), balanced across class topic counts with an audit seed to prevent re-rolling on page refreshes. |
 
 ---
 
@@ -245,6 +247,25 @@ In medical science, a rapid diagnostic screening tool (like our algorithmic gap 
 
 - **Unique Constraint:** `(student_id, topic_id, source)` ensures each student-topic pair has exactly one ground truth label per evaluation source.
 - **Validation Utility:** Allows researchers and engineers to measure classifier accuracy, precision, recall, and false discovery rate without relying on circular self-evaluation.
+
+### 9.1 Validation Topic Assignments (`student_validation_assignments`)
+
+To ensure a balanced distribution of validation topics across class sections without overwhelming educators, the system assigns exactly 3 topics at random per eligible student when the student is first evaluated:
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `student_id` | `BIGINT NOT NULL` | FK to `users` (student) |
+| `class_id` | `BIGINT NOT NULL` | FK to `classes` (classroom section) |
+| `topic_id` | `BIGINT NOT NULL` | FK to `topics` (assigned curriculum topic) |
+| `assigned_at` | `DATETIME NOT NULL` | Timestamp when the topic was assigned |
+| `assigned_order` | `INT NOT NULL` | Position in student's evaluation sequence ($1, 2, 3$) |
+| `seed` | `VARCHAR(64) NOT NULL` | Deterministic pseudo-random seed for audit reproducibility |
+
+- **Unique Constraint:** `(student_id, class_id, topic_id)` ensures a student is assigned a specific topic at most once per class.
+- **Eligibility:** A topic is eligible for sampling only if the student has attempted $\ge 3$ distinct questions (excluding `INSUFFICIENT_DATA`).
+- **Balanced Class Sampling:** When picking 3 topics, the sampling algorithm prioritizes eligible topics with the lowest assignment counts across the class cohort.
+- **Determinism:** Once assigned, topics are persisted and never re-rolled upon page refresh or subsequent session re-entry.
 
 ---
 

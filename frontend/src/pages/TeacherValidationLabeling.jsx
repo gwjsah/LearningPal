@@ -42,8 +42,8 @@ export default function TeacherValidationLabeling() {
       if (data?.topics) {
         data.topics.forEach((t) => {
           initialForm[t.topicId] = {
-            label: t.existingLabel || '',
-            note: t.existingNote || '',
+            label: t.currentLabel || t.existingLabel || '',
+            note: t.currentNote || t.existingNote || '',
           };
         });
       }
@@ -183,7 +183,7 @@ export default function TeacherValidationLabeling() {
       }
     >
       <div className="space-y-6">
-        {/* BLINDNESS BANNER */}
+        {/* BLINDNESS BANNER (DECISION 10 CALLOUT) */}
         <NotebookCard
           borderStyle="sketch"
           className="p-4 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border flex items-center justify-between gap-4"
@@ -196,12 +196,18 @@ export default function TeacherValidationLabeling() {
               <p className="text-xs font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
                 Blind Evaluation Mode Active
               </p>
-              <p className="text-xs text-ink dark:text-chalkboard-chalk">
-                All algorithmic mastery percentages, gap badges, and automated diagnostics are hidden from this screen to prevent observer bias.
+              <p className="text-xs sm:text-sm font-medium text-ink dark:text-chalkboard-chalk">
+                Your judgment is compared with the system afterwards. Seeing the system&apos;s score first would bias the result.
               </p>
             </div>
           </div>
         </NotebookCard>
+
+        {studentDetail?.topics && studentDetail.topics.length > 0 && studentDetail.topics.length < 3 && (
+          <div className="p-3 rounded-xl border border-ink/20 bg-paper-warm dark:bg-chalkboard-surface text-xs text-ink-muted dark:text-chalkboard-muted font-mono">
+            ℹ️ This student has {studentDetail.topics.length} assigned topic{studentDetail.topics.length !== 1 ? 's' : ''}. Only topics with at least 3 attempted questions are eligible for validation.
+          </div>
+        )}
 
         {loading ? (
           <NotebookCard className="p-12 text-center bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border">

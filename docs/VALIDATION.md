@@ -15,13 +15,14 @@ The core research objective of this project is:
 In automated educational systems, human validation is susceptible to **rater anchoring bias** (confirmation bias). If an instructor inspects a student while looking at the system's calculated mastery percentage (e.g., *Variables: 34%, Status: GAP*), the instructor is cognitively primed to agree with that diagnosis.
 
 To produce genuine ground-truth data:
-1. **Zero System Leaks:** The educator sees only the student's raw evidence—the specific questions answered, the student's submitted responses, whether each answer was correct, and submission dates.
-2. **Blind Input:** The teacher labels each topic independently as:
+1. **Zero System Leaks:** The educator sees only the student's raw evidence—the specific questions answered, the student's submitted responses, whether each answer was correct, and submission dates. Zero algorithmic mastery percentages, gap badges, or automated diagnostics are transmitted before a label is saved.
+2. **Deterministic Balanced Topic Sampling (3 Topics per Student):** Rather than overwhelming teachers with entire subject syllabi, the system samples 3 topics at random per student from eligible topics (topics where the student has answered at least 3 distinct questions, excluding `INSUFFICIENT_DATA`). Topic selection is balanced across class-wide topic counts, persisted in `student_validation_assignments`, and seeded for audit reproducibility. If fewer than 3 eligible topics exist, all eligible topics are assigned.
+3. **Independent Human Judgment:** The teacher labels each assigned topic independently as:
    - `WEAK`: Student has a significant conceptual gap or recurring misconception.
    - `NOT_WEAK`: Student demonstrates adequate or strong understanding.
    - `CANNOT_JUDGE`: Insufficient question evidence to make a confident pedagogical determination.
-3. **Server-Side Snapshot:** When the teacher saves a label, the system quietly records a snapshot of its own mastery percentage and status at that exact moment, along with the student's submitted attempt count.
-4. **Stale Protection:** If the student completes more quizzes after being labeled, the label is stamped as **stale** because the student's knowledge state may have changed. Stale labels are excluded from primary validation metrics by default.
+4. **Server-Side Snapshot:** When the teacher saves a label, the system quietly records a snapshot of its own mastery percentage and status at that exact moment, along with the student's submitted attempt count.
+5. **Stale Protection:** If the student completes more quizzes after being labeled, the label is stamped as **stale** because the student's knowledge state may have changed. Stale labels are excluded from primary validation metrics by default.
 
 ---
 
@@ -30,26 +31,39 @@ To produce genuine ground-truth data:
 To execute a statistically sound validation study:
 
 ### Step 1: Accumulate Sufficient Student Submissions
-Ensure students in the classroom section have completed at least one baseline assessment (such as the Comprehensive Diagnostic Assessment or targeted topic quizzes).
+Ensure students in the classroom section have completed at least one baseline assessment (such as the Comprehensive Diagnostic Assessment or targeted topic quizzes). Topics become eligible for validation once a student has answered $\ge 3$ distinct questions.
 
 ### Step 2: Access the Validation Lab
 1. Sign in as a `TEACHER` and open your classroom period (`/teacher/classes/:classId`).
-2. Navigate to the **Validation Lab** tab or button (`/teacher/classes/:classId/validation`).
+2. Navigate to the **Validation Lab** (`/teacher/classes/:classId/validation`).
 3. Notice the sample size tracker indicating your progress toward the 30-student minimum.
 
 ### Step 3: Blind Labeling Workflow
-1. Select a student from the roster by clicking **"Label Topics"**.
-2. For each curriculum topic:
+1. Select a student from the roster by clicking **"Evaluate"** or **"Review Labels"**.
+2. For each assigned topic (up to 3):
    - Review the student's answered questions and choices.
    - Select `Weak`, `Not weak`, or `Can't judge`.
    - Optionally add an instructor note (up to 300 characters, plain text).
    - Click **"Save Label"**.
-3. Repeat this process across at least **30 distinct students** across your class sections before reviewing system reports.
+3. Repeat this process across your class roster. A student counts as labeled once **all of their assigned topics** are evaluated. Progress states track `UNLABELED`, `IN_PROGRESS`, and `COMPLETED`.
 
 ### Step 4: Inspect the Validation Report
 1. Open the **Validation Report** (`/teacher/classes/:classId/validation/report`).
-2. Review the target check (Met / Not Met / Not Enough Records), accuracy, precision, recall, Cohen's kappa, per-topic breakdown, and threshold sensitivity analysis.
-3. Export the pseudonymized CSV report for formal academic documentation.
+2. Review the honest result banner:
+   - **Preliminary Banner:** Displayed from the very first label until 30 students are fully labeled: *"Preliminary: X of 30 students labeled. Metrics are calculated from current data, but small samples are statistically unreliable."*
+   - **Small Class Complete (Eligible-Only Denominator):** Uses strictly the count of enrolled students who have at least one eligible topic as the denominator. Students with no eligible topic (<3 answered questions) are reported explicitly: *"Complete: N of N eligible students (M enrolled students not yet eligible). Too few students to certify against the 85% target."* (the parenthetical is omitted when M is 0).
+   - **No Eligible Students State:** If zero enrolled students are eligible, displays a clean empty state: *"No students are eligible yet: students need at least 3 answered questions in a topic"*, never Complete.
+   - **Target Met / Not Met:** Once $\ge 30$ students are evaluated, compares empirical agreement directly against 85%. Never awards a "validated" badge based on count alone.
+3. Review accuracy, precision, recall, F1, Cohen's kappa, per-topic breakdown, and threshold sensitivity analysis.
+4. Export the pseudonymized CSV report for formal academic documentation.
+
+---
+
+## 2.1 Administrative Rollup and Isolation
+
+- **Classroom Isolation:** Each class report uses strictly only labels originating from that specific classroom. Labels from different class periods are never pooled into a teacher's class report.
+- **Admin Institutional Rollup:** The institution-wide report (`/api/admin/validation/report`) is the only place classes are pooled. It clearly states *"Pooled across N classes"* and displays a **Per-Class Breakdown Table** (`class`, `students labeled / total`, `status`, `agreement %`, `target status`).
+- **Synthetic Separation:** Simulated benchmark labels (`source=SYNTHETIC`) are strictly segregated from real teacher evaluations and clearly flagged. Real figures never include simulated rows.
 
 ---
 

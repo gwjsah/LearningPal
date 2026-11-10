@@ -43,8 +43,13 @@ export default function TeacherValidationHub() {
     fetchValidationStudents();
   }, [classId]);
 
-  // Count students who have labeled at least 1 topic
-  const labeledStudentsCount = students.filter((s) => s.labeledTopicsCount > 0).length;
+  // Count fully labeled students (all assigned topics labeled) vs in-progress
+  const completedStudents = students.filter((s) => s.progressState === 'COMPLETED');
+  const inProgressStudents = students.filter((s) => s.progressState === 'IN_PROGRESS');
+  const unlabeledStudents = students.filter((s) => s.progressState === 'UNLABELED');
+  const notEligibleStudents = students.filter((s) => s.progressState === 'NOT_ELIGIBLE');
+
+  const labeledStudentsCount = completedStudents.length;
   const targetMinStudents = 30;
   const progressPercent = Math.min(100, Math.round((labeledStudentsCount / targetMinStudents) * 100));
 
@@ -131,6 +136,9 @@ export default function TeacherValidationHub() {
               <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk mt-0.5">
                 {labeledStudentsCount} of {targetMinStudents} minimum students evaluated ({progressPercent}%)
               </h3>
+              <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-1">
+                {inProgressStudents.length} student{inProgressStudents.length !== 1 ? 's' : ''} in progress · {unlabeledStudents.length} unlabeled · {notEligibleStudents.length} not yet eligible (&lt;3 questions)
+              </p>
             </div>
 
             <div className="text-right">
@@ -168,7 +176,7 @@ export default function TeacherValidationHub() {
           </div>
 
           <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
-            The project validation protocol requires blind labeling across at least 30 enrolled students to establish statistical validity.
+            The project validation protocol requires blind labeling across at least 30 enrolled students. A student counts as labeled once all of their assigned topics are judged.
           </p>
         </NotebookCard>
 
@@ -220,16 +228,17 @@ export default function TeacherValidationHub() {
                   <tr className="border-b border-ink/15 dark:border-chalkboard-border text-left font-mono font-bold uppercase text-[11px] text-ink-muted dark:text-chalkboard-muted">
                     <th className="py-2.5 px-3">Student</th>
                     <th className="py-2.5 px-3 text-center">Class Attempts</th>
-                    <th className="py-2.5 px-3 text-center">Topics Labeled</th>
+                    <th className="py-2.5 px-3 text-center">Assigned Topics</th>
                     <th className="py-2.5 px-3 text-center">Status</th>
                     <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle font-sans">
                   {filteredStudents.map((s) => {
-                    const isComplete =
-                      s.totalTopicsCount > 0 && s.labeledTopicsCount === s.totalTopicsCount;
-                    const isStarted = s.labeledTopicsCount > 0;
+                    const assignedTotal = s.assignedTopicsCount != null ? s.assignedTopicsCount : s.totalTopicsCount;
+                    const isCompleted = s.progressState === 'COMPLETED' || (assignedTotal > 0 && s.labeledTopicsCount >= assignedTotal);
+                    const isInProgress = s.progressState === 'IN_PROGRESS' || (s.labeledTopicsCount > 0 && !isCompleted);
+                    const isNotEligible = s.progressState === 'NOT_ELIGIBLE';
 
                     return (
                       <tr
@@ -238,7 +247,7 @@ export default function TeacherValidationHub() {
                       >
                         <td className="py-3 px-3">
                           <div className="font-bold text-ink dark:text-chalkboard-chalk">
-                            {s.studentName}
+                            {s.studentName || s.fullName}
                           </div>
                           <div className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
                             {s.email}
@@ -246,16 +255,16 @@ export default function TeacherValidationHub() {
                         </td>
 
                         <td className="py-3 px-3 text-center font-mono font-bold text-ink dark:text-chalkboard-chalk">
-                          {s.submittedAttemptsCount}
+                          {s.submittedAttemptsCount ?? '—'}
                         </td>
 
                         <td className="py-3 px-3 text-center font-mono">
                           <span className="font-bold text-ink dark:text-chalkboard-chalk">
-                            {s.labeledTopicsCount}
+                            {s.labeledTopicsCount || 0}
                           </span>
                           <span className="text-ink-muted dark:text-chalkboard-muted">
                             {' '}
-                            / {s.totalTopicsCount}
+                            / {assignedTotal}
                           </span>
                         </td>
 
@@ -269,17 +278,21 @@ export default function TeacherValidationHub() {
                                 Stale
                               </span>
                             )}
-                            {isComplete ? (
+                            {isCompleted ? (
                               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                Complete
+                                Completed ({s.labeledTopicsCount}/{assignedTotal})
                               </span>
-                            ) : isStarted ? (
+                            ) : isInProgress ? (
                               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300">
-                                In Progress
+                                In Progress ({s.labeledTopicsCount}/{assignedTotal})
+                              </span>
+                            ) : isNotEligible ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15" title="Student has answered fewer than 3 questions per topic">
+                                Not Eligible (&lt;3 questions)
                               </span>
                             ) : (
                               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15">
-                                Unlabeled
+                                Unlabeled (0/{assignedTotal})
                               </span>
                             )}
                           </div>
@@ -288,11 +301,11 @@ export default function TeacherValidationHub() {
                         <td className="py-3 px-3 text-right">
                           <Button
                             to={`/teacher/classes/${classId}/validation/students/${s.studentId}`}
-                            variant={isComplete ? 'secondary' : 'mint'}
+                            variant={isCompleted ? 'secondary' : isNotEligible ? 'secondary' : 'mint'}
                             size="sm"
                             className="text-xs"
                           >
-                            <span>{isComplete ? 'Review Labels' : 'Evaluate'}</span>
+                            <span>{isCompleted ? 'Review Labels' : isNotEligible ? 'View Details' : 'Evaluate'}</span>
                             <ChevronRight className="w-3.5 h-3.5 ml-1" />
                           </Button>
                         </td>

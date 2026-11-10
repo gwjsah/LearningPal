@@ -90,6 +90,9 @@ public class ValidationLabTests {
     private StudentTopicMasteryRepository studentTopicMasteryRepository;
 
     @Autowired
+    private StudentValidationAssignmentRepository studentValidationAssignmentRepository;
+
+    @Autowired
     private InterventionRepository interventionRepository;
 
     private Institution instA;
@@ -105,6 +108,7 @@ public class ValidationLabTests {
     @BeforeEach
     void setUp() {
         gapValidationLabelRepository.deleteAll();
+        studentValidationAssignmentRepository.deleteAll();
         studentTopicMasteryRepository.deleteAll();
         interventionRepository.deleteAll();
         answerRepository.deleteAll();
@@ -557,6 +561,362 @@ public class ValidationLabTests {
         assertThat(syntheticReport.isSimulated()).isTrue();
         assertThat(syntheticReport.sampleSize().usableStudentTopicPairs()).isEqualTo(1);
         assertThat(syntheticReport.confusionMatrix().tn()).isEqualTo(1);
+    }
+
+    // =========================================================================
+    // 9. TOPIC SAMPLING AND ELIGIBILITY TEST
+    // =========================================================================
+    @Test
+    @DisplayName("Topic sampling: assigns up to 3 eligible topics, excludes INSUFFICIENT_DATA, persists deterministically")
+    void testTopicSamplingAndEligibility() {
+        Subject s2 = subjectRepository.save(new Subject("Advanced C", "CS201", "Advanced C"));
+        Topic t1 = topicRepository.save(new Topic(s2, "Pointers", "Pointers", 1));
+        Topic t2 = topicRepository.save(new Topic(s2, "Memory", "Memory", 2));
+        Topic t3 = topicRepository.save(new Topic(s2, "Structs", "Structs", 3));
+        Topic t4 = topicRepository.save(new Topic(s2, "Files", "Files", 4));
+        Topic t5 = topicRepository.save(new Topic(s2, "Macros", "Macros", 5));
+        Topic t6 = topicRepository.save(new Topic(s2, "Bitwise", "Bitwise", 6));
+
+        ClassEntity cls2 = classEntityRepository.save(new ClassEntity(instA, s2, teacherA, "CS201-A", "VAL02"));
+        enrollmentRepository.save(new Enrollment(studentA1, cls2));
+
+        // Mark t1..t4 as eligible (STRENGTH/GAP/DEVELOPING)
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls2, t1, 80.0, MasteryStatus.STRENGTH));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls2, t2, 40.0, MasteryStatus.GAP));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls2, t3, 65.0, MasteryStatus.DEVELOPING));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls2, t4, 70.0, MasteryStatus.DEVELOPING));
+        // Mark t5, t6 as INSUFFICIENT_DATA (not eligible)
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls2, t5, 0.0, MasteryStatus.INSUFFICIENT_DATA));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls2, t6, 0.0, MasteryStatus.INSUFFICIENT_DATA));
+
+        // First call to get detail -> performs assignment
+        ValidationStudentDetailDto detail1 = validationService.getValidationStudentDetail(cls2.getId(), studentA1.getId(), teacherA.getEmail());
+        assertThat(detail1.topics()).hasSize(3);
+
+        Set<Long> assignedIds1 = new HashSet<>();
+        for (ValidationTopicEvidenceDto tc : detail1.topics()) {
+            assignedIds1.add(tc.topicId());
+            assertThat(tc.topicId()).isNotEqualTo(t5.getId());
+            assertThat(tc.topicId()).isNotEqualTo(t6.getId());
+        }
+
+        // Check persisted rows in DB
+        List<StudentValidationAssignment> rows = studentValidationAssignmentRepository.findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(
+                studentA1.getId(), cls2.getId()
+        );
+        assertThat(rows).hasSize(3);
+        assertThat(rows.get(0).getSeed()).isNotBlank();
+        assertThat(rows.get(0).getAssignedOrder()).isEqualTo(1);
+        assertThat(rows.get(1).getAssignedOrder()).isEqualTo(2);
+        assertThat(rows.get(2).getAssignedOrder()).isEqualTo(3);
+
+        // Second call -> must return identical assigned topics (no re-rolling)
+        ValidationStudentDetailDto detail2 = validationService.getValidationStudentDetail(cls2.getId(), studentA1.getId(), teacherA.getEmail());
+        Set<Long> assignedIds2 = new HashSet<>();
+        for (ValidationTopicEvidenceDto tc : detail2.topics()) {
+            assignedIds2.add(tc.topicId());
+        }
+        assertThat(assignedIds2).isEqualTo(assignedIds1);
+    }
+
+    // =========================================================================
+    // 10. GATE UNIT AND PROGRESS STATES TEST
+    // =========================================================================
+    @Test
+    @DisplayName("Gate unit: 30 students gate counts only students whose assigned topics are fully labeled")
+    void testGateUnitAndProgressStates() {
+        Subject s = subjectRepository.save(new Subject("Algorithms", "CS301", "Algos"));
+        Topic t1 = topicRepository.save(new Topic(s, "Sorting", "Sort", 1));
+        Topic t2 = topicRepository.save(new Topic(s, "Searching", "Search", 2));
+        ClassEntity cls = classEntityRepository.save(new ClassEntity(instA, s, teacherA, "Algos A", "ALG01"));
+
+        enrollmentRepository.save(new Enrollment(studentA1, cls));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls, t1, 80.0, MasteryStatus.STRENGTH));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls, t2, 40.0, MasteryStatus.GAP));
+
+        // Pre-label state: UNLABELED, 2 assigned topics
+        List<ValidationStudentSummaryDto> list0 = validationService.getValidationStudents(cls.getId(), teacherA.getEmail());
+        assertThat(list0).hasSize(1);
+        assertThat(list0.get(0).progressState()).isEqualTo("UNLABELED");
+        assertThat(list0.get(0).assignedTopicsCount()).isEqualTo(2);
+        assertThat(list0.get(0).labeledTopicsCount()).isEqualTo(0);
+
+        // Partially label (1 of 2): IN_PROGRESS
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                studentA1, t1, ValidationLabel.WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls, "Label 1", 0, MasteryStatus.STRENGTH, 80.0
+        ));
+
+        List<ValidationStudentSummaryDto> list1 = validationService.getValidationStudents(cls.getId(), teacherA.getEmail());
+        assertThat(list1.get(0).progressState()).isEqualTo("IN_PROGRESS");
+        assertThat(list1.get(0).labeledTopicsCount()).isEqualTo(1);
+
+        // At this point, report target check studentsEvaluated must be 0 (partially labeled student does not count)
+        ValidationReportDto rep1 = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(rep1.targetCheck().studentsEvaluated()).isEqualTo(0);
+
+        // Fully label (2 of 2): COMPLETED
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                studentA1, t2, ValidationLabel.NOT_WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls, "Label 2", 0, MasteryStatus.GAP, 40.0
+        ));
+
+        List<ValidationStudentSummaryDto> list2 = validationService.getValidationStudents(cls.getId(), teacherA.getEmail());
+        assertThat(list2.get(0).progressState()).isEqualTo("COMPLETED");
+        assertThat(list2.get(0).labeledTopicsCount()).isEqualTo(2);
+
+        // Target check studentsEvaluated is now 1
+        ValidationReportDto rep2 = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(rep2.targetCheck().studentsEvaluated()).isEqualTo(1);
+    }
+
+    // =========================================================================
+    // 11. SMALL CLASS COMPLETE HONEST BANNER TEST
+    // =========================================================================
+    @Test
+    @DisplayName("Small class honest banner: complete with < 30 students shows SMALL_CLASS_COMPLETE banner")
+    void testSmallClassHonestBanner() {
+        Subject s = subjectRepository.save(new Subject("Math", "M101", "Math"));
+        Topic t1 = topicRepository.save(new Topic(s, "Algebra", "Alg", 1));
+        ClassEntity cls = classEntityRepository.save(new ClassEntity(instA, s, teacherA, "Small Class", "SML01"));
+
+        enrollmentRepository.save(new Enrollment(studentA1, cls));
+        enrollmentRepository.save(new Enrollment(studentA2, cls));
+
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls, t1, 80.0, MasteryStatus.STRENGTH));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA2, cls, t1, 40.0, MasteryStatus.GAP));
+
+        // Fully label studentA1 only (1 of 2 complete) -> banner is PRELIMINARY
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                studentA1, t1, ValidationLabel.WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls, "A1", 0, MasteryStatus.STRENGTH, 80.0
+        ));
+
+        ValidationReportDto repPreliminary = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(repPreliminary.targetCheck().bannerType()).isEqualTo("PRELIMINARY");
+        assertThat(repPreliminary.targetCheck().sentence()).contains("Preliminary: 1 of 30 students labeled");
+
+        // Now fully label studentA2 too (2 of 2 complete, all enrolled labeled!) -> SMALL_CLASS_COMPLETE
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                studentA2, t1, ValidationLabel.WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls, "A2", 0, MasteryStatus.GAP, 40.0
+        ));
+
+        ValidationReportDto repComplete = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(repComplete.targetCheck().bannerType()).isEqualTo("SMALL_CLASS_COMPLETE");
+        assertThat(repComplete.targetCheck().status()).isEqualTo("NOT_ENOUGH_RECORDS");
+        assertThat(repComplete.targetCheck().sentence()).contains("Complete: 2 of 2 eligible students");
+        assertThat(repComplete.targetCheck().sentence()).contains("Too few students to certify against the 85% target");
+    }
+
+    // =========================================================================
+    // 12. NO CROSS-CLASS POOLING TEST
+    // =========================================================================
+    @Test
+    @DisplayName("No cross-class pooling: class reports do not pool labels across classes")
+    void testNoCrossClassPooling() {
+        Subject s = subjectRepository.save(new Subject("Databases", "DB101", "Databases"));
+        Topic t1 = topicRepository.save(new Topic(s, "SQL", "SQL", 1));
+
+        ClassEntity cls1 = classEntityRepository.save(new ClassEntity(instA, s, teacherA, "DB Sec 1", "DBS01"));
+        ClassEntity cls2 = classEntityRepository.save(new ClassEntity(instA, s, teacherA, "DB Sec 2", "DBS02"));
+
+        enrollmentRepository.save(new Enrollment(studentA1, cls1));
+        enrollmentRepository.save(new Enrollment(studentA2, cls2));
+
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA1, cls1, t1, 80.0, MasteryStatus.STRENGTH));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(studentA2, cls2, t1, 40.0, MasteryStatus.GAP));
+
+        // Save 1 label for cls1
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                studentA1, t1, ValidationLabel.WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls1, "Sec 1", 0, MasteryStatus.STRENGTH, 80.0
+        ));
+
+        // Save 1 label for cls2
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                studentA2, t1, ValidationLabel.WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls2, "Sec 2", 0, MasteryStatus.GAP, 40.0
+        ));
+
+        ValidationReportDto rep1 = validationService.getClassValidationReport(cls1.getId(), "TEACHER", false, teacherA.getEmail());
+        ValidationReportDto rep2 = validationService.getClassValidationReport(cls2.getId(), "TEACHER", false, teacherA.getEmail());
+
+        assertThat(rep1.sampleSize().usableStudentTopicPairs()).isEqualTo(1);
+        assertThat(rep2.sampleSize().usableStudentTopicPairs()).isEqualTo(1);
+    }
+
+    // =========================================================================
+    // 13. ADMIN ROLLUP AND BREAKDOWN TEST
+    // =========================================================================
+    @Test
+    @DisplayName("Admin rollup: aggregates institution classes, provides per-class breakdown, rejects SUPER_ADMIN")
+    void testAdminRollupAndBreakdown() throws Exception {
+        User admin = userRepository.save(new User(
+                "Admin User", "admin.val@insta.com", passwordEncoder.encode("Pass123!"),
+                Role.ADMIN, UserStatus.ACTIVE, instA
+        ));
+        String adminToken = "Bearer " + jwtService.generateToken(admin);
+
+        User superAdmin = userRepository.save(new User(
+                "Super User", "superadmin.val@insta.com", passwordEncoder.encode("Pass123!"),
+                Role.SUPER_ADMIN, UserStatus.ACTIVE, null
+        ));
+        String superAdminToken = "Bearer " + jwtService.generateToken(superAdmin);
+
+        // 1. Admin gets institution rollup
+        mockMvc.perform(get("/api/admin/validation/report")
+                        .header("Authorization", adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pooledClassesCount").isNumber())
+                .andExpect(jsonPath("$.classBreakdowns").isArray());
+
+        // 2. Super admin is rejected with 403 (role barrier)
+        mockMvc.perform(get("/api/admin/validation/report")
+                        .header("Authorization", superAdminToken))
+                .andExpect(status().isForbidden());
+    }
+
+    // =========================================================================
+    // 15. TOP-UP BEFORE FIRST LABEL TEST (FIX 1)
+    // =========================================================================
+    @Test
+    @DisplayName("Fix 1: Top-up before first label - assignment expands until first label is saved, then freezes")
+    void testTopUpBeforeFirstLabel() {
+        Subject sub = subjectRepository.save(new Subject("World History", "HIST101", "World History"));
+        Topic t1 = topicRepository.save(new Topic(sub, "Ancient Egypt", "Egypt", 1));
+        Topic t2 = topicRepository.save(new Topic(sub, "Roman Empire", "Rome", 2));
+        Topic t3 = topicRepository.save(new Topic(sub, "Classical Greece", "Greece", 3));
+        Topic t4 = topicRepository.save(new Topic(sub, "Dynastic China", "China", 4));
+
+        ClassEntity cls = classEntityRepository.save(new ClassEntity(instA, sub, teacherA, "History Class", "HIST01"));
+        User student = userRepository.save(new User(
+                "History Student", "history.student@test.com", passwordEncoder.encode("pw"),
+                Role.STUDENT, UserStatus.ACTIVE, instA
+        ));
+        enrollmentRepository.save(new Enrollment(student, cls));
+
+        // 1. Initially, only t1 is eligible
+        studentTopicMasteryRepository.save(new StudentTopicMastery(student, cls, t1, 80.0, MasteryStatus.STRENGTH));
+
+        List<Topic> firstAssigned = validationService.getOrAssignTopicsForStudent(cls, student);
+        assertThat(firstAssigned).hasSize(1);
+        assertThat(firstAssigned.get(0).getId()).isEqualTo(t1.getId());
+
+        List<StudentValidationAssignment> rows1 = studentValidationAssignmentRepository
+                .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(student.getId(), cls.getId());
+        assertThat(rows1).hasSize(1);
+        assertThat(rows1.get(0).getAssignedOrder()).isEqualTo(1);
+        String initialSeed = rows1.get(0).getSeed();
+
+        // 2. More topics become eligible before any label is saved
+        studentTopicMasteryRepository.save(new StudentTopicMastery(student, cls, t2, 75.0, MasteryStatus.STRENGTH));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(student, cls, t3, 60.0, MasteryStatus.DEVELOPING));
+
+        List<Topic> secondAssigned = validationService.getOrAssignTopicsForStudent(cls, student);
+        assertThat(secondAssigned).hasSize(3);
+        // Existing assignment t1 must NOT be removed or reordered
+        assertThat(secondAssigned.get(0).getId()).isEqualTo(t1.getId());
+
+        List<StudentValidationAssignment> rows2 = studentValidationAssignmentRepository
+                .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(student.getId(), cls.getId());
+        assertThat(rows2).hasSize(3);
+        assertThat(rows2.get(0).getTopic().getId()).isEqualTo(t1.getId());
+        assertThat(rows2.get(0).getAssignedOrder()).isEqualTo(1);
+        assertThat(rows2.get(0).getSeed()).isEqualTo(initialSeed);
+        assertThat(rows2.get(1).getAssignedOrder()).isEqualTo(2);
+        assertThat(rows2.get(2).getAssignedOrder()).isEqualTo(3);
+
+        // 3. Repeated call without changes returns identical results
+        List<Topic> repeatedAssigned = validationService.getOrAssignTopicsForStudent(cls, student);
+        assertThat(repeatedAssigned).hasSize(3);
+        assertThat(repeatedAssigned.stream().map(Topic::getId).toList())
+                .isEqualTo(secondAssigned.stream().map(Topic::getId).toList());
+        assertThat(studentValidationAssignmentRepository
+                .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(student.getId(), cls.getId()))
+                .hasSize(3);
+
+        // 4. Save one label for t1; make t4 also eligible; verify assignments are frozen
+        gapValidationLabelRepository.save(new GapValidationLabel(
+                student, t1, ValidationLabel.NOT_WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                cls, "Good", 0, MasteryStatus.STRENGTH, 80.0
+        ));
+        studentTopicMasteryRepository.save(new StudentTopicMastery(student, cls, t4, 85.0, MasteryStatus.STRENGTH));
+
+        List<Topic> frozenAssigned = validationService.getOrAssignTopicsForStudent(cls, student);
+        assertThat(frozenAssigned).hasSize(3);
+        assertThat(frozenAssigned.stream().map(Topic::getId).toList())
+                .isEqualTo(secondAssigned.stream().map(Topic::getId).toList());
+        assertThat(studentValidationAssignmentRepository
+                .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(student.getId(), cls.getId()))
+                .hasSize(3);
+    }
+
+    // =========================================================================
+    // 16. ELIGIBLE-ONLY DENOMINATOR AND HONEST BANNER TEST (FIX 2)
+    // =========================================================================
+    @Test
+    @DisplayName("Fix 2: Eligible-only denominator and honest banner - excluded enrolled students reported accurately")
+    void testEligibleOnlyDenominatorAndHonestBanner() {
+        Subject sci = subjectRepository.save(new Subject("Natural Science", "SCI101", "Natural Science"));
+        Topic top1 = topicRepository.save(new Topic(sci, "Mechanics", "Mech", 1));
+        Topic top2 = topicRepository.save(new Topic(sci, "Thermodynamics", "Thermo", 2));
+
+        ClassEntity cls = classEntityRepository.save(new ClassEntity(instA, sci, teacherA, "Science Class", "SCI01"));
+
+        // Create 20 enrolled students
+        List<User> students = new ArrayList<>();
+        for (int i = 1; i <= 20; i++) {
+            User s = userRepository.save(new User(
+                    "Sci Student " + i, "sci.student" + i + "@test.com", passwordEncoder.encode("pw"),
+                    Role.STUDENT, UserStatus.ACTIVE, instA
+            ));
+            enrollmentRepository.save(new Enrollment(s, cls));
+            students.add(s);
+        }
+
+        // Initially zero students are eligible -> empty state banner
+        ValidationReportDto zeroRep = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(zeroRep.targetCheck().bannerType()).isEqualTo("NO_ELIGIBLE_STUDENTS");
+        assertThat(zeroRep.targetCheck().sentence()).contains("No students are eligible yet: students need at least 3 answered questions in a topic");
+        assertThat(zeroRep.notYetEligible()).isEqualTo(20);
+        assertThat(zeroRep.eligibleStudents()).isEqualTo(0);
+
+        // Make first 4 students eligible and fully label them
+        for (int i = 0; i < 4; i++) {
+            User s = students.get(i);
+            studentTopicMasteryRepository.save(new StudentTopicMastery(s, cls, top1, 85.0, MasteryStatus.STRENGTH));
+            studentTopicMasteryRepository.save(new StudentTopicMastery(s, cls, top2, 45.0, MasteryStatus.GAP));
+            validationService.getOrAssignTopicsForStudent(cls, s);
+
+            gapValidationLabelRepository.save(new GapValidationLabel(
+                    s, top1, ValidationLabel.NOT_WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                    cls, "Strong", 0, MasteryStatus.STRENGTH, 85.0
+            ));
+            gapValidationLabelRepository.save(new GapValidationLabel(
+                    s, top2, ValidationLabel.WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                    cls, "Weak", 0, MasteryStatus.GAP, 45.0
+            ));
+        }
+
+        // 4 of 4 eligible students labeled, 16 not yet eligible -> SMALL_CLASS_COMPLETE with parenthetical
+        ValidationReportDto smallCompleteRep = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(smallCompleteRep.targetCheck().bannerType()).isEqualTo("SMALL_CLASS_COMPLETE");
+        assertThat(smallCompleteRep.targetCheck().sentence())
+                .isEqualTo("Complete: 4 of 4 eligible students (16 enrolled students not yet eligible). Too few students to certify against the 85% target.");
+        assertThat(smallCompleteRep.notYetEligible()).isEqualTo(16);
+        assertThat(smallCompleteRep.eligibleStudents()).isEqualTo(4);
+
+        // Adding an eligible unlabeled student (student index 4) returns the class to Preliminary
+        User s5 = students.get(4);
+        studentTopicMasteryRepository.save(new StudentTopicMastery(s5, cls, top1, 75.0, MasteryStatus.STRENGTH));
+        validationService.getOrAssignTopicsForStudent(cls, s5);
+
+        ValidationReportDto prelimRep = validationService.getClassValidationReport(cls.getId(), "TEACHER", false, teacherA.getEmail());
+        assertThat(prelimRep.targetCheck().bannerType()).isEqualTo("PRELIMINARY");
+        assertThat(prelimRep.targetCheck().sentence()).contains("Preliminary: 4 of 30 students labeled");
+        assertThat(prelimRep.eligibleStudents()).isEqualTo(5);
+        assertThat(prelimRep.notYetEligible()).isEqualTo(15);
     }
 
     // =========================================================================
