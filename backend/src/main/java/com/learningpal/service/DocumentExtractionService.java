@@ -170,6 +170,17 @@ public class DocumentExtractionService {
                     if (totalUncompressedBytes > MAX_UNCOMPRESSED_BYTES) {
                         throw new BadRequestException("Document uncompressed size exceeds security threshold.");
                     }
+                } else {
+                    // entry.getSize() == -1 or 0 (streamed or absent zip header entry size)
+                    // Count bytes directly from stream to guard against zip bombs
+                    byte[] buf = new byte[8192];
+                    int read;
+                    while ((read = zis.read(buf)) != -1) {
+                        totalUncompressedBytes += read;
+                        if (totalUncompressedBytes > MAX_UNCOMPRESSED_BYTES) {
+                            throw new BadRequestException("Document uncompressed size exceeds security threshold.");
+                        }
+                    }
                 }
                 zis.closeEntry();
             }

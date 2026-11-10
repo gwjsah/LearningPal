@@ -347,8 +347,21 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         try {
             String dbProduct = jdbcTemplate.execute((java.sql.Connection conn) -> conn.getMetaData().getDatabaseProductName());
             if (!"H2".equalsIgnoreCase(dbProduct)) {
-                // Ensure questions.origin supports AI_DRAFT
-                executeSilently("ALTER TABLE questions MODIFY COLUMN origin ENUM('MANUAL', 'AI_DRAFT') NOT NULL DEFAULT 'MANUAL'");
+                // Ensure questions.origin supports MANUAL, AI, and AI_DRAFT if defined as an ENUM
+                try {
+                    String originDataType = jdbcTemplate.queryForObject(
+                            "SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'questions' AND COLUMN_NAME = 'origin'",
+                            String.class
+                    );
+                    if ("enum".equalsIgnoreCase(originDataType)) {
+                        executeSilently("ALTER TABLE questions MODIFY COLUMN origin ENUM('MANUAL', 'AI', 'AI_DRAFT') NOT NULL DEFAULT 'MANUAL'");
+                        log.info("Migration: Updated questions.origin ENUM to include 'MANUAL', 'AI', 'AI_DRAFT'");
+                    }
+                } catch (Exception ex) {
+                    // Fallback modify attempt if INFORMATION_SCHEMA cannot be inspected directly
+                    executeSilently("ALTER TABLE questions MODIFY COLUMN origin ENUM('MANUAL', 'AI', 'AI_DRAFT') NOT NULL DEFAULT 'MANUAL'");
+                }
+
                 // Ensure questions has origin_file_id
                 executeSilently("ALTER TABLE questions ADD COLUMN origin_file_id BIGINT NULL");
                 // Ensure resources.type supports FILE

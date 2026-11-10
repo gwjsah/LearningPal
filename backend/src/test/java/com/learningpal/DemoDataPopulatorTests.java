@@ -90,6 +90,9 @@ public class DemoDataPopulatorTests {
     private ResourceRepository resourceRepository;
 
     @Autowired
+    private com.learningpal.config.DatabaseMigrationRunner databaseMigrationRunner;
+
+    @Autowired
     private ResourceProgressRepository resourceProgressRepository;
 
     @Autowired
@@ -365,5 +368,26 @@ public class DemoDataPopulatorTests {
         if (realAdminCountBefore > 0) {
             assertTrue(userRepository.findByEmail("admin@learningpal.edu").isPresent(), "Real seed admin must survive demo reset!");
         }
+    }
+
+    @Test
+    @DisplayName("FINDING-004: DatabaseMigrationRunner idempotently verifies questions.origin and accepts AI/MANUAL")
+    void testQuestionOriginMigrationAndStorage() throws Exception {
+        databaseMigrationRunner.run(null);
+
+        Topic topic = topicRepository.findAll().stream().findFirst().orElseThrow();
+        Question aiQuestion = new Question(topic, QuestionType.MCQ, "What is an AI generated question?", "Explanation", DifficultyLevel.EASY, 1.0, null);
+        aiQuestion.setOrigin(QuestionOrigin.AI);
+        Question savedAi = questionRepository.save(aiQuestion);
+
+        Question reloadedAi = questionRepository.findById(savedAi.getId()).orElseThrow();
+        assertEquals(QuestionOrigin.AI, reloadedAi.getOrigin());
+
+        Question manualQuestion = new Question(topic, QuestionType.MCQ, "What is a manual question?", "Explanation", DifficultyLevel.EASY, 1.0, null);
+        manualQuestion.setOrigin(QuestionOrigin.MANUAL);
+        Question savedManual = questionRepository.save(manualQuestion);
+
+        Question reloadedManual = questionRepository.findById(savedManual.getId()).orElseThrow();
+        assertEquals(QuestionOrigin.MANUAL, reloadedManual.getOrigin());
     }
 }
