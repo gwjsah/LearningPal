@@ -429,3 +429,18 @@ export function SessionVerificationBar({
   );
 }
 
+// Re-export table and tab primitives for notebook UI
+export {
+  NotebookTabs,
+  NotebookTabPanel,
+  SearchInput,
+  PaginationControls,
+  NotebookTable,
+  NotebookTableHead,
+  NotebookTableRow,
+  NotebookTableHeaderCell,
+  NotebookTableCell,
+  EmptyState,
+} from './NotebookTablePrimitives';
+
+
