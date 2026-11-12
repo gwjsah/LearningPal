@@ -1,0 +1,25 @@
+package com.csit321g2.codebuds.learningpal.dto;
+
+/**
+ * Standard error response envelope required by LearningPal API specifications: { "message": "..." }
+ */
+public class ErrorResponse {
+
+    private String message;
+
+    public ErrorResponse() {
+    }
+
+    public ErrorResponse(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+}
+

@@ -1,0 +1,528 @@
+{
+  "info": {
+    "_postman_id": "learningpal-inc1-postman-collection",
+    "name": "LearningPal - Increment 1 CRUD API",
+    "description": "Collection for testing LearningPal Increment 1 Core Entities CRUD (com.csit321g2.codebuds.learningpal)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved to variable: ' + jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@learningpal.edu\",\n  \"password\": \"AdminPass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Signup Student",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Doe\",\n  \"email\": \"student.jane@learningpal.edu\",\n  \"password\": \"Password123!\",\n  \"role\": \"STUDENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signup"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users CRUD",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Updated Admin Name\",\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "2"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Topics CRUD",
+      "item": [
+        {
+          "name": "Get All Topics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topics"]
+            }
+          }
+        },
+        {
+          "name": "Create Topic",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Object-Oriented Programming\",\n  \"description\": \"Core OOP principles including Inheritance, Polymorphism, and Encapsulation\",\n  \"displayOrder\": 1,\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topics"]
+            }
+          }
+        },
+        {
+          "name": "Get Topic By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/topics/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topics", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Topic",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Advanced OOP & Design Patterns\",\n  \"description\": \"Updated description of OOP topic\",\n  \"displayOrder\": 2,\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/topics/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topics", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Topic",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/topics/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "topics", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Questions CRUD",
+      "item": [
+        {
+          "name": "Get All Questions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "questions"]
+            }
+          }
+        },
+        {
+          "name": "Create Question",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": 1,\n  \"type\": \"MULTIPLE_CHOICE\",\n  \"text\": \"What does Polymorphism allow in Java?\",\n  \"explanation\": \"Polymorphism allows methods to perform different tasks based on the object calling them.\",\n  \"difficulty\": \"EASY\",\n  \"points\": 2.0,\n  \"choices\": [\n    {\n      \"text\": \"It allows one interface to take multiple forms\",\n      \"isCorrect\": true,\n      \"displayOrder\": 1\n    },\n    {\n      \"text\": \"It ensures variables cannot change\",\n      \"isCorrect\": false,\n      \"displayOrder\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "questions"]
+            }
+          }
+        },
+        {
+          "name": "Get Question By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/questions/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "questions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Updated question prompt on Polymorphism?\",\n  \"explanation\": \"Updated explanation text.\",\n  \"points\": 3.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/questions/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "questions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/questions/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "questions", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Assessments CRUD",
+      "item": [
+        {
+          "name": "Get All Assessments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments"]
+            }
+          }
+        },
+        {
+          "name": "Create Assessment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"CSIT321 Midterm Quiz\",\n  \"description\": \"Comprehensive diagnostic assessment for OOP\",\n  \"status\": \"PUBLISHED\",\n  \"timeLimitMinutes\": 45,\n  \"questionIds\": [1]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments"]
+            }
+          }
+        },
+        {
+          "name": "Get Assessment By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Assessment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"CSIT321 Midterm Quiz (Revised)\",\n  \"timeLimitMinutes\": 60\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Assessment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/assessments/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessments", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Attempts CRUD",
+      "item": [
+        {
+          "name": "Get All Attempts",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/attempts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attempts"]
+            }
+          }
+        },
+        {
+          "name": "Create Attempt",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": 1,\n  \"assessmentId\": 1,\n  \"status\": \"IN_PROGRESS\",\n  \"maxScore\": 10.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/attempts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attempts"]
+            }
+          }
+        },
+        {
+          "name": "Get Attempt By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/attempts/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attempts", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Attempt (Submit/Score)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"GRADED\",\n  \"totalScore\": 9.5,\n  \"maxScore\": 10.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/attempts/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attempts", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Attempt",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/attempts/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attempts", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

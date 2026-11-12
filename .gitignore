@@ -21,8 +21,13 @@ graphify-out/
 !.env.example
 
 # Spring Boot Configuration & Secrets
-application.properties
+# (Increment 1 includes default local dev configuration)
+!backend/src/main/resources/application.properties
 !application.properties.example
+
+# Postman workspace cache
+.postman/
+postman/
 
 # Editor directories and files
 .vscode/*

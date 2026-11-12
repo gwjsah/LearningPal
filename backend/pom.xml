@@ -9,10 +9,10 @@
         <version>3.3.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.learningpal</groupId>
-    <artifactId>backend</artifactId>
+    <groupId>com.csit321g2.codebuds</groupId>
+    <artifactId>learningpal</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>backend</name>
+    <name>learningpal</name>
     <description>LearningPal Backend Service</description>
 
     <properties>
