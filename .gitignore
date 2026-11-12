@@ -49,6 +49,7 @@ FEATURE_GUIDE.md
 
 # Database dumps & local database files
 *.sql
+!database_backup.sql
 *.mv.db
 data/
 
