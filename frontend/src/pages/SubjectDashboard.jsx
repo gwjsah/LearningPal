@@ -409,24 +409,11 @@ export default function SubjectDashboard() {
                 </div>
               ) : (
                 /* STATE 2 HERO: Next Step / Highest Priority Remediation */
-                <div className="relative pt-3">
-                  <div className="absolute -top-1 left-8 z-10">
-                    <WashiTape
-                      colorClass={
-                        inProgressQuiz
-                          ? 'bg-highlighter-yellow/90 dark:bg-yellow-500/50'
-                          : priorityGaps.length > 0
-                          ? 'bg-highlighter-pink/80 dark:bg-rose-500/40'
-                          : 'bg-highlighter-mint/90 dark:bg-emerald-500/50'
-                      }
-                      rotate="-rotate-1"
-                    />
-                  </div>
-                  <NotebookCard
-                    pattern="grid"
-                    borderStyle="sketch"
-                    className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4 shadow-notebook-sm"
-                  >
+                <NotebookCard
+                  pattern="grid"
+                  borderStyle="sketch"
+                  className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4 shadow-notebook-sm"
+                >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono font-bold uppercase border border-ink/30 shadow-xs ${
@@ -546,7 +533,6 @@ export default function SubjectDashboard() {
                       </div>
                     )}
                   </NotebookCard>
-                </div>
               )}
 
               {/* ---------------------------------------------------------------------

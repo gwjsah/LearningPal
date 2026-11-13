@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   GraduationCap,
-  Sparkles,
   ArrowRight,
   Plus,
   RefreshCw,
@@ -170,7 +169,7 @@ export default function StudentSubjectsHome() {
           className="self-start sm:self-center shrink-0 font-bold"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>+ Join a Class</span>
+          <span>Join a Class</span>
         </Button>
       }
     >
@@ -244,42 +243,60 @@ export default function StudentSubjectsHome() {
 
         {/* Dismissible 2-Minute Usability Survey Banner */}
         {!surveyDismissed && (
-          <div className="p-4 sm:p-5 rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="p-2.5 rounded-xl bg-highlighter-yellow/30 border border-ink/20 dark:border-chalkboard-borderSubtle text-redpen dark:text-highlighter-yellow shrink-0">
-                <Sparkles className="w-5 h-5" aria-hidden="true" />
+          <div className="relative rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card shadow-notebook-sm overflow-hidden transition-all">
+            {/* Top Index Card Tab / Accent Strip */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-paper-warm dark:bg-chalkboard-surface border-b border-ink/15 dark:border-chalkboard-borderSubtle">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-redpen shrink-0" aria-hidden="true" />
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
+                  Student Feedback Memo
+                </span>
+                <span className="text-ink/30 dark:text-chalkboard-border">•</span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                  <Clock className="w-3 h-3 text-redpen shrink-0" aria-hidden="true" />
+                  <span>2 mins</span>
+                </span>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-highlighter-yellow text-ink border border-ink/20">
-                    Usability Study
-                  </span>
-                  <h3 className="text-sm sm:text-base font-bold text-ink dark:text-chalkboard-chalk">
-                    Help us improve LearningPal · 2-minute usability survey
-                  </h3>
-                </div>
-                <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-2xl leading-relaxed">
-                  Tell us about your learning experience, topic feedback clarity, and platform usability to support our user research targets.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
               <button
                 type="button"
                 onClick={handleDismissSurvey}
-                className="px-3 py-1.5 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors cursor-pointer"
+                className="p-1 rounded-md text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk hover:bg-paper dark:hover:bg-chalkboard transition-colors cursor-pointer"
+                aria-label="Dismiss survey"
+                title="Dismiss survey banner"
               >
-                Dismiss
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
-              <Button
-                to="/feedback/survey"
-                variant="mint"
-                size="sm"
-                className="font-bold text-xs"
-              >
-                <span>Take Survey</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
-              </Button>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                  Help us calibrate LearningPal
+                </h3>
+                <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted max-w-xl leading-relaxed">
+                  Share your experience with diagnostic test accuracy, topic feedback, and study resources to help our research team improve student gap detection.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDismissSurvey}
+                  className="px-3 py-2 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors cursor-pointer"
+                >
+                  Maybe Later
+                </button>
+                <Button
+                  to="/feedback/survey"
+                  variant="mint"
+                  size="sm"
+                  className="font-bold text-xs shadow-notebook-sm"
+                >
+                  <span>Take Survey</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -441,14 +458,9 @@ export default function StudentSubjectsHome() {
         >
           <div className="relative w-full max-w-md bg-paper dark:bg-chalkboard border-2 border-ink dark:border-chalkboard-border rounded-2xl shadow-lifted p-6 space-y-5 animate-scaleUp">
             <div className="flex items-center justify-between pb-3 border-b border-ink/15 dark:border-chalkboard-borderSubtle">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-highlighter-mint flex items-center justify-center border border-ink text-ink font-bold">
-                  <Plus className="w-4 h-4" aria-hidden="true" />
-                </div>
-                <h2 id="join-class-modal-title" className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk">
-                  Join a Class Section
-                </h2>
-              </div>
+              <h2 id="join-class-modal-title" className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk">
+                Join a Class Section
+              </h2>
               <button
                 type="button"
                 onClick={handleCloseModal}

@@ -143,11 +143,11 @@ public class AiGenerationWorkerService {
 
             job.setStatus(AiJobStatus.RUNNING);
             job.setStartedAt(Instant.now());
-            job.setModelName(aiConfig.getModel());
+            job.setModelName(aiConfig.getActiveModel());
             jobRepository.save(job);
 
             String fullText = job.getSourceFile().getExtractedText();
-            List<String> sections = DocumentChunker.chunkText(fullText, aiConfig.getChunkChars());
+            List<String> sections = DocumentChunker.chunkText(fullText, aiConfig.getActiveChunkChars());
 
             if (sections.isEmpty()) {
                 job.setStatus(AiJobStatus.FAILED);
@@ -181,7 +181,17 @@ public class AiGenerationWorkerService {
                 String sectionText = sections.get(i);
                 int needed = Math.min(perSectionTarget, totalTarget - draftsCreated);
 
-                List<AiResponseParser.ParsedQuestion> parsedQuestions = generateWithRepair(sectionText, needed);
+                List<AiResponseParser.ParsedQuestion> parsedQuestions;
+                try {
+                    parsedQuestions = generateWithRepair(sectionText, needed);
+                } catch (LlmRateLimitException rle) {
+                    job.setStatus(AiJobStatus.FAILED);
+                    job.setShortNote(rle.getMessage());
+                    job.setCompletedAt(Instant.now());
+                    jobRepository.save(job);
+                    log.warn("AI generation job {} failed due to rate limit: {}", job.getId(), rle.getMessage());
+                    return;
+                }
 
                 for (AiResponseParser.ParsedQuestion pq : parsedQuestions) {
                     if (draftsCreated >= totalTarget) {
@@ -237,7 +247,7 @@ public class AiGenerationWorkerService {
 
     private List<AiResponseParser.ParsedQuestion> generateWithRepair(String sectionText, int count) {
         String systemPrompt = AiPromptBuilder.buildSystemPrompt();
-        String userPrompt = AiPromptBuilder.buildUserPrompt(sectionText, count, aiConfig.getUserSuffix());
+        String userPrompt = AiPromptBuilder.buildUserPrompt(sectionText, count, aiConfig.getActiveUserSuffix());
 
         try {
             String rawOutput = llmClient.generateChatCompletion(
@@ -248,15 +258,18 @@ public class AiGenerationWorkerService {
             );
 
             return responseParser.parseAndValidate(rawOutput, new HashSet<>());
+        } catch (LlmRateLimitException rateEx) {
+            // Do not hammer provider with repair attempt when rate limits are exhausted
+            throw rateEx;
         } catch (Exception firstEx) {
-            log.debug("Primary generation attempt failed ({}), executing single repair retry...", firstEx.getMessage());
+            log.warn("Primary generation attempt failed ({}). Executing single repair retry...", firstEx.getMessage());
 
             // Exactly ONE repair retry informing the model what was wrong
             try {
                 String repairPrompt = AiPromptBuilder.buildRepairPrompt(
                         sectionText,
                         count,
-                        aiConfig.getUserSuffix(),
+                        aiConfig.getActiveUserSuffix(),
                         firstEx.getMessage() != null ? firstEx.getMessage() : "Malformed JSON syntax"
                 );
 
@@ -268,8 +281,10 @@ public class AiGenerationWorkerService {
                 );
 
                 return responseParser.parseAndValidate(repairOutput, new HashSet<>());
+            } catch (LlmRateLimitException rateEx) {
+                throw rateEx;
             } catch (Exception repairEx) {
-                log.debug("Repair retry failed: {}", repairEx.getMessage());
+                log.warn("Repair retry failed: {}", repairEx.getMessage());
                 return Collections.emptyList();
             }
         }

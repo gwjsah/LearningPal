@@ -511,19 +511,31 @@ public class ValidationService {
                 .collect(Collectors.groupingBy(l -> l.getClassroom().getId()));
 
         List<ValidationClassBreakdownDto> classBreakdowns = new ArrayList<>();
+        int pooledNotYetEligible = 0;
 
         for (ClassEntity cls : classes) {
             List<GapValidationLabel> clsLabels = labelsByClass.getOrDefault(cls.getId(), Collections.emptyList());
             List<Enrollment> enrollments = enrollmentRepository.findByClassEntityOrderByEnrolledAtDesc(cls);
-            int totalEnrolled = enrollments.size();
 
-            // Count fully labeled students in this class
+            // Count eligible and fully labeled students in this class (eligible-only denominator)
             Map<Long, List<GapValidationLabel>> studentLabels = clsLabels.stream()
                     .collect(Collectors.groupingBy(l -> l.getStudent().getId()));
 
+            int eligibleInClass = 0;
             int fullyLabeled = 0;
             for (Enrollment enr : enrollments) {
-                Long sId = enr.getStudent().getId();
+                User st = enr.getStudent();
+                if (st == null || st.getRole() != Role.STUDENT) {
+                    continue;
+                }
+                List<Topic> assigned = getOrAssignTopicsForStudent(cls, st);
+                if (!assigned.isEmpty()) {
+                    eligibleInClass++;
+                } else {
+                    pooledNotYetEligible++;
+                }
+
+                Long sId = st.getId();
                 List<StudentValidationAssignment> assigns = studentValidationAssignmentRepository
                         .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(sId, cls.getId());
                 if (!assigns.isEmpty()) {
@@ -536,22 +548,26 @@ public class ValidationService {
                 }
             }
 
+            int totalEligibleInClass = Math.max(eligibleInClass, fullyLabeled);
+
             // Calculate class accuracy
             Double classAccuracy = computeClassAgreement(clsLabels, source, includeStale, cls.getId());
 
             String status;
             if (fullyLabeled == 0) {
                 status = "UNLABELED";
-            } else if (fullyLabeled >= totalEnrolled && totalEnrolled > 0) {
+            } else if (fullyLabeled >= totalEligibleInClass && totalEligibleInClass > 0) {
                 status = "COMPLETED";
             } else {
                 status = "IN_PROGRESS";
             }
 
             String targetStatus;
-            if (fullyLabeled >= 30) {
+            if (totalEligibleInClass == 0 && fullyLabeled == 0) {
+                targetStatus = "NO_ELIGIBLE_STUDENTS";
+            } else if (fullyLabeled >= 30) {
                 targetStatus = (classAccuracy != null && classAccuracy >= 85.0) ? "MET" : "NOT_MET";
-            } else if (fullyLabeled >= totalEnrolled && totalEnrolled > 0) {
+            } else if (fullyLabeled >= totalEligibleInClass && totalEligibleInClass > 0) {
                 targetStatus = "SMALL_CLASS_COMPLETE";
             } else {
                 targetStatus = "PRELIMINARY";
@@ -563,14 +579,14 @@ public class ValidationService {
                     cls.getName(),
                     teacherName,
                     fullyLabeled,
-                    totalEnrolled,
+                    totalEligibleInClass,
                     status,
                     classAccuracy,
                     targetStatus
             ));
         }
 
-        return computeReport(labels, source, includeStale, null, "All Institution Classes", inst.getName(), classes.size(), classBreakdowns);
+        return computeReport(labels, source, includeStale, null, "All Institution Classes", inst.getName(), classes.size(), classBreakdowns, pooledNotYetEligible);
     }
 
     /**
@@ -686,6 +702,19 @@ public class ValidationService {
             String institutionName,
             Integer pooledClassesCount,
             List<ValidationClassBreakdownDto> classBreakdowns) {
+        return computeReport(labels, source, includeStale, classId, className, institutionName, pooledClassesCount, classBreakdowns, 0);
+    }
+
+    private ValidationReportDto computeReport(
+            List<GapValidationLabel> labels,
+            ValidationSource source,
+            boolean includeStale,
+            Long classId,
+            String className,
+            String institutionName,
+            Integer pooledClassesCount,
+            List<ValidationClassBreakdownDto> classBreakdowns,
+            int pooledNotYetEligible) {
 
         // Build stable student pseudonyms
         List<Long> studentIds = labels.stream()
@@ -847,24 +876,32 @@ public class ValidationService {
                     }
                 }
             }
+        } else if (classBreakdowns != null) {
+            notYetEligibleCount = pooledNotYetEligible;
+            for (ValidationClassBreakdownDto cb : classBreakdowns) {
+                eligibleStudentsCount += cb.totalStudents();
+                fullyLabeledStudents += cb.studentsLabeled();
+            }
         }
 
-        for (Long sId : labelsByStudent.keySet()) {
-            List<StudentValidationAssignment> assigns = Collections.emptyList();
-            if (classId != null) {
-                assigns = studentValidationAssignmentRepository
-                        .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(sId, classId);
-            }
-            if (!assigns.isEmpty()) {
-                List<GapValidationLabel> sl = labelsByStudent.get(sId);
-                Set<Long> labeledTopicIds = sl.stream().map(l -> l.getTopic().getId()).collect(Collectors.toSet());
-                boolean allLabeled = assigns.stream().allMatch(a -> labeledTopicIds.contains(a.getTopic().getId()));
-                if (allLabeled) {
+        if (classId != null || classBreakdowns == null) {
+            for (Long sId : labelsByStudent.keySet()) {
+                List<StudentValidationAssignment> assigns = Collections.emptyList();
+                if (classId != null) {
+                    assigns = studentValidationAssignmentRepository
+                            .findByStudentIdAndClassroomIdOrderByAssignedOrderAsc(sId, classId);
+                }
+                if (!assigns.isEmpty()) {
+                    List<GapValidationLabel> sl = labelsByStudent.get(sId);
+                    Set<Long> labeledTopicIds = sl.stream().map(l -> l.getTopic().getId()).collect(Collectors.toSet());
+                    boolean allLabeled = assigns.stream().allMatch(a -> labeledTopicIds.contains(a.getTopic().getId()));
+                    if (allLabeled) {
+                        fullyLabeledStudents++;
+                    }
+                } else {
+                    // Backwards-compatible / fixture: if no specific assignments, student counts as labeled
                     fullyLabeledStudents++;
                 }
-            } else {
-                // Backwards-compatible / fixture: if no specific assignments, student counts as labeled
-                fullyLabeledStudents++;
             }
         }
 
@@ -928,13 +965,33 @@ public class ValidationService {
         } else {
             // Admin pooled report across classes (Decision 9)
             int pooledCount = pooledClassesCount != null ? pooledClassesCount : 1;
-            if (fullyLabeledStudents < 30) {
+            if (totalEligibleStudents == 0 && fullyLabeledStudents == 0) {
                 targetStatus = "NOT_ENOUGH_RECORDS";
-                bannerType = "PRELIMINARY";
-                targetSentence = String.format(Locale.US,
-                        "Preliminary: %d of 30 students labeled. Currently %d evaluated (%d more needed), pooled across %d classes.",
-                        fullyLabeledStudents, fullyLabeledStudents, 30 - fullyLabeledStudents, pooledCount);
-                warningMessage = "Pooled metrics are preliminary. Small samples are statistically unreliable.";
+                bannerType = "NO_ELIGIBLE_STUDENTS";
+                targetSentence = "No students are eligible yet: students need at least 3 answered questions in a topic";
+                warningMessage = "Students need at least 3 answered questions in a topic before they become eligible for validation labeling.";
+            } else if (fullyLabeledStudents < 30) {
+                if (isSmallClassComplete) {
+                    targetStatus = "NOT_ENOUGH_RECORDS";
+                    bannerType = "SMALL_CLASS_COMPLETE";
+                    if (notYetEligibleCount > 0) {
+                        targetSentence = String.format(Locale.US,
+                                "Complete: %d of %d eligible students (%d enrolled students not yet eligible) across %d classes. Too few students to certify against the 85%% target.",
+                                fullyLabeledStudents, totalEligibleStudents, notYetEligibleCount, pooledCount);
+                    } else {
+                        targetSentence = String.format(Locale.US,
+                                "Complete: %d of %d eligible students across %d classes. Too few students to certify against the 85%% target.",
+                                fullyLabeledStudents, totalEligibleStudents, pooledCount);
+                    }
+                    warningMessage = "All eligible students across institution classes have been fully evaluated, but the pooled sample is under 30. Statistical confidence requires at least 30 student records to certify agreement.";
+                } else {
+                    targetStatus = "NOT_ENOUGH_RECORDS";
+                    bannerType = "PRELIMINARY";
+                    targetSentence = String.format(Locale.US,
+                            "Preliminary: %d of 30 students labeled. Currently %d evaluated (%d more needed), pooled across %d classes.",
+                            fullyLabeledStudents, fullyLabeledStudents, 30 - fullyLabeledStudents, pooledCount);
+                    warningMessage = "Pooled metrics are preliminary. Small samples are statistically unreliable.";
+                }
             } else if (accuracy >= 85.0) {
                 targetStatus = "MET";
                 bannerType = "MET";

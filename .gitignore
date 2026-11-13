@@ -40,6 +40,8 @@ application.properties
 # Agent tooling & local skills cache
 .agents/
 .claude/
+.impeccable/
+frontend/.impeccable/
 skills-lock.json
 
 LearningPal_Handoff.md
@@ -49,6 +51,7 @@ FEATURE_GUIDE.md
 
 # Database dumps & local database files
 *.sql
+!database_backup.sql
 *.mv.db
 data/
 

@@ -4,5 +4,10 @@ public record AiStatusDto(
         boolean enabled,
         boolean reachable,
         String configuredModel,
-        boolean modelFound
-) {}
+        boolean modelFound,
+        String provider
+) {
+    public AiStatusDto(boolean enabled, boolean reachable, String configuredModel, boolean modelFound) {
+        this(enabled, reachable, configuredModel, modelFound, "local");
+    }
+}

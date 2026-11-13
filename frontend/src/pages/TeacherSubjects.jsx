@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
+  ArrowLeft,
   BookOpen,
   Plus,
   Copy,
@@ -241,8 +242,12 @@ export default function TeacherSubjects() {
       <div className="w-full space-y-8">
         {/* Breadcrumb back to classes */}
         <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link to="/teacher" className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk">
-            Teacher Home
+          <Link
+            to="/teacher"
+            className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Teacher Home</span>
           </Link>
           <span>/</span>
           <span className="text-ink dark:text-chalkboard-chalk font-bold">My Subjects</span>

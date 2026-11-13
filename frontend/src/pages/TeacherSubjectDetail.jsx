@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
+  ArrowLeft,
   BookOpen,
   Layers,
   FileQuestion,
@@ -1194,8 +1195,12 @@ export default function TeacherSubjectDetail() {
       <div className="w-full space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link to="/teacher" className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk">
-            Teacher Home
+          <Link
+            to="/teacher"
+            className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Teacher Home</span>
           </Link>
           <span>/</span>
           <Link to="/teacher/subjects" className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk">
@@ -3296,7 +3301,7 @@ export default function TeacherSubjectDetail() {
               <div className="flex items-start justify-between border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                 <div>
                   <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
-                    Draft Questions with Local AI
+                    {aiStatus.provider === 'gemini' ? 'Draft Questions with Google Gemini' : 'Draft Questions with Local AI'}
                   </h3>
                   <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-1">
                     Source: <span className="font-mono font-bold text-ink dark:text-chalkboard-chalk">{aiSetupModal.file?.title}</span>
@@ -3313,20 +3318,28 @@ export default function TeacherSubjectDetail() {
                 </button>
               </div>
 
-              {/* Local AI Architecture & Privacy Callout */}
+              {/* AI Architecture, Provider & Privacy Callout */}
               <div className="p-3.5 rounded-xl border border-ink/15 dark:border-chalkboard-border bg-paper-warm/70 dark:bg-chalkboard-surface/60 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 font-bold font-mono text-xs text-ink dark:text-chalkboard-chalk">
                     <Bot className="w-4 h-4 text-ink-blue dark:text-highlighter-sky shrink-0" />
-                    <span>Model: {aiStatus.model || 'qwen/qwen3-14b'}</span>
+                    <span>Provider: {aiStatus.provider === 'gemini' ? 'Google AI Studio (Gemini)' : 'Local LM Studio'}</span>
+                    <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
+                    <span>Model: {aiStatus.configuredModel || aiStatus.model || (aiStatus.provider === 'gemini' ? 'gemini-2.5-flash' : 'qwen/qwen3-14b')}</span>
                   </div>
                   <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-paper-card dark:bg-chalkboard-card border border-ink/20 dark:border-chalkboard-border text-ink-muted dark:text-chalkboard-muted">
-                    Local Offline
+                    {aiStatus.provider === 'gemini' ? 'Cloud Mode' : 'Local Offline'}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed text-ink-muted dark:text-chalkboard-muted">
-                  Served locally via LM Studio. Your document text never leaves your local machine. Every generated question will be held as a draft for your review and approval before students can see it.
-                </p>
+                {aiStatus.provider === 'gemini' ? (
+                  <p className="text-xs leading-relaxed text-ink dark:text-chalkboard-chalk font-medium">
+                    Cloud mode: this file's text is sent to Google to generate questions. Every generated question will be held as a draft for your review and approval before students can see it.
+                  </p>
+                ) : (
+                  <p className="text-xs leading-relaxed text-ink-muted dark:text-chalkboard-muted">
+                    Served locally via LM Studio. Your document text never leaves your local machine. Every generated question will be held as a draft for your review and approval before students can see it.
+                  </p>
+                )}
               </div>
 
               {aiSetupError && (
@@ -3454,7 +3467,7 @@ export default function TeacherSubjectDetail() {
                       {activeAiJob.status === 'QUEUED' ? 'Job Queued...' : 'Drafting Questions...'}
                     </h3>
                     <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
-                      Analyzing document text with local model
+                      {aiStatus.provider === 'gemini' ? 'Analyzing document text with Google Gemini' : 'Analyzing document text with local model'}
                     </p>
                   </div>
                 </div>

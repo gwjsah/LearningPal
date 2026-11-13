@@ -56,15 +56,53 @@ export default function ValidationReportView({
 
   if (!report) return null;
 
+  // Adapt backend ValidationReportDto field names to the names this view renders.
+  const rawSample = report.sampleSize || {};
+  const rawMetrics = report.metrics || {};
+  const rawCm = report.confusionMatrix || {};
+  const sampleSize = {
+    usablePairs: rawSample.usableStudentTopicPairs ?? 0,
+    usableStudents: rawSample.studentsWithUsableLabel ?? 0,
+    totalLabelsCount: rawSample.totalLabelsEvaluated ?? 0,
+    cannotJudgeExcludedCount: rawSample.excludedCannotJudge ?? 0,
+    insufficientDataExcludedCount: rawSample.excludedInsufficientData ?? 0,
+    staleExcludedCount: rawSample.excludedStale ?? 0,
+  };
+  const metrics = {
+    ...rawMetrics,
+    cohensKappa: rawMetrics.cohenKappa,
+    studentTotalUsableCount: rawSample.studentsWithUsableLabel ?? 0,
+  };
+  const { tp = 0, fp = 0, tn = 0, fn = 0 } = rawCm;
+  const confusionMatrix = {
+    truePositives: tp,
+    falsePositives: fp,
+    trueNegatives: tn,
+    falseNegatives: fn,
+    predictedWeakTotal: tp + fp,
+    predictedNotWeakTotal: fn + tn,
+    actualWeakTotal: tp + fn,
+    actualNotWeakTotal: fp + tn,
+  };
+  const topicMetrics = (report.perTopic || []).map((t) => ({
+    ...t,
+    usablePairs: t.usableCount,
+    matchesCount: t.matchCount,
+  }));
+  const thresholdSensitivity = (report.thresholdSensitivity || []).map((r) => ({
+    ...r,
+    systemWeakCount: r.tp + r.fp,
+    systemNotWeakCount: r.fn + r.tn,
+    accuracyPercent: r.agreementPercent,
+    bestFit: report.bestThreshold != null && r.threshold === report.bestThreshold,
+  }));
+  const disagreements = (report.disagreements || []).map((d) => ({
+    ...d,
+    systemMasteryPercent: d.systemMastery,
+  }));
   const {
-    sampleSize = {},
-    metrics = {},
     targetCheck = {},
-    confusionMatrix = {},
-    topicMetrics = [],
-    thresholdSensitivity = [],
-    disagreements = [],
-    simulated = false,
+    simulated = report.isSimulated ?? false,
     pooledClassesCount = null,
     classBreakdowns = [],
   } = report;
@@ -787,7 +825,7 @@ export default function ValidationReportView({
                 <tr className="bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk text-left">
                   <th className="p-2 border border-ink/20 dark:border-chalkboard-border">Class Name</th>
                   <th className="p-2 border border-ink/20 dark:border-chalkboard-border">Teacher</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Students Labeled</th>
+                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Labeled / Eligible</th>
                   <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Status</th>
                   <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Agreement %</th>
                   <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Target Status</th>
@@ -825,11 +863,13 @@ export default function ValidationReportView({
                         cb.targetStatus === 'MET' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300' :
                         cb.targetStatus === 'NOT_MET' ? 'bg-redpen-soft text-redpen-dark border border-redpen/30' :
                         cb.targetStatus === 'SMALL_CLASS_COMPLETE' ? 'bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300' :
-                        'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15'
+                        cb.targetStatus === 'NO_ELIGIBLE_STUDENTS' ? 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15' :
+                        'bg-amber-100/80 text-amber-900 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300'
                       }`}>
                         {cb.targetStatus === 'MET' ? 'Target Met (≥85%)' :
                          cb.targetStatus === 'NOT_MET' ? 'Target Not Met (<85%)' :
                          cb.targetStatus === 'SMALL_CLASS_COMPLETE' ? 'Small Class Complete' :
+                         cb.targetStatus === 'NO_ELIGIBLE_STUDENTS' ? 'No Eligible Students' :
                          'Preliminary'}
                       </span>
                     </td>

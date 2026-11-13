@@ -1,11 +1,12 @@
 import React from 'react';
-import { Database, Cpu, Compass } from 'lucide-react';
+import { Database, Cpu, Compass, ShieldCheck, FlaskConical } from 'lucide-react';
 import { howItWorksContent } from '../data/content';
 import { HandDrawnCircle } from './Doodles';
 import { SectionHeading } from './NotebookPrimitives';
 
 export default function HowItWorks() {
   const stepIcons = [Database, Cpu, Compass];
+  const highlightIcons = [ShieldCheck, FlaskConical];
 
   return (
     <section
@@ -91,7 +92,7 @@ export default function HowItWorks() {
                       </div>
 
                       <div className="w-10 h-10 rounded-xl bg-highlighter-yellowSoft dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-ink dark:text-highlighter-yellow" />
+                        <Icon className="w-5 h-5 text-ink dark:text-highlighter-yellow" aria-hidden="true" />
                       </div>
                     </div>
 
@@ -110,7 +111,9 @@ export default function HowItWorks() {
                   </div>
 
                   <div className="pt-5 mt-5 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between">
-                    <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">Key benefit</span>
+                    <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                      Product rule
+                    </span>
                     <span className="font-hand text-base font-bold text-redpen dark:text-red-400">
                       ↳ {step.handNote}
                     </span>
@@ -120,6 +123,33 @@ export default function HowItWorks() {
             })}
           </ol>
         </div>
+
+        {/* Product Honesty & Architecture Ledger Row */}
+        {howItWorksContent.honestyHighlights && (
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {howItWorksContent.honestyHighlights.map((item, idx) => {
+              const HIcon = highlightIcons[idx] || ShieldCheck;
+              return (
+                <div
+                  key={item.title}
+                  className="p-5 sm:p-6 rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-notebook-sm flex items-start gap-3.5"
+                >
+                  <div className="p-2.5 rounded-xl bg-highlighter-mintSoft dark:bg-chalkboard-surface border border-ink/15 shrink-0 mt-0.5">
+                    <HIcon className="w-5 h-5 text-ink-blue dark:text-highlighter-mint" aria-hidden="true" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base font-extrabold text-ink dark:text-chalkboard-chalk">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

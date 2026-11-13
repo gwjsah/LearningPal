@@ -42,15 +42,32 @@ public class AiResponseParser {
     public List<ParsedQuestion> parseAndValidate(String rawOutput, Set<String> seenNormalizedQuestions) throws Exception {
         String cleanText = stripThinkBlocks(rawOutput);
 
-        // Find JSON boundaries in case model outputs leading/trailing text outside schema
-        int firstBrace = cleanText.indexOf('{');
-        int lastBrace = cleanText.lastIndexOf('}');
-        if (firstBrace >= 0 && lastBrace > firstBrace) {
-            cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+        // Strip markdown code fences if present (e.g. ```json ... ```)
+        if (cleanText.contains("```")) {
+            cleanText = cleanText.replaceAll("(?s)```(?:json)?\\s*(.*?)\\s*```", "$1").trim();
+        }
+
+        // Find JSON boundaries (either object {...} or array [...])
+        int firstObj = cleanText.indexOf('{');
+        int firstArr = cleanText.indexOf('[');
+
+        if (firstArr >= 0 && (firstObj < 0 || firstArr < firstObj)) {
+            int lastArr = cleanText.lastIndexOf(']');
+            if (lastArr > firstArr) {
+                cleanText = cleanText.substring(firstArr, lastArr + 1);
+            }
+        } else if (firstObj >= 0) {
+            int lastObj = cleanText.lastIndexOf('}');
+            if (lastObj > firstObj) {
+                cleanText = cleanText.substring(firstObj, lastObj + 1);
+            }
         }
 
         JsonNode root = objectMapper.readTree(cleanText);
         JsonNode questionsNode = root.get("questions");
+        if (questionsNode == null && root.isArray()) {
+            questionsNode = root;
+        }
         if (questionsNode == null || !questionsNode.isArray()) {
             throw new IllegalArgumentException("Response missing required 'questions' array.");
         }

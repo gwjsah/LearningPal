@@ -78,16 +78,27 @@ public class TeacherAiService {
         boolean enabled = aiConfig.isEnabled();
         boolean reachable = false;
         boolean modelFound = false;
+        String provider = aiConfig.getProvider();
 
         if (enabled) {
-            reachable = llmClient.isAvailable();
-            if (reachable) {
-                List<String> availableModels = llmClient.listModels();
-                modelFound = availableModels.contains(aiConfig.getModel());
+            if (aiConfig.isGeminiProvider() && (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isBlank())) {
+                reachable = false;
+                modelFound = false;
+            } else {
+                reachable = llmClient.isAvailable();
+                if (reachable) {
+                    List<String> availableModels = llmClient.listModels();
+                    String targetModel = aiConfig.getActiveModel();
+                    modelFound = availableModels.stream().anyMatch(m ->
+                            m.equalsIgnoreCase(targetModel) ||
+                            m.equalsIgnoreCase("models/" + targetModel) ||
+                            targetModel.equalsIgnoreCase("models/" + m)
+                    );
+                }
             }
         }
 
-        return new AiStatusDto(enabled, reachable, aiConfig.getModel(), modelFound);
+        return new AiStatusDto(enabled, reachable, aiConfig.getActiveModel(), modelFound, provider);
     }
 
     /**
@@ -102,6 +113,10 @@ public class TeacherAiService {
 
         if (!aiConfig.isEnabled()) {
             throw new ServiceUnavailableException("AI question drafting is currently disabled in server configuration.");
+        }
+
+        if (aiConfig.isGeminiProvider() && (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isBlank())) {
+            throw new ServiceUnavailableException("AI question drafting is unavailable: Gemini API key is not configured.");
         }
 
         User teacher = getActiveTeacher(teacherEmail);
@@ -128,11 +143,13 @@ public class TeacherAiService {
             throw new ConflictException("You already have a generation job in progress. Please wait for it to complete or cancel it.");
         }
 
-        // Enforce hourly rate limit per teacher
-        Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
-        long recentJobs = jobRepository.countByTeacherAndCreatedAtAfter(teacher, oneHourAgo);
-        if (recentJobs >= aiConfig.getMaxJobsPerTeacherPerHour()) {
-            throw new RateLimitException("Hourly generation limit reached (" + aiConfig.getMaxJobsPerTeacherPerHour() + " jobs/hour). Please try again later.");
+        // Enforce hourly rate limit per teacher (disabled when <= 0)
+        if (aiConfig.getMaxJobsPerTeacherPerHour() > 0) {
+            Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+            long recentJobs = jobRepository.countByTeacherAndCreatedAtAfter(teacher, oneHourAgo);
+            if (recentJobs >= aiConfig.getMaxJobsPerTeacherPerHour()) {
+                throw new RateLimitException("Hourly generation limit reached (" + aiConfig.getMaxJobsPerTeacherPerHour() + " jobs/hour). Please try again later.");
+            }
         }
 
         // Enforce strict question count rules (no silent clamping)
@@ -148,7 +165,7 @@ public class TeacherAiService {
                 topic,
                 resourceFile,
                 count,
-                aiConfig.getModel()
+                aiConfig.getActiveModel()
         );
 
         AiGenerationJob saved = jobRepository.save(job);
