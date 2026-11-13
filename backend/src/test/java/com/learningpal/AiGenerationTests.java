@@ -27,7 +27,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -141,6 +143,7 @@ public class AiGenerationTests {
         fakeLlm.reset();
 
         aiConfig.setEnabled(true);
+        aiConfig.setProvider("local");
         aiConfig.setModel("qwen/qwen3-14b");
         aiConfig.setChunkChars(5000);
         aiConfig.setMaxDraftsPerJob(30);
@@ -742,5 +745,289 @@ public class AiGenerationTests {
         AiGenerationJob entity30 = jobRepository.findById(job30.id()).orElseThrow();
         assertEquals(30, entity30.getRequestedCount());
         workerService.awaitJobCompletion(job30.id(), 5000);
+    }
+
+    @Test
+    @DisplayName("Per-type prompt, JSON schema, and parser validation drop invalid/duplicate enumeration and essay drafts with counts")
+    void testPerTypePromptSchemaAndParserValidationWithDroppedCounts() throws Exception {
+        // Prompt & schema selection
+        assertTrue(AiPromptBuilder.buildSystemPrompt(QuestionType.ENUMERATION).contains("acceptedAnswers"));
+        assertTrue(AiPromptBuilder.buildSystemPrompt(QuestionType.ESSAY).contains("rubricCriteria"));
+        assertTrue(AiPromptBuilder.buildUserPrompt(QuestionType.ENUMERATION, "text", 5, "").contains("enumeration"));
+        assertTrue(AiPromptBuilder.buildUserPrompt(QuestionType.ESSAY, "text", 5, "").contains("essay"));
+
+        Map<String, Object> enumSchema = AiPromptBuilder.buildJsonSchema(QuestionType.ENUMERATION);
+        Map<String, Object> essaySchema = AiPromptBuilder.buildJsonSchema(QuestionType.ESSAY);
+        assertTrue(enumSchema.toString().contains("acceptedAnswers"));
+        assertTrue(essaySchema.toString().contains("rubricCriteria"));
+
+        AiResponseParser parser = new AiResponseParser(objectMapper);
+
+        // Enumeration: 1 valid + 1 duplicate + 1 invalid (11 variants > 10)
+        String enumJson = """
+                {
+                  "questions": [
+                    {
+                      "question": "What component executes program instructions?",
+                      "acceptedAnswers": ["CPU", "Central Processing Unit"],
+                      "points": 2,
+                      "explanation": "The CPU executes instructions.",
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    },
+                    {
+                      "question": "What component executes program instructions?",
+                      "acceptedAnswers": ["CPU"],
+                      "explanation": "Duplicate question.",
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    },
+                    {
+                      "question": "Too many variants",
+                      "acceptedAnswers": ["1","2","3","4","5","6","7","8","9","10","11"],
+                      "explanation": "Invalid.",
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    }
+                  ]
+                }
+                """;
+        AiResponseParser.ParseBatchResult enumResult = parser.parseAndValidate(enumJson, QuestionType.ENUMERATION, new HashSet<>());
+        assertEquals(1, enumResult.accepted().size());
+        assertEquals(2, enumResult.droppedCount());
+        assertEquals(2.0, enumResult.accepted().get(0).points());
+
+        // Essay: 1 valid (2 criteria, sum=8) + 1 invalid (only 1 criterion < 2) + 1 invalid (maxPoints <= 0)
+        String essayJson = """
+                {
+                  "questions": [
+                    {
+                      "question": "Explain how the CPU executes instructions and manages calculations.",
+                      "rubricCriteria": [
+                        {"name": "Instruction Cycle", "description": "Explains fetch-decode-execute", "maxPoints": 5},
+                        {"name": "Clarity", "description": "Clear technical writing", "maxPoints": 3}
+                      ],
+                      "modelAnswerNote": "Mention instruction execution and system calculations.",
+                      "difficulty": "MEDIUM",
+                      "evidenceQuote": "CPU executes program instructions"
+                    },
+                    {
+                      "question": "Too few criteria",
+                      "rubricCriteria": [
+                        {"name": "Only one", "description": "Insufficient", "maxPoints": 5}
+                      ],
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    },
+                    {
+                      "question": "Zero maxPoints",
+                      "rubricCriteria": [
+                        {"name": "A", "description": "desc", "maxPoints": 0},
+                        {"name": "B", "description": "desc", "maxPoints": 3}
+                      ],
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    }
+                  ]
+                }
+                """;
+        AiResponseParser.ParseBatchResult essayResult = parser.parseAndValidate(essayJson, QuestionType.ESSAY, new HashSet<>());
+        assertEquals(1, essayResult.accepted().size());
+        assertEquals(2, essayResult.droppedCount());
+        assertEquals(8.0, essayResult.accepted().get(0).points());
+        assertEquals("Mention instruction execution and system calculations.", essayResult.accepted().get(0).explanation());
+    }
+
+    @Test
+    @DisplayName("Enumeration job: repair retry, evidence verification, edit validation, idempotent approval, and origin linkage")
+    void testEnumerationDraftRepairEditApproveIdempotencyAndEvidence() throws Exception {
+        String teacherToken = jwtService.generateToken(teacherA1);
+        FakeLlmClient fakeLlm = (FakeLlmClient) llmClient;
+        fakeLlm.setSimulateMalformedOnFirstAttempt(true);
+        fakeLlm.setCustomResponse("""
+                {
+                  "questions": [
+                    {
+                      "question": "Which unit executes program instructions?",
+                      "acceptedAnswers": ["CPU", "one", "1"],
+                      "points": 2,
+                      "explanation": "The CPU executes program instructions.",
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    },
+                    {
+                      "question": "Which unit is unverified?",
+                      "acceptedAnswers": ["RAM"],
+                      "points": 1,
+                      "explanation": "Not in source text.",
+                      "difficulty": "MEDIUM",
+                      "evidenceQuote": "completely fabricated quote not present"
+                    },
+                    {
+                      "question": "Invalid empty variants",
+                      "acceptedAnswers": [],
+                      "explanation": "Should be dropped.",
+                      "difficulty": "EASY",
+                      "evidenceQuote": "CPU executes program instructions"
+                    }
+                  ]
+                }
+                """);
+
+        CreateAiJobRequest req = new CreateAiJobRequest(topicA1.getId(), 5, QuestionType.ENUMERATION);
+        AiGenerationJobDto job = teacherAiService.createJob(teacherA1.getEmail(), subjectA1.getId(), resourceFileReady.getId(), req);
+        assertEquals(QuestionType.ENUMERATION, job.questionType());
+        workerService.awaitJobCompletion(job.id(), 5000);
+
+        assertEquals(2, fakeLlm.getCallCount(), "Malformed first attempt should trigger exactly 1 repair retry");
+        AiGenerationJobDto completedJob = teacherAiService.getJob(teacherA1.getEmail(), job.id());
+        assertEquals(AiJobStatus.COMPLETED, completedJob.status());
+        assertEquals(1, completedJob.droppedCount());
+
+        List<AiQuestionDraftDto> drafts = teacherAiService.getJobDrafts(teacherA1.getEmail(), job.id());
+        assertEquals(2, drafts.size());
+        assertEquals(QuestionType.ENUMERATION, drafts.get(0).questionType());
+        assertTrue(drafts.get(0).evidenceVerified());
+        assertFalse(drafts.get(1).evidenceVerified());
+
+        // Bulk approve with unverified draft fails with 400
+        ApproveSelectedRequest badBulk = new ApproveSelectedRequest(List.of(drafts.get(0).id(), drafts.get(1).id()));
+        mockMvc.perform(post("/api/teacher/ai/jobs/" + job.id() + "/approve-selected")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(badBulk)))
+                .andExpect(status().isBadRequest());
+
+        // Invalid edit (>10 variants) rejected with 400
+        UpdateDraftRequest invalidEdit = new UpdateDraftRequest(
+                "Updated?", null, null,
+                List.of("1","2","3","4","5","6","7","8","9","10","11"),
+                null, 2.0, "Explanation", null, DifficultyLevel.EASY
+        );
+        mockMvc.perform(patch("/api/teacher/ai/drafts/" + drafts.get(0).id())
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidEdit)))
+                .andExpect(status().isBadRequest());
+
+        // Valid edit updates accepted answers
+        UpdateDraftRequest validEdit = new UpdateDraftRequest(
+                "Which hardware unit executes program instructions?", null, null,
+                List.of("CPU", "Central Processing Unit"),
+                null, 2.0, "CPU executes instructions.", null, DifficultyLevel.EASY
+        );
+        AiQuestionDraftDto edited = teacherAiService.updateDraft(teacherA1.getEmail(), drafts.get(0).id(), validEdit);
+        assertEquals(List.of("CPU", "Central Processing Unit"), edited.acceptedAnswers());
+
+        // Idempotent approval creates ENUMERATION question with origin=AI and sourceFile
+        TeacherQuestionDto approved1 = teacherAiService.approveDraft(teacherA1.getEmail(), drafts.get(0).id());
+        TeacherQuestionDto approved2 = teacherAiService.approveDraft(teacherA1.getEmail(), drafts.get(0).id());
+        assertEquals(approved1.id(), approved2.id());
+        assertEquals(QuestionType.ENUMERATION, approved1.type());
+        assertEquals(List.of("CPU", "Central Processing Unit"), approved1.acceptedAnswers());
+        assertEquals(2.0, approved1.points());
+        Question qEntity = questionRepository.findById(approved1.id()).orElseThrow();
+        assertEquals(QuestionOrigin.AI, qEntity.getOrigin());
+        assertEquals(resourceFileReady.getId(), qEntity.getSourceFile().getId());
+    }
+
+    @Test
+    @DisplayName("Essay job: max 10 count bound, repair retry, rubric sum points, invalid edit 400, idempotent approval, and student isolation")
+    void testEssayDraftBoundsRepairEditApproveAndStudentIsolation() throws Exception {
+        String teacherToken = jwtService.generateToken(teacherA1);
+
+        // Essay count > 10 (e.g. 11) rejected with 400
+        CreateAiJobRequest tooManyEssays = new CreateAiJobRequest(topicA1.getId(), 11, QuestionType.ESSAY);
+        mockMvc.perform(post("/api/teacher/subjects/" + subjectA1.getId() + "/files/" + resourceFileReady.getId() + "/ai/generate")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tooManyEssays)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("between 5 and 10")));
+
+        FakeLlmClient fakeLlm = (FakeLlmClient) llmClient;
+        fakeLlm.setSimulateMalformedOnFirstAttempt(true);
+        fakeLlm.setCustomResponse("""
+                {
+                  "questions": [
+                    {
+                      "question": "Explain how the CPU coordinates instruction execution.",
+                      "rubricCriteria": [
+                        {"name": "Accuracy", "description": "Correctly describes execution", "maxPoints": 4},
+                        {"name": "Depth", "description": "Explains system coordination", "maxPoints": 6}
+                      ],
+                      "modelAnswerNote": "Teacher note: look for fetch-decode-execute.",
+                      "difficulty": "HARD",
+                      "evidenceQuote": "CPU executes program instructions"
+                    }
+                  ]
+                }
+                """);
+
+        AiGenerationJobDto job = teacherAiService.createJob(
+                teacherA1.getEmail(),
+                subjectA1.getId(),
+                resourceFileReady.getId(),
+                new CreateAiJobRequest(topicA1.getId(), 5, QuestionType.ESSAY)
+        );
+        assertEquals(QuestionType.ESSAY, job.questionType());
+        workerService.awaitJobCompletion(job.id(), 5000);
+        assertEquals(2, fakeLlm.getCallCount());
+
+        List<AiQuestionDraftDto> drafts = teacherAiService.getJobDrafts(teacherA1.getEmail(), job.id());
+        assertEquals(1, drafts.size());
+        AiQuestionDraftDto essayDraft = drafts.get(0);
+        assertEquals(QuestionType.ESSAY, essayDraft.questionType());
+        assertEquals(10.0, essayDraft.points());
+        assertEquals(2, essayDraft.rubricCriteria().size());
+        assertEquals("Teacher note: look for fetch-decode-execute.", essayDraft.modelAnswerNote());
+        assertTrue(essayDraft.evidenceVerified());
+
+        // Invalid rubric edit (maxPoints = 0) rejected with 400
+        UpdateDraftRequest badRubricEdit = new UpdateDraftRequest(
+                "Updated essay prompt", null, null, null,
+                List.of(new EssayRubricCriterionDto(null, "Accuracy", "desc", 0, 0)),
+                null, null, "Note", DifficultyLevel.MEDIUM
+        );
+        mockMvc.perform(patch("/api/teacher/ai/drafts/" + essayDraft.id())
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(badRubricEdit)))
+                .andExpect(status().isBadRequest());
+
+        // Valid rubric edit recomputes points = sum(maxPoints)
+        UpdateDraftRequest goodRubricEdit = new UpdateDraftRequest(
+                "Describe the role of the CPU in instruction execution.", null, null, null,
+                List.of(
+                        new EssayRubricCriterionDto(null, "Accuracy", "Technical accuracy", 5, 0),
+                        new EssayRubricCriterionDto(null, "Examples", "Concrete examples", 3, 1)
+                ),
+                null, null, "Updated teacher note.", DifficultyLevel.MEDIUM
+        );
+        AiQuestionDraftDto updatedEssay = teacherAiService.updateDraft(teacherA1.getEmail(), essayDraft.id(), goodRubricEdit);
+        assertEquals(8.0, updatedEssay.points());
+
+        // Idempotent approval creates ESSAY question with rubric criteria and points = sum
+        TeacherQuestionDto approved1 = teacherAiService.approveDraft(teacherA1.getEmail(), essayDraft.id());
+        TeacherQuestionDto approved2 = teacherAiService.approveDraft(teacherA1.getEmail(), essayDraft.id());
+        assertEquals(approved1.id(), approved2.id());
+        assertEquals(QuestionType.ESSAY, approved1.type());
+        assertEquals(8.0, approved1.points());
+        assertEquals(2, approved1.rubricCriteria().size());
+        assertEquals("Updated teacher note.", approved1.explanation());
+
+        // Foreign teacher & student get 404 on draft/job endpoints
+        String otherTeacherToken = jwtService.generateToken(teacherA2);
+        String studentToken = jwtService.generateToken(studentA1);
+        for (String unauthorizedToken : List.of(otherTeacherToken, studentToken)) {
+            mockMvc.perform(get("/api/teacher/ai/jobs/" + job.id() + "/drafts")
+                            .header("Authorization", "Bearer " + unauthorizedToken))
+                    .andExpect(status().isNotFound());
+            mockMvc.perform(patch("/api/teacher/ai/drafts/" + essayDraft.id())
+                            .header("Authorization", "Bearer " + unauthorizedToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(goodRubricEdit)))
+                    .andExpect(status().isNotFound());
+        }
     }
 }

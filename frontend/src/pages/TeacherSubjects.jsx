@@ -364,7 +364,8 @@ export default function TeacherSubjects() {
                   key={sub.id}
                   pattern="grid"
                   borderStyle="sketch"
-                  className="flex flex-col justify-between p-6 space-y-5 bg-paper-card dark:bg-chalkboard-card hover:shadow-notebook transition-shadow"
+                  className="h-full bg-paper-card dark:bg-chalkboard-card hover:shadow-notebook transition-shadow"
+                  bodyClassName="h-full flex flex-col justify-between gap-5 p-6"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -373,31 +374,37 @@ export default function TeacherSubjects() {
                       </span>
                       <div className="flex items-center gap-1">
                         <button
+                          type="button"
                           onClick={() => {
                             setName(sub.name);
                             setDescription(sub.description || '');
                             setModalError('');
                             setShowEditModal(sub);
                           }}
-                          className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
+                          aria-label={`Edit ${sub.name}`}
+                          className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Edit subject name/description"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleArchive(sub)}
-                          className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-600 cursor-pointer"
+                          aria-label={`Archive ${sub.name}`}
+                          className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Archive subject"
                         >
-                          <Archive className="w-3.5 h-3.5" />
+                          <Archive className="w-4 h-4" />
                         </button>
                         {sub.topicCount === 0 && sub.questionCount === 0 && sub.quizCount === 0 && sub.classCount === 0 && (
                           <button
+                            type="button"
                             onClick={() => handleDelete(sub)}
-                            className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen cursor-pointer"
+                            aria-label={`Delete ${sub.name}`}
+                            className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                             title="Delete unused subject"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
@@ -408,42 +415,30 @@ export default function TeacherSubjects() {
                         {sub.name}
                       </h3>
                       {sub.description && (
-                        <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-1 line-clamp-2">
+                        <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-1.5 line-clamp-2 leading-relaxed">
                           {sub.description}
                         </p>
                       )}
                     </div>
 
-                    {/* Stats Pill Matrix */}
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <div className="p-2 rounded-lg bg-paper-warm dark:bg-chalkboard-surface border border-ink/10 dark:border-chalkboard-borderSubtle flex items-center gap-2">
-                        <Layers className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted" />
-                        <div className="text-xs">
-                          <span className="font-bold text-ink dark:text-chalkboard-chalk">{sub.topicCount}</span>{' '}
-                          <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted font-mono">Topics</span>
-                        </div>
-                      </div>
-                      <div className="p-2 rounded-lg bg-paper-warm dark:bg-chalkboard-surface border border-ink/10 dark:border-chalkboard-borderSubtle flex items-center gap-2">
-                        <FileQuestion className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted" />
-                        <div className="text-xs">
-                          <span className="font-bold text-ink dark:text-chalkboard-chalk">{sub.questionCount}</span>{' '}
-                          <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted font-mono">Questions</span>
-                        </div>
-                      </div>
-                      <div className="p-2 rounded-lg bg-paper-warm dark:bg-chalkboard-surface border border-ink/10 dark:border-chalkboard-borderSubtle flex items-center gap-2">
-                        <GraduationCap className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted" />
-                        <div className="text-xs">
-                          <span className="font-bold text-ink dark:text-chalkboard-chalk">{sub.quizCount}</span>{' '}
-                          <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted font-mono">Quizzes</span>
-                        </div>
-                      </div>
-                      <div className="p-2 rounded-lg bg-paper-warm dark:bg-chalkboard-surface border border-ink/10 dark:border-chalkboard-borderSubtle flex items-center gap-2">
-                        <Link2 className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted" />
-                        <div className="text-xs">
-                          <span className="font-bold text-ink dark:text-chalkboard-chalk">{sub.resourceCount}</span>{' '}
-                          <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted font-mono">Links</span>
-                        </div>
-                      </div>
+                    {/* Compact Content Summary Strip (avoids nested card boxes) */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-ink-muted dark:text-chalkboard-muted pt-1">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" aria-hidden="true" />
+                        <strong className="font-mono text-ink dark:text-chalkboard-chalk">{sub.topicCount}</strong> Topics
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <FileQuestion className="w-3.5 h-3.5" aria-hidden="true" />
+                        <strong className="font-mono text-ink dark:text-chalkboard-chalk">{sub.questionCount}</strong> Questions
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <GraduationCap className="w-3.5 h-3.5" aria-hidden="true" />
+                        <strong className="font-mono text-ink dark:text-chalkboard-chalk">{sub.quizCount}</strong> Quizzes
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Link2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        <strong className="font-mono text-ink dark:text-chalkboard-chalk">{sub.resourceCount}</strong> Links
+                      </span>
                     </div>
                   </div>
 
@@ -452,7 +447,7 @@ export default function TeacherSubjects() {
                       to={`/teacher/subjects/${sub.id}`}
                       variant="primary"
                       size="sm"
-                      className="w-full flex items-center justify-center gap-1.5 shadow-notebook-sm"
+                      className="w-full min-h-[40px] flex items-center justify-center gap-1.5 shadow-notebook-sm"
                     >
                       <span>Manage Content</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -471,12 +466,12 @@ export default function TeacherSubjects() {
               <Archive className="w-4 h-4" />
               <span>Archived Subjects ({archivedSubjects.length})</span>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-75">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {archivedSubjects.map((sub) => (
-                <NotebookCard key={sub.id} className="p-5 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-3">
+                <NotebookCard key={sub.id} className="p-5 bg-paper-warm/70 dark:bg-chalkboard-surface/70 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted">{sub.code}</span>
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-ink/10 text-ink-muted">Archived</span>
+                    <span className="text-[11px] uppercase font-mono font-semibold px-2 py-0.5 rounded bg-ink/10 text-ink-muted dark:text-chalkboard-muted">Archived</span>
                   </div>
                   <h3 className="font-bold text-base text-ink dark:text-chalkboard-chalk">{sub.name}</h3>
                   <div className="text-xs text-ink-muted dark:text-chalkboard-muted flex items-center gap-3 font-mono">
@@ -493,7 +488,7 @@ export default function TeacherSubjects() {
         {/* Create Subject Modal */}
         {showCreateModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/45 dark:bg-black/65"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-subject-title"
@@ -591,7 +586,7 @@ export default function TeacherSubjects() {
         {/* Edit Subject Modal */}
         {showEditModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/45 dark:bg-black/65"
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-subject-title"

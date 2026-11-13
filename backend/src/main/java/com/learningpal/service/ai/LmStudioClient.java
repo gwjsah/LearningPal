@@ -3,6 +3,7 @@ package com.learningpal.service.ai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learningpal.config.AiConfigProperties;
+import com.learningpal.entity.QuestionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -161,6 +162,28 @@ public class LmStudioClient implements LlmClient {
 
     @Override
     public String generateChatCompletion(String systemPrompt, String userPrompt, double temperature, int timeoutSeconds) {
+        return generateChatCompletion(systemPrompt, userPrompt, temperature, timeoutSeconds, QuestionType.MULTIPLE_CHOICE);
+    }
+
+    @Override
+    public String generateChatCompletion(
+            String systemPrompt,
+            String userPrompt,
+            double temperature,
+            int timeoutSeconds,
+            QuestionType questionType) {
+        QuestionType effectiveType = questionType != null ? questionType.canonical() : QuestionType.MULTIPLE_CHOICE;
+        return generateChatCompletion(systemPrompt, userPrompt, temperature, timeoutSeconds,
+                AiPromptBuilder.buildJsonSchema(effectiveType));
+    }
+
+    @Override
+    public String generateChatCompletion(
+            String systemPrompt,
+            String userPrompt,
+            double temperature,
+            int timeoutSeconds,
+            Map<String, Object> responseSchema) {
         if (!aiConfig.isEnabled()) {
             throw new IllegalStateException("AI question drafting is currently disabled in server configuration.");
         }
@@ -168,6 +191,9 @@ public class LmStudioClient implements LlmClient {
             throw new IllegalStateException("AI question drafting is unavailable: Gemini API key is not configured.");
         }
 
+        Map<String, Object> schema = responseSchema != null
+                ? responseSchema
+                : AiPromptBuilder.buildJsonSchema(QuestionType.MULTIPLE_CHOICE);
         int maxRetries = aiConfig.isGeminiProvider() ? Math.max(0, aiConfig.getGeminiMaxRetries()) : 0;
         int attempt = 0;
 
@@ -176,8 +202,8 @@ public class LmStudioClient implements LlmClient {
             try {
                 boolean isGemini = aiConfig.isGeminiProvider();
                 Map<String, Object> payload = isGemini
-                        ? buildGeminiInteractionsPayload(systemPrompt, userPrompt)
-                        : buildPayload(systemPrompt, userPrompt, temperature);
+                        ? buildGeminiInteractionsPayload(systemPrompt, userPrompt, schema)
+                        : buildPayload(systemPrompt, userPrompt, temperature, schema);
                 String jsonBody = objectMapper.writeValueAsString(payload);
                 String endpoint = resolveEndpoint(isGemini ? "/interactions" : "/chat/completions");
 
@@ -310,7 +336,7 @@ public class LmStudioClient implements LlmClient {
         throw new IllegalStateException("Empty or malformed interaction response from Gemini.");
     }
 
-    private Map<String, Object> buildGeminiInteractionsPayload(String systemPrompt, String userPrompt) {
+    private Map<String, Object> buildGeminiInteractionsPayload(String systemPrompt, String userPrompt, Map<String, Object> schema) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", aiConfig.getActiveModel());
         payload.put("system_instruction", systemPrompt);
@@ -320,13 +346,13 @@ public class LmStudioClient implements LlmClient {
         Map<String, Object> responseFormat = new LinkedHashMap<>();
         responseFormat.put("type", "text");
         responseFormat.put("mime_type", "application/json");
-        responseFormat.put("schema", buildQuestionsSchema());
+        responseFormat.put("schema", schema);
         payload.put("response_format", responseFormat);
 
         return payload;
     }
 
-    private Map<String, Object> buildPayload(String systemPrompt, String userPrompt, double temperature) {
+    private Map<String, Object> buildPayload(String systemPrompt, String userPrompt, double temperature, Map<String, Object> schema) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", aiConfig.getActiveModel());
         payload.put("temperature", temperature);
@@ -337,36 +363,11 @@ public class LmStudioClient implements LlmClient {
         payload.put("messages", messages);
 
         Map<String, Object> jsonSchema = new LinkedHashMap<>();
-        jsonSchema.put("name", "questions_response");
-        jsonSchema.put("schema", buildQuestionsSchema());
+        jsonSchema.put("name", "structured_response");
+        jsonSchema.put("schema", schema);
 
         payload.put("response_format", Map.of("type", "json_schema", "json_schema", jsonSchema));
 
         return payload;
-    }
-
-    private Map<String, Object> buildQuestionsSchema() {
-        Map<String, Object> questionItemProperties = new LinkedHashMap<>();
-        questionItemProperties.put("question", Map.of("type", "string"));
-        questionItemProperties.put("choices", Map.of("type", "array", "items", Map.of("type", "string")));
-        questionItemProperties.put("correctIndex", Map.of("type", "integer"));
-        questionItemProperties.put("explanation", Map.of("type", "string"));
-        questionItemProperties.put("difficulty", Map.of("type", "string", "enum", List.of("EASY", "MEDIUM", "HARD")));
-        questionItemProperties.put("evidenceQuote", Map.of("type", "string"));
-
-        Map<String, Object> questionItemSchema = new LinkedHashMap<>();
-        questionItemSchema.put("type", "object");
-        questionItemSchema.put("properties", questionItemProperties);
-        questionItemSchema.put("required", List.of("question", "choices", "correctIndex", "explanation", "difficulty", "evidenceQuote"));
-
-        Map<String, Object> questionsArrayProperty = new LinkedHashMap<>();
-        questionsArrayProperty.put("type", "array");
-        questionsArrayProperty.put("items", questionItemSchema);
-
-        Map<String, Object> schema = new LinkedHashMap<>();
-        schema.put("type", "object");
-        schema.put("properties", Map.of("questions", questionsArrayProperty));
-        schema.put("required", List.of("questions"));
-        return schema;
     }
 }

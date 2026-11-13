@@ -2,6 +2,7 @@ package com.learningpal.dto;
 
 import com.learningpal.entity.AiGenerationJob;
 import com.learningpal.entity.AiJobStatus;
+import com.learningpal.entity.QuestionType;
 
 import java.time.Instant;
 
@@ -14,6 +15,8 @@ public record AiGenerationJobDto(
         Long sourceFileId,
         String sourceFileName,
         int requestedCount,
+        QuestionType questionType,
+        int droppedCount,
         AiJobStatus status,
         int sectionsDone,
         int sectionsTotal,
@@ -34,6 +37,8 @@ public record AiGenerationJobDto(
                 job.getSourceFile().getId(),
                 job.getSourceFile().getFileName(),
                 job.getRequestedCount(),
+                job.getQuestionType(),
+                job.getDroppedCount(),
                 job.getStatus(),
                 job.getSectionsDone(),
                 job.getSectionsTotal(),

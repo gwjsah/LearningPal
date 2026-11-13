@@ -13,6 +13,21 @@ public record TeacherClassAssessmentDto(
         Instant availableFrom,
         Instant availableUntil,
         boolean allowRetakes,
-        boolean hasCustomSetting
-) {}
+        boolean hasCustomSetting,
+        int ungradedEssayCount
+) {
+    public TeacherClassAssessmentDto(
+            Long assessmentId,
+            String title,
+            String description,
+            Integer timeLimitMinutes,
+            Instant availableFrom,
+            Instant availableUntil,
+            boolean allowRetakes,
+            boolean hasCustomSetting
+    ) {
+        this(assessmentId, title, description, timeLimitMinutes, availableFrom, availableUntil,
+                allowRetakes, hasCustomSetting, 0);
+    }
+}
 

@@ -441,7 +441,7 @@ public class ValidationLabTests {
                         .header("Authorization", teacherToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req1)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
 
         // 5. Validation: Student not enrolled in class rejected (404)
         User unenrolledStudent = userRepository.save(new User(

@@ -512,6 +512,45 @@ Subjects represent courses authored by teachers or seeded as universal read-only
 | `created_at` | `DATETIME NOT NULL` | Draft generation timestamp |
 | `reviewed_at` | `DATETIME NULL` | Approval or rejection timestamp |
 
+---
+
+## 13. Question Types (`MULTIPLE_CHOICE`, `ENUMERATION`, `ESSAY`)
+
+### `questions` Updates
+- `type` (`VARCHAR(20) NOT NULL DEFAULT 'MULTIPLE_CHOICE'`): `MULTIPLE_CHOICE` (legacy `MCQ` mapped cleanly), `ENUMERATION`, or `ESSAY`.
+- `explanation` (`TEXT NULL`): Required for `MULTIPLE_CHOICE` and `ENUMERATION`; optional model answer/explanation for `ESSAY`.
+- `text` (`VARCHAR(2000) NOT NULL`): Question prompt up to 2000 characters.
+
+### `question_accepted_answers`
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `question_id` | `BIGINT NOT NULL` | FK to `questions` (for `ENUMERATION`) |
+| `answer_text` | `VARCHAR(100) NOT NULL` | Accepted answer variant (1–10 per question) |
+| `display_order` | `INT NOT NULL` | 0-based variant order |
+
+### `essay_rubric_criteria`
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `question_id` | `BIGINT NOT NULL` | FK to `questions` (for `ESSAY`, 1–8 criteria; sum of `max_points` = `questions.points`) |
+| `name` | `VARCHAR(100) NOT NULL` | Criterion name |
+| `description` | `VARCHAR(500) NULL` | Optional criterion description |
+| `max_points` | `INT NOT NULL` | Positive integer max points |
+| `display_order` | `INT NOT NULL` | 0-based display order |
+
+### `answer_rubric_scores`
+| Column | Type | Description |
+|---|---|---|
+| `id` | `BIGINT AUTO_INCREMENT` | Primary key |
+| `answer_id` | `BIGINT NOT NULL` | FK to `answers` |
+| `criterion_id` | `BIGINT NOT NULL` | FK to `essay_rubric_criteria` |
+| `points_awarded` | `INT NOT NULL` | Integer points awarded (`0..criterion.max_points`) |
+
+- **Unique Constraint:** `(answer_id, criterion_id)`.
+- **Single Grading Path:** Summing `points_awarded` writes `Answer.teacherScore` via `Answer.applyTeacherOverride(...)` and recalculates `finalScore`, `Attempt.totalScore`, and `StudentTopicMastery` in the same transaction.
+
+
 
 
 

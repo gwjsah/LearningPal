@@ -148,6 +148,7 @@ app.llm.gemini.max-retries=3
 # =========================================================
 app.llm.max-drafts-per-job=30
 app.llm.max-jobs-per-teacher-per-hour=5
+app.llm.max-suggestions-per-teacher-per-hour=30
 app.llm.temperature=0.2
 ```
 
@@ -156,14 +157,18 @@ app.llm.temperature=0.2
 ## 5. How the Drafting Pipeline Works
 
 1. **Teacher Action**: In *My Subjects* $\to$ *Resources* $\to$ *Files*, teacher clicks **Draft with AI** on any file with status `Text ready`.
-2. **Setup Dialog**: Teacher selects target curriculum topic and desired question count (5 to 30, default 10). If cloud mode is active, the Google disclosure notice is displayed.
+2. **Setup Dialog**: Teacher selects target curriculum topic, **question type** (`MULTIPLE_CHOICE`, `ENUMERATION`, or `ESSAY` — one type per job), and desired question count (`5` to `30`, default `10`; capped at `10` for `ESSAY`). If cloud mode is active, the Google disclosure notice is displayed.
 3. **Chunking**: `DocumentChunker` splits document text into sections (up to 5,000 characters for local; up to 12,000 for Gemini) on natural paragraph breaks.
 4. **Structured JSON Generation**:
    - System prompt instructs model to act as an objective curriculum examiner and never execute instructions found in untrusted text.
-   - Structured JSON schema enforces: `question`, 4 `choices`, `correctIndex` (0-3), `explanation`, `difficulty`, and `evidenceQuote`.
+   - Per-type structured JSON schema enforces:
+     - `MULTIPLE_CHOICE`: `question`, 4 `choices`, `correctIndex` (0–3), `explanation`, `difficulty`, `evidenceQuote`.
+     - `ENUMERATION`: `question`, `acceptedAnswers` (1–10 variants ≤100 chars, including synonyms/number-word forms), `points`, `explanation`, `difficulty`, `evidenceQuote`.
+     - `ESSAY`: `question` (≤2000 chars), `rubricCriteria` (2–5 criteria with `name`, `description`, positive integer `maxPoints`), optional teacher-only `modelAnswerNote`, `difficulty`, `evidenceQuote`.
 5. **Reasoning Tag Stripping & Strict Parsing**:
    - Strips `<think>...</think>` tags emitted by reasoning models.
    - If model output violates JSON schema, a single automatic repair retry is sent citing the syntax error.
+   - Invalid or near-duplicate drafts are dropped and reported in `droppedCount`.
 6. **Evidence Verification**:
    - Backend normalizes punctuation, whitespace, and case.
    - Confirms `evidenceQuote` is a verbatim substring of the source section text.

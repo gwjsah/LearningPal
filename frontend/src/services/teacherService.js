@@ -99,12 +99,28 @@ export const teacherService = {
     apiRequest(`/teacher/classes/${classId}/attempts/${attemptId}`),
 
   /**
-   * Overrides or reverts a student's score on a question answer.
+   * Overrides or reverts a student's score on a question answer (or grades an essay by rubric).
    */
-  gradeAnswer: (classId, attemptId, answerId, { teacherScore, teacherComment }) =>
+  gradeAnswer: (classId, attemptId, answerId, { teacherScore, teacherComment, rubricScores }) =>
     apiRequest(`/teacher/classes/${classId}/attempts/${attemptId}/answers/${answerId}/grade`, {
       method: 'PUT',
-      body: JSON.stringify({ teacherScore, teacherComment }),
+      body: JSON.stringify({ teacherScore, teacherComment, rubricScores }),
+    }),
+
+  /**
+   * Requests an on-demand AI rubric grade suggestion for an ESSAY answer.
+   */
+  suggestEssayGrade: (classId, attemptId, answerId) =>
+    apiRequest(`/teacher/classes/${classId}/attempts/${attemptId}/answers/${answerId}/ai-suggest`, {
+      method: 'POST',
+    }),
+
+  /**
+   * Discards an active AI grade suggestion for an ESSAY answer.
+   */
+  discardEssaySuggestion: (classId, attemptId, answerId, suggestionId) =>
+    apiRequest(`/teacher/classes/${classId}/attempts/${attemptId}/answers/${answerId}/ai-suggest/${suggestionId}/discard`, {
+      method: 'POST',
     }),
 
   /**

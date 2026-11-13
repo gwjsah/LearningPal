@@ -1,9 +1,9 @@
 package com.learningpal.dto;
 
 import com.learningpal.entity.DifficultyLevel;
+import com.learningpal.entity.QuestionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -14,11 +14,10 @@ public record UpdateQuestionRequest(
         Long topicId,
 
         @NotBlank(message = "Question text is required")
-        @Size(max = 1000, message = "Question text must be 1000 characters or fewer")
+        @Size(max = 2000, message = "Question text must be 2000 characters or fewer")
         String text,
 
-        @NotBlank(message = "Explanation is required")
-        @Size(max = 1000, message = "Explanation must be 1000 characters or fewer")
+        @Size(max = 2000, message = "Explanation must be 2000 characters or fewer")
         String explanation,
 
         @NotNull(message = "Difficulty level is required")
@@ -26,7 +25,23 @@ public record UpdateQuestionRequest(
 
         Double points,
 
-        @NotEmpty(message = "Choices list cannot be empty")
-        @Size(min = 2, max = 6, message = "Questions must have between 2 and 6 choices")
-        List<@Valid ChoiceDto> choices
-) {}
+        List<@Valid ChoiceDto> choices,
+
+        QuestionType type,
+
+        List<String> acceptedAnswers,
+
+        List<@Valid EssayRubricCriterionDto> rubricCriteria
+) {
+    /** Backward-compatible 6-arg constructor for existing MCQ callers and tests. */
+    public UpdateQuestionRequest(
+            Long topicId,
+            String text,
+            String explanation,
+            DifficultyLevel difficulty,
+            Double points,
+            List<ChoiceDto> choices
+    ) {
+        this(topicId, text, explanation, difficulty, points, choices, null, null, null);
+    }
+}

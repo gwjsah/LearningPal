@@ -402,7 +402,7 @@ public class ValidationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
 
         if (topic.getSubject() == null || !topic.getSubject().getId().equals(cls.getSubject().getId())) {
-            throw new BadRequestException("Topic does not belong to the class subject: " + cls.getSubject().getName());
+            throw new ResourceNotFoundException("Resource not found");
         }
 
         // Verify the topic is assigned for this student (or existing label exists for back-compat)

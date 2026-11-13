@@ -2,6 +2,9 @@ package com.learningpal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learningpal.config.AiConfigProperties;
+import com.learningpal.entity.EssayRubricCriterion;
+import com.learningpal.entity.Question;
+import com.learningpal.entity.QuestionType;
 import com.learningpal.service.ai.AiPromptBuilder;
 import com.learningpal.service.ai.AiResponseParser;
 import com.learningpal.service.ai.EvidenceVerifier;
@@ -93,5 +96,85 @@ public class RealGeminiVerificationTest {
 
         assertFalse(parsedQuestions.isEmpty(), "Gemini should produce at least one valid parsed question");
         assertEquals(2, parsedQuestions.size(), "Gemini should produce exactly requested 2 questions");
+    }
+
+    @Test
+    void testRealEssayGenerationAgainstGoogleGemini() throws Exception {
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            return;
+        }
+
+        AiConfigProperties config = new AiConfigProperties();
+        config.setEnabled(true);
+        config.setProvider("gemini");
+        config.setGeminiApiKey(apiKey);
+        config.setGeminiBaseUrl("https://generativelanguage.googleapis.com/v1beta");
+        config.setGeminiModel("gemini-3.5-flash-lite");
+        config.setGeminiMaxRetries(3);
+        config.setRequestTimeoutSeconds(60);
+        config.setTemperature(0.2);
+
+        LmStudioClient client = new LmStudioClient(config, new ObjectMapper());
+        String sampleDocumentText = """
+                Operating Systems: CPU Scheduling Fundamentals
+                In preemptive scheduling, the operating system can interrupt a currently running process to assign the CPU to another higher-priority process.
+                Round Robin scheduling allocates a fixed time quantum to each ready process in cyclic order.
+                """;
+
+        String systemPrompt = AiPromptBuilder.buildSystemPrompt(QuestionType.ESSAY);
+        String userPrompt = AiPromptBuilder.buildUserPrompt(QuestionType.ESSAY, sampleDocumentText, 1, config.getActiveUserSuffix());
+        String rawOutput = client.generateChatCompletion(
+                systemPrompt, userPrompt, config.getTemperature(), config.getRequestTimeoutSeconds(), QuestionType.ESSAY);
+
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
+        AiResponseParser.ParseBatchResult result = parser.parseAndValidate(rawOutput, QuestionType.ESSAY, new HashSet<>());
+        assertFalse(result.accepted().isEmpty(), "Gemini should produce at least one valid essay draft");
+        assertTrue(result.accepted().get(0).rubricCriteria().size() >= 2);
+    }
+
+    @Test
+    void testRealEssayGradingSuggestionAgainstGoogleGemini() throws Exception {
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            return;
+        }
+
+        AiConfigProperties config = new AiConfigProperties();
+        config.setEnabled(true);
+        config.setProvider("gemini");
+        config.setGeminiApiKey(apiKey);
+        config.setGeminiBaseUrl("https://generativelanguage.googleapis.com/v1beta");
+        config.setGeminiModel("gemini-3.5-flash-lite");
+        config.setGeminiMaxRetries(3);
+        config.setRequestTimeoutSeconds(60);
+        config.setTemperature(0.2);
+
+        LmStudioClient client = new LmStudioClient(config, new ObjectMapper());
+        Question q = new Question();
+        EssayRubricCriterion c1 = new EssayRubricCriterion(q, "Accuracy", "Explains preemption", 5, 0);
+        EssayRubricCriterion c2 = new EssayRubricCriterion(q, "Clarity", "Clear writing", 3, 1);
+        // Assign synthetic IDs via reflection for standalone manual test
+        var idField = EssayRubricCriterion.class.getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(c1, 1L);
+        idField.set(c2, 2L);
+        List<EssayRubricCriterion> criteria = List.of(c1, c2);
+
+        String systemPrompt = AiPromptBuilder.buildEssaySuggestionSystemPrompt();
+        String userPrompt = AiPromptBuilder.buildEssaySuggestionUserPrompt(
+                "Explain preemptive scheduling.",
+                criteria,
+                "Mention interrupting a running process.",
+                "Preemptive scheduling lets the OS interrupt a running process for a higher-priority one.",
+                config.getActiveUserSuffix()
+        );
+        String raw = client.generateChatCompletion(
+                systemPrompt, userPrompt, config.getTemperature(), config.getRequestTimeoutSeconds(),
+                AiPromptBuilder.buildEssaySuggestionJsonSchema()
+        );
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
+        AiResponseParser.ParsedEssaySuggestion parsed = parser.parseAndValidateEssaySuggestion(raw, criteria);
+        assertEquals(2, parsed.criteria().size());
     }
 }

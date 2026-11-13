@@ -362,6 +362,9 @@ public class GapAnalysisService {
 
         for (Answer a : answers) {
             Question q = a.getQuestion();
+            if (q.getType() == QuestionType.ESSAY && a.getFinalScore() == null) {
+                continue;
+            }
             double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
             double earned = (a.getFinalScore() != null) ? a.getFinalScore() : 0.0;
             boolean isCorrect = earned >= points;
@@ -509,6 +512,9 @@ public class GapAnalysisService {
         List<StudentAnswerHistoryDto> history = new ArrayList<>();
         for (Answer a : answers) {
             Question q = a.getQuestion();
+            if (q.getType() == QuestionType.ESSAY && a.getFinalScore() == null) {
+                continue;
+            }
             double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
             double earned = (a.getFinalScore() != null) ? a.getFinalScore() : 0.0;
             boolean isCorrect = earned >= points;
@@ -576,6 +582,9 @@ public class GapAnalysisService {
                     ans = answerByLineage.get(lineageKey);
                 }
                 Question evalQ = (ans != null && ans.getQuestion() != null) ? ans.getQuestion() : q;
+                if (evalQ.getType() == QuestionType.ESSAY && (ans == null || ans.getFinalScore() == null)) {
+                    continue;
+                }
                 double points = (evalQ.getPoints() != null) ? evalQ.getPoints() : 1.0;
                 double earned = 0.0;
                 boolean answered = false;
@@ -601,6 +610,9 @@ public class GapAnalysisService {
             for (Answer ans : answers) {
                 Question q = ans.getQuestion();
                 if (q == null) continue;
+                if (q.getType() == QuestionType.ESSAY && ans.getFinalScore() == null) {
+                    continue;
+                }
                 Long lineageKey = (q.getLineageId() != null) ? q.getLineageId() : q.getId();
                 double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
                 double earned = (ans.getFinalScore() != null) ? ans.getFinalScore() : 0.0;
@@ -622,22 +634,17 @@ public class GapAnalysisService {
 
     @Transactional(readOnly = true)
     public Map<Long, Integer> countDistinctQuestionsEvaluatedPerTopicInClass(Long studentId, Long classId) {
-        List<Attempt> attempts =
-                attemptRepository.findByStudentIdAndClassIdAndStatusOrderBySubmittedAtAsc(studentId, classId, AttemptStatus.SUBMITTED);
+        return countDistinctByTopic(getLatestQuestionEvaluationsInClass(studentId, classId).values());
+    }
 
-        Map<Long, Set<Long>> questionIdsByTopic = new HashMap<>();
-        for (Attempt attempt : attempts) {
-            List<AssessmentQuestion> aqList =
-                    assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(attempt.getAssessment());
-            for (AssessmentQuestion aq : aqList) {
-                Long topicId = aq.getQuestion().getTopic().getId();
-                Long lineageKey = (aq.getQuestion().getLineageId() != null) ? aq.getQuestion().getLineageId() : aq.getQuestion().getId();
-                questionIdsByTopic.computeIfAbsent(topicId, k -> new HashSet<>()).add(lineageKey);
+    private Map<Long, Integer> countDistinctByTopic(Collection<QuestionEvaluation> evaluations) {
+        Map<Long, Integer> result = new HashMap<>();
+        for (QuestionEvaluation eval : evaluations) {
+            if (eval.question() != null && eval.question().getTopic() != null) {
+                Long topicId = eval.question().getTopic().getId();
+                result.merge(topicId, 1, Integer::sum);
             }
         }
-
-        Map<Long, Integer> result = new HashMap<>();
-        questionIdsByTopic.forEach((topicId, set) -> result.put(topicId, set.size()));
         return result;
     }
 
@@ -678,6 +685,9 @@ public class GapAnalysisService {
                     ans = answerByLineage.get(lineageKey);
                 }
                 Question evalQ = (ans != null && ans.getQuestion() != null) ? ans.getQuestion() : q;
+                if (evalQ.getType() == QuestionType.ESSAY && (ans == null || ans.getFinalScore() == null)) {
+                    continue;
+                }
                 double points = (evalQ.getPoints() != null) ? evalQ.getPoints() : 1.0;
                 double earned = 0.0;
                 boolean answered = false;
@@ -703,6 +713,9 @@ public class GapAnalysisService {
             for (Answer ans : answers) {
                 Question q = ans.getQuestion();
                 if (q == null) continue;
+                if (q.getType() == QuestionType.ESSAY && ans.getFinalScore() == null) {
+                    continue;
+                }
                 Long lineageKey = (q.getLineageId() != null) ? q.getLineageId() : q.getId();
                 double points = (q.getPoints() != null) ? q.getPoints() : 1.0;
                 double earned = (ans.getFinalScore() != null) ? ans.getFinalScore() : 0.0;
@@ -727,23 +740,7 @@ public class GapAnalysisService {
      */
     @Transactional(readOnly = true)
     public Map<Long, Integer> countDistinctQuestionsEvaluatedPerTopic(Long studentId) {
-        List<Attempt> attempts =
-                attemptRepository.findByStudentIdAndStatusOrderBySubmittedAtAsc(studentId, AttemptStatus.SUBMITTED);
-
-        Map<Long, Set<Long>> questionIdsByTopic = new HashMap<>();
-        for (Attempt attempt : attempts) {
-            List<AssessmentQuestion> aqList =
-                    assessmentQuestionRepository.findByAssessmentOrderByPositionAsc(attempt.getAssessment());
-            for (AssessmentQuestion aq : aqList) {
-                Long topicId = aq.getQuestion().getTopic().getId();
-                Long lineageKey = (aq.getQuestion().getLineageId() != null) ? aq.getQuestion().getLineageId() : aq.getQuestion().getId();
-                questionIdsByTopic.computeIfAbsent(topicId, k -> new HashSet<>()).add(lineageKey);
-            }
-        }
-
-        Map<Long, Integer> result = new HashMap<>();
-        questionIdsByTopic.forEach((topicId, set) -> result.put(topicId, set.size()));
-        return result;
+        return countDistinctByTopic(getLatestQuestionEvaluations(studentId).values());
     }
 
     // Expose classification helper for testing or service callers

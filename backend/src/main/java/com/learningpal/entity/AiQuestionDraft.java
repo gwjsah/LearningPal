@@ -23,25 +23,38 @@ public class AiQuestionDraft {
     @Column(name = "section_index", nullable = false)
     private int sectionIndex = 0;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_type", nullable = false, length = 20)
+    private QuestionType questionType = QuestionType.MULTIPLE_CHOICE;
+
     @Column(name = "question_text", columnDefinition = "TEXT", nullable = false)
     private String questionText;
 
-    @Column(name = "choice_a", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "choice_a", columnDefinition = "TEXT")
     private String choiceA;
 
-    @Column(name = "choice_b", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "choice_b", columnDefinition = "TEXT")
     private String choiceB;
 
-    @Column(name = "choice_c", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "choice_c", columnDefinition = "TEXT")
     private String choiceC;
 
-    @Column(name = "choice_d", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "choice_d", columnDefinition = "TEXT")
     private String choiceD;
 
-    @Column(name = "correct_index", nullable = false)
-    private int correctIndex;
+    @Column(name = "correct_index")
+    private Integer correctIndex = 0;
 
-    @Column(name = "explanation", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "accepted_answers_json", columnDefinition = "TEXT")
+    private String acceptedAnswersJson;
+
+    @Column(name = "rubric_criteria_json", columnDefinition = "TEXT")
+    private String rubricCriteriaJson;
+
+    @Column(name = "points", nullable = false)
+    private double points = 1.0;
+
+    @Column(name = "explanation", columnDefinition = "TEXT")
     private String explanation;
 
     @Enumerated(EnumType.STRING)
@@ -103,6 +116,12 @@ public class AiQuestionDraft {
 
     @PrePersist
     protected void onCreate() {
+        if (this.questionType == null) {
+            this.questionType = QuestionType.MULTIPLE_CHOICE;
+        }
+        if (this.points <= 0) {
+            this.points = 1.0;
+        }
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
         }
@@ -117,12 +136,23 @@ public class AiQuestionDraft {
     }
 
     public List<String> getChoicesList() {
+        if (questionType != null && !questionType.isMultipleChoice()) {
+            return List.of();
+        }
         List<String> list = new ArrayList<>(4);
-        list.add(choiceA);
-        list.add(choiceB);
-        list.add(choiceC);
-        list.add(choiceD);
+        if (choiceA != null) list.add(choiceA);
+        if (choiceB != null) list.add(choiceB);
+        if (choiceC != null) list.add(choiceC);
+        if (choiceD != null) list.add(choiceD);
         return list;
+    }
+
+    public QuestionType getQuestionType() {
+        return questionType != null ? questionType.canonical() : QuestionType.MULTIPLE_CHOICE;
+    }
+
+    public void setQuestionType(QuestionType questionType) {
+        this.questionType = questionType != null ? questionType.canonical() : QuestionType.MULTIPLE_CHOICE;
     }
 
     public Long getId() {
@@ -186,11 +216,35 @@ public class AiQuestionDraft {
     }
 
     public int getCorrectIndex() {
-        return correctIndex;
+        return correctIndex != null ? correctIndex : 0;
     }
 
-    public void setCorrectIndex(int correctIndex) {
+    public void setCorrectIndex(Integer correctIndex) {
         this.correctIndex = correctIndex;
+    }
+
+    public String getAcceptedAnswersJson() {
+        return acceptedAnswersJson;
+    }
+
+    public void setAcceptedAnswersJson(String acceptedAnswersJson) {
+        this.acceptedAnswersJson = acceptedAnswersJson;
+    }
+
+    public String getRubricCriteriaJson() {
+        return rubricCriteriaJson;
+    }
+
+    public void setRubricCriteriaJson(String rubricCriteriaJson) {
+        this.rubricCriteriaJson = rubricCriteriaJson;
+    }
+
+    public double getPoints() {
+        return points;
+    }
+
+    public void setPoints(double points) {
+        this.points = points;
     }
 
     public String getExplanation() {

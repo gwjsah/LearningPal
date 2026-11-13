@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
@@ -56,6 +57,9 @@ public class IsolationMatrixTests {
 
     @Autowired
     private SubjectRepository subjectRepository;
+
+    @Autowired
+    private AssessmentQuestionRepository assessmentQuestionRepository;
 
     @Autowired
     private ClassEntityRepository classEntityRepository;
@@ -952,5 +956,190 @@ public class IsolationMatrixTests {
         mockMvc.perform(get("/api/teacher/subjects/" + subjA.getId() + "/quizzes/999999")
                         .header("Authorization", "Bearer " + tokenTeacherA1))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Matrix: Enumeration & Essay CRUD, grading, and quiz-taking payloads enforce ownership and hide answer keys/rubrics")
+    void testQuestionTypesAndRubricIsolation() throws Exception {
+        Subject subjA = subjectRepository.save(new Subject("SUBJ_QT_" + System.nanoTime(), "QT Subj", "Desc", teacherA1));
+        Topic topicA = topicRepository.save(new Topic(subjA, "QT Topic", "Desc", 1));
+        ClassEntity clsA = classEntityRepository.save(new ClassEntity(instA, subjA, teacherA1, "QT Class", "QTISO1"));
+        enrollmentRepository.save(new Enrollment(studentA1, clsA));
+
+        String tokenTeacherB1 = jwtService.generateToken(teacherB1);
+        String tokenTeacherA2 = jwtService.generateToken(teacherA2);
+        String tokenStudentB1 = jwtService.generateToken(studentB1);
+
+        String enumBody = """
+                {
+                  "topicId": %d,
+                  "type": "ENUMERATION",
+                  "text": "What is 2+2?",
+                  "explanation": "Basic arithmetic",
+                  "difficulty": "EASY",
+                  "points": 1.0,
+                  "acceptedAnswers": ["4", "four"]
+                }
+                """.formatted(topicA.getId());
+
+        // Cross-teacher & student cannot create enumeration question on subjA
+        mockMvc.perform(post("/api/teacher/subjects/" + subjA.getId() + "/questions")
+                        .header("Authorization", "Bearer " + tokenTeacherA2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(enumBody))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/teacher/subjects/" + subjA.getId() + "/questions")
+                        .header("Authorization", "Bearer " + tokenTeacherB1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(enumBody))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/teacher/subjects/" + subjA.getId() + "/questions")
+                        .header("Authorization", "Bearer " + tokenStudentA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(enumBody))
+                .andExpect(status().isForbidden());
+
+        // Owner creates enumeration and essay questions
+        MvcResult enumRes = mockMvc.perform(post("/api/teacher/subjects/" + subjA.getId() + "/questions")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(enumBody))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long enumId = objectMapper.readTree(enumRes.getResponse().getContentAsString()).get("id").asLong();
+
+        String essayBody = """
+                {
+                  "topicId": %d,
+                  "type": "ESSAY",
+                  "text": "Explain recursion.",
+                  "explanation": "Base case stops infinite calls.",
+                  "difficulty": "MEDIUM",
+                  "rubricCriteria": [
+                    { "name": "Base case", "description": "Termination", "maxPoints": 3 }
+                  ]
+                }
+                """.formatted(topicA.getId());
+        MvcResult essayRes = mockMvc.perform(post("/api/teacher/subjects/" + subjA.getId() + "/questions")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(essayBody))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long essayId = objectMapper.readTree(essayRes.getResponse().getContentAsString()).get("id").asLong();
+        Long critId = objectMapper.readTree(essayRes.getResponse().getContentAsString())
+                .get("rubricCriteria").get(0).get("id").asLong();
+
+        // Publish quiz with both questions
+        Assessment quiz = assessmentRepository.save(new Assessment(subjA, "QT Iso Quiz", "Desc", AssessmentStatus.PUBLISHED, teacherA1));
+        assessmentQuestionRepository.save(new AssessmentQuestion(quiz, questionRepository.findById(enumId).orElseThrow(), 1));
+        assessmentQuestionRepository.save(new AssessmentQuestion(quiz, questionRepository.findById(essayId).orElseThrow(), 2));
+
+        // Student starts attempt: payload MUST NOT contain acceptedAnswers or rubricCriteria
+        MvcResult startRes = mockMvc.perform(post("/api/student/assessments/" + quiz.getId() + "/attempts")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.questions[0].acceptedAnswers").doesNotExist())
+                .andExpect(jsonPath("$.questions[1].rubricCriteria").doesNotExist())
+                .andReturn();
+        Long attemptId = objectMapper.readTree(startRes.getResponse().getContentAsString()).get("attemptId").asLong();
+
+        mockMvc.perform(post("/api/student/attempts/" + attemptId + "/submit")
+                        .header("Authorization", "Bearer " + tokenStudentA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "answers": [
+                                  { "questionId": %d, "textAnswer": "four" },
+                                  { "questionId": %d, "textAnswer": "A function calling itself" }
+                                ] }
+                                """.formatted(enumId, essayId)))
+                .andExpect(status().isOk());
+
+        // Student result before grading: no rubricScores and no ESSAY model-answer explanation (SEC2-004)
+        mockMvc.perform(get("/api/student/attempts/" + attemptId + "/result")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.questionReviews[1].rubricScores", hasSize(0)))
+                .andExpect(jsonPath("$.questionReviews[1].explanation").value(org.hamcrest.Matchers.nullValue()));
+
+        // Another student cannot view studentA1's result -> 404
+        mockMvc.perform(get("/api/student/attempts/" + attemptId + "/result")
+                        .header("Authorization", "Bearer " + tokenStudentB1))
+                .andExpect(status().isNotFound());
+
+        // Foreign teacher cannot grade essay -> 404
+        Long essayAnsId = objectMapper.readTree(mockMvc.perform(get("/api/teacher/classes/" + clsA.getId() + "/attempts/" + attemptId)
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString())
+                .get("answers").get(1).get("answerId").asLong();
+
+        String gradeBody = """
+                { "teacherComment": "Good", "rubricScores": [{ "criterionId": %d, "points": 3 }] }
+                """.formatted(critId);
+        mockMvc.perform(put("/api/teacher/classes/" + clsA.getId() + "/attempts/" + attemptId + "/answers/" + essayAnsId + "/grade")
+                        .header("Authorization", "Bearer " + tokenTeacherA2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gradeBody))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/teacher/classes/" + clsA.getId() + "/attempts/" + attemptId + "/answers/" + essayAnsId + "/grade")
+                        .header("Authorization", "Bearer " + tokenTeacherB1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gradeBody))
+                .andExpect(status().isNotFound());
+
+        // Owner grades essay -> student now sees explanation
+        mockMvc.perform(put("/api/teacher/classes/" + clsA.getId() + "/attempts/" + attemptId + "/answers/" + essayAnsId + "/grade")
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(gradeBody))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/student/attempts/" + attemptId + "/result")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.questionReviews[1].explanation", is("Base case stops infinite calls.")));
+    }
+
+    @Test
+    @DisplayName("SEC2-005/006/008: 404 on SUPER_ADMIN deactivate & foreign topicId, 403 on non-teacher ai-suggest & SUPER_ADMIN validation report")
+    void testSecurityAudit2ZeroLeakageAndMatrixAlignment() throws Exception {
+        // SEC2-005: Admin probing SUPER_ADMIN user ID on deactivate gets 404 (not 400)
+        User superAdmin = userRepository.save(new User(
+                "Platform Super",
+                "super_" + System.nanoTime() + "@platform.edu",
+                passwordEncoder.encode("Pass123!"),
+                Role.SUPER_ADMIN,
+                UserStatus.ACTIVE,
+                null
+        ));
+        String tokenSuperAdmin = jwtService.generateToken(superAdmin);
+
+        mockMvc.perform(post("/api/admin/users/" + superAdmin.getId() + "/deactivate")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isNotFound());
+
+        // SEC2-006: Teacher submitting validation label with foreign topicId gets 404 (not 400)
+        Subject foreignSubject = subjectRepository.save(new Subject("FOR_SUB_" + System.nanoTime(), "Foreign", "Desc", teacherB1));
+        Topic foreignTopic = topicRepository.save(new Topic(foreignSubject, "Foreign Topic", "Desc", 1));
+
+        mockMvc.perform(put("/api/teacher/classes/" + classA1.getId() + "/validation/students/" + studentA1.getId() + "/topics/" + foreignTopic.getId())
+                        .header("Authorization", "Bearer " + tokenTeacherA1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "label": "WEAK", "note": "Test" }
+                                """))
+                .andExpect(status().isNotFound());
+
+        // SEC2-008: Non-teachers get 403 on /ai-suggest, SUPER_ADMIN gets 403 on /api/admin/validation/report
+        mockMvc.perform(post("/api/teacher/classes/" + classA1.getId() + "/attempts/" + attemptA2.getId() + "/answers/1/ai-suggest")
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/teacher/classes/" + classA1.getId() + "/attempts/" + attemptA2.getId() + "/answers/1/ai-suggest")
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/validation/report")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isForbidden());
     }
 }

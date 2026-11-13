@@ -43,6 +43,9 @@ public class AiConfigProperties {
     @Value("${app.llm.max-jobs-per-teacher-per-hour:5}")
     private int maxJobsPerTeacherPerHour;
 
+    @Value("${app.llm.max-suggestions-per-teacher-per-hour:30}")
+    private int maxSuggestionsPerTeacherPerHour;
+
     // Google AI Studio (Gemini) cloud configuration
     @Value("${GEMINI_API_KEY:${app.llm.gemini.api-key:}}")
     private String geminiApiKey;
@@ -242,5 +245,13 @@ public class AiConfigProperties {
 
     public void setGeminiMaxRetries(int geminiMaxRetries) {
         this.geminiMaxRetries = geminiMaxRetries;
+    }
+
+    public int getMaxSuggestionsPerTeacherPerHour() {
+        return maxSuggestionsPerTeacherPerHour;
+    }
+
+    public void setMaxSuggestionsPerTeacherPerHour(int maxSuggestionsPerTeacherPerHour) {
+        this.maxSuggestionsPerTeacherPerHour = maxSuggestionsPerTeacherPerHour;
     }
 }
