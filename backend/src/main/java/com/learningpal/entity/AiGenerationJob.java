@@ -34,6 +34,13 @@ public class AiGenerationJob {
     private int requestedCount = 10;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "question_type", nullable = false, length = 20)
+    private QuestionType questionType = QuestionType.MULTIPLE_CHOICE;
+
+    @Column(name = "dropped_count", nullable = false)
+    private int droppedCount = 0;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AiJobStatus status = AiJobStatus.QUEUED;
 
@@ -68,11 +75,24 @@ public class AiGenerationJob {
             ResourceFile sourceFile,
             int requestedCount,
             String modelName) {
+        this(teacher, subject, topic, sourceFile, requestedCount, QuestionType.MULTIPLE_CHOICE, modelName);
+    }
+
+    public AiGenerationJob(
+            User teacher,
+            Subject subject,
+            Topic topic,
+            ResourceFile sourceFile,
+            int requestedCount,
+            QuestionType questionType,
+            String modelName) {
         this.teacher = teacher;
         this.subject = subject;
         this.topic = topic;
         this.sourceFile = sourceFile;
         this.requestedCount = requestedCount;
+        this.questionType = questionType != null ? questionType.canonical() : QuestionType.MULTIPLE_CHOICE;
+        this.droppedCount = 0;
         this.modelName = modelName;
         this.status = AiJobStatus.QUEUED;
         this.sectionsDone = 0;
@@ -84,6 +104,9 @@ public class AiGenerationJob {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
+        }
+        if (this.questionType == null) {
+            this.questionType = QuestionType.MULTIPLE_CHOICE;
         }
     }
 
@@ -129,6 +152,22 @@ public class AiGenerationJob {
 
     public void setRequestedCount(int requestedCount) {
         this.requestedCount = requestedCount;
+    }
+
+    public QuestionType getQuestionType() {
+        return questionType != null ? questionType.canonical() : QuestionType.MULTIPLE_CHOICE;
+    }
+
+    public void setQuestionType(QuestionType questionType) {
+        this.questionType = questionType != null ? questionType.canonical() : QuestionType.MULTIPLE_CHOICE;
+    }
+
+    public int getDroppedCount() {
+        return droppedCount;
+    }
+
+    public void setDroppedCount(int droppedCount) {
+        this.droppedCount = droppedCount;
     }
 
     public AiJobStatus getStatus() {

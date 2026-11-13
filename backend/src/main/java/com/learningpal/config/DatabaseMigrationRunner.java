@@ -83,6 +83,7 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         relaxLegacyTopicColumnOnResourcesIfPresent();
         migrateEnumsAndColumnsIfPresent();
         ensureValidationAssignmentTableIfPresent();
+        ensureAiGradeSuggestionTableIfPresent();
 
         // 2. Ensure default "Pilot University" exists
         Institution pilot = institutionRepository.findByCode("PILOT-2026")
@@ -363,14 +364,43 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
                     executeSilently("ALTER TABLE questions MODIFY COLUMN origin ENUM('MANUAL', 'AI', 'AI_DRAFT') NOT NULL DEFAULT 'MANUAL'");
                 }
 
+                // Ensure questions.type supports MULTIPLE_CHOICE, ENUMERATION, ESSAY, MCQ
+                executeSilently("ALTER TABLE questions MODIFY COLUMN type VARCHAR(20) NOT NULL DEFAULT 'MULTIPLE_CHOICE'");
+                // Ensure questions.explanation is nullable (optional for ESSAY questions)
+                executeSilently("ALTER TABLE questions MODIFY COLUMN explanation TEXT NULL");
                 // Ensure questions has origin_file_id
                 executeSilently("ALTER TABLE questions ADD COLUMN origin_file_id BIGINT NULL");
                 // Ensure resources.type supports FILE
                 executeSilently("ALTER TABLE resources MODIFY COLUMN type ENUM('ARTICLE', 'LINK', 'NOTE', 'PRACTICE', 'VIDEO', 'FILE') NOT NULL");
                 // Ensure resources has file_id
                 executeSilently("ALTER TABLE resources ADD COLUMN file_id BIGINT NULL");
-                log.info("Migration: Verified enum and column compatibility for questions and resources.");
+                // Ensure AI generation jobs & drafts support question_type, dropped_count, variants, and rubrics
+                executeSilently("ALTER TABLE ai_generation_jobs ADD COLUMN question_type VARCHAR(20) NOT NULL DEFAULT 'MULTIPLE_CHOICE'");
+                executeSilently("ALTER TABLE ai_generation_jobs ADD COLUMN dropped_count INT NOT NULL DEFAULT 0");
+                executeSilently("ALTER TABLE ai_question_drafts ADD COLUMN question_type VARCHAR(20) NOT NULL DEFAULT 'MULTIPLE_CHOICE'");
+                executeSilently("ALTER TABLE ai_question_drafts ADD COLUMN accepted_answers_json TEXT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ADD COLUMN rubric_criteria_json TEXT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ADD COLUMN points DOUBLE NOT NULL DEFAULT 1.0");
+                executeSilently("ALTER TABLE ai_question_drafts MODIFY COLUMN choice_a TEXT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts MODIFY COLUMN choice_b TEXT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts MODIFY COLUMN choice_c TEXT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts MODIFY COLUMN choice_d TEXT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts MODIFY COLUMN correct_index INT NULL");
+                executeSilently("ALTER TABLE ai_question_drafts MODIFY COLUMN explanation TEXT NULL");
+                log.info("Migration: Verified enum and column compatibility for questions, resources, and AI drafting tables.");
+            } else {
+                executeSilently("ALTER TABLE questions ALTER COLUMN explanation SET NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ALTER COLUMN choice_a SET NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ALTER COLUMN choice_b SET NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ALTER COLUMN choice_c SET NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ALTER COLUMN choice_d SET NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ALTER COLUMN correct_index SET NULL");
+                executeSilently("ALTER TABLE ai_question_drafts ALTER COLUMN explanation SET NULL");
             }
+            // Idempotent backfill for any legacy rows missing a question type
+            executeSilently("UPDATE questions SET type = 'MULTIPLE_CHOICE' WHERE type IS NULL OR type = ''");
+            executeSilently("UPDATE ai_generation_jobs SET question_type = 'MULTIPLE_CHOICE' WHERE question_type IS NULL OR question_type = ''");
+            executeSilently("UPDATE ai_question_drafts SET question_type = 'MULTIPLE_CHOICE' WHERE question_type IS NULL OR question_type = ''");
         } catch (Exception e) {
             log.debug("Database enum and column migration skipped: {}", e.getMessage());
         }
@@ -390,6 +420,25 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
                     ")");
         } catch (Exception e) {
             log.debug("Validation assignments table migration notice: {}", e.getMessage());
+        }
+    }
+
+    private void ensureAiGradeSuggestionTableIfPresent() {
+        try {
+            executeSilently("CREATE TABLE IF NOT EXISTS ai_grade_suggestions (" +
+                    "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
+                    "answer_id BIGINT NOT NULL, " +
+                    "teacher_id BIGINT NOT NULL, " +
+                    "criterion_suggestions_json TEXT NOT NULL, " +
+                    "overall_feedback VARCHAR(600), " +
+                    "provider_name VARCHAR(30) NOT NULL, " +
+                    "model_name VARCHAR(120) NOT NULL, " +
+                    "status VARCHAR(20) NOT NULL DEFAULT 'SUGGESTED', " +
+                    "created_at TIMESTAMP NOT NULL, " +
+                    "resolved_at TIMESTAMP NULL" +
+                    ")");
+        } catch (Exception e) {
+            log.debug("AI grade suggestions table migration notice: {}", e.getMessage());
         }
     }
 }

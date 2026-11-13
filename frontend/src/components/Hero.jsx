@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
+  Clock,
   BookOpen,
   PenTool,
   TrendingUp,
@@ -20,30 +21,31 @@ import {
 } from './Doodles';
 
 const TOPIC_RECOMMENDATIONS = {
-  organelles: {
-    topic: 'Cell Organelles & Membrane',
-    title: '5-Min Membrane Transport Mastery Challenge',
-    matchReason: 'Confirmed 94% strength — try an optional AP-level synthesis prompt.',
+  variables: {
+    topic: 'Variables & Data Types',
+    title: 'PDF Reference: C99 Primitive Types & Format Specifiers',
+    matchReason: 'Strength (92% ≥ 80% across 6 questions) — optional reference sheet for review.',
   },
-  atp: {
-    topic: 'ATP & Cellular Respiration',
-    title: 'Electron Transport Chain Quick-Check Flashcards',
-    matchReason: '82% mastery — 1 quick review locks in oxidative phosphorylation.',
+  control: {
+    topic: 'Control Flow & Loops',
+    title: 'DOCX Guide: Loop Invariant & Trace Table Walkthrough',
+    matchReason: 'Strength (81% ≥ 80% across 5 questions) — reinforces nested loop boundary checks.',
   },
-  enzymes: {
-    topic: 'Enzyme Kinetics & pH Curves',
-    title: 'Interactive pH Denaturation Curve Plotter (10 min)',
-    matchReason: '61% score — 2 graph-reading errors on optimal pH & competitive inhibition.',
+  functions: {
+    topic: 'Functions & Scope',
+    title: 'PDF Guide: Stack Frames & Pass-by-Value Illustrated',
+    matchReason: 'Developing (68%, 60–79% band) — 2 missed questions on local parameter copies.',
   },
-  meiosis: {
-    topic: 'Meiosis & Chromosome Crossing',
-    title: 'Interactive Visual Guide: Crossing-Over in Prophase I (8 min)',
-    matchReason: 'Matched to your visual learning style & 3 missed questions on chromatid exchange.',
+  pointers: {
+    topic: 'Pointers & Memory Addresses',
+    title: 'PDF Guide: Visualizing & and * Dereference Operators on the Stack',
+    matchReason: 'Learning Gap (48% < 60% across 4 questions) — prioritized for study next.',
   },
 };
 
 export default function Hero({ onSelectDemoRole }) {
-  const [selectedTopicId, setSelectedTopicId] = useState('meiosis');
+  const [selectedTopicId, setSelectedTopicId] = useState('pointers');
+  const shouldReduceMotion = useReducedMotion();
   const { heroCard } = heroContent;
   const activeRecommendation =
     TOPIC_RECOMMENDATIONS[selectedTopicId] || heroCard.pinnedRecommendation;
@@ -52,7 +54,7 @@ export default function Hero({ onSelectDemoRole }) {
     onSelectDemoRole(role);
     const demoEl = document.getElementById('demo');
     if (demoEl) {
-      demoEl.scrollIntoView({ behavior: 'smooth' });
+      demoEl.scrollIntoView({ behavior: shouldReduceMotion ? 'auto' : 'smooth' });
     }
   };
 
@@ -67,7 +69,7 @@ export default function Hero({ onSelectDemoRole }) {
           <div className="lg:col-span-6 space-y-6">
             {/* Washi-tape style eyebrow badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-highlighter-yellowSoft dark:bg-yellow-950/70 border border-ink/20 dark:border-yellow-500/30 shadow-sm -rotate-1">
-              <PenTool className="w-3.5 h-3.5 text-redpen dark:text-red-400" />
+              <PenTool className="w-3.5 h-3.5 text-redpen dark:text-red-400" aria-hidden="true" />
               <span className="font-mono text-xs font-semibold tracking-tight text-ink dark:text-chalkboard-chalk">
                 {heroContent.eyebrow}
               </span>
@@ -98,7 +100,7 @@ export default function Hero({ onSelectDemoRole }) {
                 className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl border-2 border-ink bg-redpen hover:bg-redpen-dark text-white font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen"
               >
                 <span>{heroContent.primaryCta}</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
               </Link>
 
               <button
@@ -106,7 +108,7 @@ export default function Hero({ onSelectDemoRole }) {
                 onClick={() => handleOpenDemo('student')}
                 className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-mintSoft dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-bold text-base shadow-notebook-lg hover:translate-y-[-2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen cursor-pointer"
               >
-                <BookOpen className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
+                <BookOpen className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" aria-hidden="true" />
                 <span>{heroContent.secondaryCta}</span>
               </button>
             </div>
@@ -134,32 +136,32 @@ export default function Hero({ onSelectDemoRole }) {
             <dl className="grid grid-cols-3 gap-3 pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle max-w-lg">
               <div>
                 <dt className="text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
-                  Granularity
+                  Mastery Scope
                 </dt>
                 <dd className="text-sm sm:text-base font-bold text-ink dark:text-chalkboard-chalk">
-                  Topic-by-Topic
+                  Per Student, Per Class
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
-                  Actionability
+                  Grading Engine
                 </dt>
                 <dd className="text-sm sm:text-base font-bold text-ink dark:text-chalkboard-chalk">
-                  Matched Activities
+                  100% Rule-Based
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
-                  Dual Perspectives
+                  Study Resources
                 </dt>
                 <dd className="text-sm sm:text-base font-bold text-ink dark:text-chalkboard-chalk">
-                  Student + Teacher
+                  PDF, DOCX &amp; Links
                 </dd>
               </div>
             </dl>
           </div>
 
-          {/* Right Column: Interactive Notebook Page Dashboard Visual with Animated Drawing Chart */}
+          {/* Right Column: Sample Diagnostic Sheet Preview */}
           <div className="lg:col-span-6 relative">
             {/* Decorative background graph sheet tilted behind */}
             <div
@@ -169,10 +171,9 @@ export default function Hero({ onSelectDemoRole }) {
 
             {/* Main Notebook Sheet Card */}
             <motion.div
-              initial={{ opacity: 0, y: 18, rotate: -1 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 18, rotate: -1 }}
               animate={{ opacity: 1, y: 0, rotate: -0.75 }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
-              whileHover={{ rotate: 0, y: -3 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
               className="relative rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-lifted overflow-hidden"
             >
               {/* Washi tape on top */}
@@ -189,9 +190,9 @@ export default function Hero({ onSelectDemoRole }) {
                   {/* Top Notebook Page Header */}
                   <div className="flex flex-wrap items-start justify-between gap-2 pb-4 border-b border-ink/15 dark:border-chalkboard-borderSubtle">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-[11px] font-mono font-bold uppercase rounded bg-highlighter-yellow text-ink">
-                          Diagnostic Sheet
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2 py-0.5 text-[11px] font-mono font-bold uppercase rounded bg-highlighter-yellow text-ink border border-ink/20">
+                          {heroCard.sampleBadge}
                         </span>
                         <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                           {heroCard.dateLabel}
@@ -211,90 +212,102 @@ export default function Hero({ onSelectDemoRole }) {
                       <div className="font-hand text-3xl font-bold text-redpen dark:text-red-400 leading-none">
                         {heroCard.overallScore}%
                       </div>
-                      <div className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-0.5">
-                        <TrendingUp className="w-3 h-3" />
+                      <div className="text-[11px] font-mono font-semibold text-amber-800 dark:text-amber-300 flex items-center justify-center gap-0.5 mt-0.5">
+                        <TrendingUp className="w-3 h-3" aria-hidden="true" />
                         <span>{heroCard.scoreDelta}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* SVG Hand-Drawn Mastery Curve that "gets drawn" on load */}
+                  {/* SVG Hand-Drawn Mastery Curve with 80% Strength and 60% Gap lines */}
                   <div className="mt-4 p-3 rounded-xl bg-graph-paper border border-ink/15 dark:border-chalkboard-borderSubtle">
-                    <div className="flex items-center justify-between text-xs font-mono mb-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-mono mb-1.5">
                       <span className="font-semibold text-ink dark:text-chalkboard-chalk flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-redpen" />
-                        Topic Mastery Profile (Drawn Live from 4 Quizzes)
+                        <Sparkles className="w-3.5 h-3.5 text-redpen" aria-hidden="true" />
+                        Sample Topic Mastery Profile (≥ 3 Questions / Topic)
                       </span>
-                      <span className="text-redpen dark:text-red-400 font-hand text-base font-bold">
-                        Target: 80% line
+                      <span className="text-ink-muted dark:text-chalkboard-muted text-[11px]">
+                        Bands: ≥80% Strength • 60–79% Dev • &lt;60% Gap
                       </span>
                     </div>
 
                     <svg
-                      viewBox="0 0 420 110"
+                      viewBox="0 0 420 115"
                       className="w-full h-24 sm:h-28 overflow-visible"
                       role="img"
-                      aria-label="Line chart showing high mastery in Cell Organelles at 94% and a priority learning gap in Meiosis at 52%"
+                      aria-label="Sample chart showing Strength at 92% in Variables and 81% in Loops, Developing at 68% in Functions, and a Learning Gap at 48% in Pointers against 80% Strength and 60% Gap reference lines."
                     >
-                      {/* Target 80% dashed line */}
+                      {/* 80% Strength reference line */}
                       <line
                         x1="20"
-                        y1="30"
+                        y1="28"
                         x2="400"
-                        y2="30"
+                        y2="28"
+                        stroke="#059669"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 4"
+                        opacity="0.8"
+                      />
+                      <text x="325" y="23" fill="#059669" className="text-[9px] font-mono font-bold">
+                        80% Strength
+                      </text>
+
+                      {/* 60% Gap reference line */}
+                      <line
+                        x1="20"
+                        y1="62"
+                        x2="400"
+                        y2="62"
                         stroke="#D93829"
                         strokeWidth="1.5"
                         strokeDasharray="5 5"
-                        opacity="0.7"
+                        opacity="0.8"
                       />
-                      <text x="330" y="24" fill="#D93829" className="text-[10px] font-mono font-bold">
-                        80% Mastery Goal
+                      <text x="342" y="57" fill="#D93829" className="text-[9px] font-mono font-bold">
+                        60% Gap
                       </text>
-
-                      {/* Area fill under the curve */}
-                      <motion.path
-                        d="M 45 16 C 115 20, 145 26, 175 28 C 215 31, 255 58, 290 64 C 325 70, 355 76, 380 78 L 380 96 L 45 96 Z"
-                        fill="rgba(253, 224, 71, 0.25)"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5, duration: 0.6 }}
-                      />
 
                       {/* Animated Pen-Drawn Mastery Curve */}
                       <motion.path
-                        d="M 45 16 C 115 20, 145 26, 175 28 C 215 31, 255 58, 290 64 C 325 70, 355 76, 380 78"
+                        d="M 45 16 C 115 20, 145 25, 175 27 C 215 31, 255 44, 290 49 C 325 56, 355 72, 380 78"
                         fill="none"
                         stroke="#1E3A5F"
                         className="dark:stroke-sky-300"
                         strokeWidth="3.5"
                         strokeLinecap="round"
-                        initial={{ pathLength: 0 }}
+                        initial={shouldReduceMotion ? false : { pathLength: 0 }}
                         animate={{ pathLength: 1 }}
-                        transition={{ duration: 1.4, ease: 'easeInOut' }}
+                        transition={{ duration: 1.1, ease: 'easeInOut' }}
                       />
 
                       {/* Data nodes along the curve */}
                       {[
-                        { cx: 45, cy: 16, label: 'Organelles', val: '94%', gap: false },
-                        { cx: 175, cy: 28, label: 'ATP Resp.', val: '82%', gap: false },
-                        { cx: 290, cy: 64, label: 'Enzymes', val: '61%', gap: true },
-                        { cx: 380, cy: 78, label: 'Meiosis', val: '52%', gap: true },
+                        { cx: 45, cy: 16, label: 'Variables', status: 'STRENGTH' },
+                        { cx: 175, cy: 27, label: 'Loops', status: 'STRENGTH' },
+                        { cx: 290, cy: 49, label: 'Functions', status: 'DEVELOPING' },
+                        { cx: 380, cy: 78, label: 'Pointers', status: 'GAP' },
                       ].map((pt, idx) => (
                         <g key={pt.label}>
                           <motion.circle
                             cx={pt.cx}
                             cy={pt.cy}
-                            r={pt.gap ? 6 : 5}
-                            fill={pt.gap ? '#D93829' : '#10B981'}
+                            r={pt.status === 'GAP' ? 6 : 5}
+                            fill={
+                              pt.status === 'GAP'
+                                ? '#D93829'
+                                : pt.status === 'DEVELOPING'
+                                ? '#F59E0B'
+                                : '#10B981'
+                            }
                             stroke="#FDFBF7"
                             strokeWidth="2"
-                            initial={{ scale: 0 }}
+                            initial={shouldReduceMotion ? false : { scale: 0 }}
                             animate={{ scale: 1 }}
-                            transition={{ delay: 0.3 + idx * 0.25, type: 'spring' }}
+                            transition={{ delay: 0.2 + idx * 0.15, type: 'spring' }}
                           />
                           <text
                             x={pt.cx}
-                            y="104"
+                            y="106"
                             textAnchor="middle"
                             className="fill-ink dark:fill-chalkboard-chalk text-[10px] font-mono font-medium"
                           >
@@ -303,8 +316,8 @@ export default function Hero({ onSelectDemoRole }) {
                         </g>
                       ))}
 
-                      {/* Red-pen circle around the Meiosis gap point */}
-                      <motion.ellipse
+                      {/* Red-pen circle around the Pointers <60% gap point */}
+                      <ellipse
                         cx="380"
                         cy="78"
                         rx="22"
@@ -313,46 +326,20 @@ export default function Hero({ onSelectDemoRole }) {
                         stroke="#D93829"
                         strokeWidth="2"
                         strokeDasharray="4 2"
-                        initial={{ opacity: 0, scale: 0.7 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 1.3, duration: 0.4 }}
                       />
-
-                      {/* Animated Pencil Icon at the end of the drawn line */}
-                      <motion.g
-                        initial={{ x: 45, y: 16, opacity: 0 }}
-                        animate={{ x: 384, y: 66, opacity: 1 }}
-                        transition={{ duration: 1.4, ease: 'easeInOut' }}
-                      >
-                        <rect
-                          x="0"
-                          y="-14"
-                          width="5"
-                          height="13"
-                          rx="1"
-                          transform="rotate(35)"
-                          fill="#FDE047"
-                          stroke="#1B2534"
-                          strokeWidth="1.2"
-                        />
-                        <polygon
-                          points="0,0 2.5,5 5,0"
-                          transform="rotate(35)"
-                          fill="#D93829"
-                        />
-                      </motion.g>
                     </svg>
                   </div>
 
                   {/* Topic-Level Breakdown Bars (Interactive on click) */}
-                  <div className="mt-4 space-y-2.5" role="list" aria-label="Detected topic mastery scores">
+                  <div className="mt-4 space-y-2.5" role="list" aria-label="Sample topic mastery scores">
                     <div className="flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                      <span>Click any topic to inspect gap analysis:</span>
-                      <span>Score / Status</span>
+                      <span>Click any topic to inspect rule-based status:</span>
+                      <span>Band / Mastery</span>
                     </div>
 
-                    {heroCard.topics.map((topic, index) => {
-                      const isGap = topic.score < 70;
+                    {heroCard.topics.map((topic) => {
+                      const isGap = topic.score < 60;
+                      const isDeveloping = topic.score >= 60 && topic.score < 80;
                       const isSelected = selectedTopicId === topic.id;
 
                       return (
@@ -360,7 +347,8 @@ export default function Hero({ onSelectDemoRole }) {
                           key={topic.id}
                           type="button"
                           onClick={() => setSelectedTopicId(topic.id)}
-                          className={`w-full text-left p-2.5 rounded-xl border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+                          aria-pressed={isSelected}
+                          className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                             isSelected
                               ? 'bg-highlighter-yellowSoft/80 dark:bg-chalkboard-surface border-ink dark:border-chalkboard-borderStrong shadow-sm'
                               : 'bg-paper/60 dark:bg-chalkboard/40 border-ink/15 dark:border-chalkboard-borderSubtle hover:border-ink/40'
@@ -369,9 +357,11 @@ export default function Hero({ onSelectDemoRole }) {
                           <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-ink dark:text-chalkboard-chalk mb-1.5">
                             <span className="flex items-center gap-1.5">
                               {isGap ? (
-                                <AlertCircle className="w-4 h-4 text-redpen shrink-0" />
+                                <AlertCircle className="w-4 h-4 text-redpen shrink-0" aria-hidden="true" />
+                              ) : isDeveloping ? (
+                                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
                               ) : (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
                               )}
                               <span>{topic.name}</span>
                             </span>
@@ -380,6 +370,8 @@ export default function Hero({ onSelectDemoRole }) {
                                 className={`px-2 py-0.5 rounded font-bold ${
                                   isGap
                                     ? 'bg-redpen-soft text-redpen-dark dark:bg-red-950/80 dark:text-red-300'
+                                    : isDeveloping
+                                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300'
                                     : 'bg-highlighter-mintSoft text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300'
                                 }`}
                               >
@@ -391,11 +383,9 @@ export default function Hero({ onSelectDemoRole }) {
 
                           {/* Pen-stroke style progress bar */}
                           <div className="h-2.5 w-full rounded-full bg-paper-warm dark:bg-chalkboard overflow-hidden border border-ink/15 dark:border-chalkboard-borderSubtle p-0.5">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${topic.score}%` }}
-                              transition={{ duration: 0.9, delay: 0.2 + index * 0.12, ease: 'easeOut' }}
-                              className={`h-full rounded-full ${
+                            <div
+                              style={{ width: `${topic.score}%` }}
+                              className={`h-full rounded-full transition-all duration-300 ${
                                 topic.score >= 80
                                   ? 'bg-emerald-500'
                                   : topic.score >= 60
@@ -409,12 +399,12 @@ export default function Hero({ onSelectDemoRole }) {
                     })}
                   </div>
 
-                  {/* Sticky-Note Personalized Recommendation Footer */}
+                  {/* Sticky-Note Study Next Footer */}
                   <div className="mt-4 p-3.5 rounded-xl bg-highlighter-yellowSoft dark:bg-yellow-950/50 border-2 border-ink/20 dark:border-yellow-500/30 shadow-sticky rotate-[0.5deg]">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-redpen dark:text-red-300">
-                          ★ Recommended Next Step ({activeRecommendation.topic})
+                          ★ Study Next Recommendation ({activeRecommendation.topic})
                         </span>
                         <p className="text-sm font-bold text-ink dark:text-chalkboard-chalk mt-0.5">
                           {activeRecommendation.title}
@@ -428,7 +418,7 @@ export default function Hero({ onSelectDemoRole }) {
                         onClick={() => handleOpenDemo('student')}
                         className="shrink-0 px-3 py-1.5 rounded-lg bg-ink text-paper dark:bg-highlighter-yellow dark:text-ink text-xs font-mono font-bold hover:opacity-90 transition-opacity cursor-pointer"
                       >
-                        Start →
+                        Explore →
                       </button>
                     </div>
                   </div>
@@ -441,4 +431,3 @@ export default function Hero({ onSelectDemoRole }) {
     </section>
   );
 }
-

@@ -110,12 +110,17 @@ app.seed.demo.password=DemoPassword123!
 app.seed.demo.allow-remote=false
 
 # -------------------------------------------------------------------
-# Local LLM Question Drafting Configuration (Phase C)
-# Connects to a local OpenAI-compatible server (e.g. LM Studio on localhost:1234).
-# No document text, prompts, or drafts are ever sent to external clouds.
+# LLM Question Drafting Configuration (Phase C)
+# Supports two providers:
+#   1. local  - Local OpenAI-compatible server (LM Studio, default). 100% private, runs on loopback.
+#   2. gemini - Google AI Studio (Gemini API). Optional cloud provider with free tier.
 # -------------------------------------------------------------------
 # Master feature flag enabling AI question drafting (default: false)
 app.llm.enabled=false
+# Active provider: local | gemini (default: local)
+app.llm.provider=local
+
+# --- Local LM Studio Settings (used when app.llm.provider=local) ---
 # Base URL of the local LM Studio OpenAI-compatible server
 app.llm.base-url=http://localhost:1234
 # Target model identifier (e.g. qwen/qwen3-14b)
@@ -124,14 +129,30 @@ app.llm.model=qwen/qwen3-14b
 app.llm.request-timeout-seconds=60
 # Character limit per document text chunk analyzed (default: 5000)
 app.llm.chunk-chars=5000
+# Suffix appended to user prompt (/no_think suppresses verbose reasoning tokens on Qwen models)
+app.llm.user-suffix=/no_think
+
+# --- Google AI Studio / Gemini Settings (used when app.llm.provider=gemini) ---
+# Gemini API key: obtain a free key at https://aistudio.google.com/
+# Can be supplied via environment variable GEMINI_API_KEY or configured here. NEVER commit real keys!
+app.llm.gemini.api-key=${GEMINI_API_KEY:YOUR_GEMINI_API_KEY_HERE}
+# Gemini Interactions API base URL (server-configured only)
+app.llm.gemini.base-url=https://generativelanguage.googleapis.com/v1beta
+# Cost-effective Flash-Lite model supporting Interactions API & structured output (default: gemini-3.5-flash-lite)
+app.llm.gemini.model=gemini-3.5-flash-lite
+# Character limit per document text chunk analyzed for Gemini (larger context window, default: 12000)
+app.llm.gemini.chunk-chars=12000
+# Bounded retry count on HTTP 429/503 rate limits before friendly failure (default: 3)
+app.llm.gemini.max-retries=3
+
+# --- Shared Limits & Generation Parameters ---
 # Maximum drafts generated per job (hard limit 30)
 app.llm.max-drafts-per-job=30
-# Hourly generation limit per teacher (default: 5)
+# Hourly generation limit per teacher (default: 5; set <= 0 to disable for testing)
 app.llm.max-jobs-per-teacher-per-hour=5
 # Sampling temperature for factual extraction (default: 0.2)
 app.llm.temperature=0.2
-# Suffix appended to user prompt (e.g. /no_think to suppress verbose reasoning blocks)
-app.llm.user-suffix=/no_think
+
 
 
 

@@ -1,11 +1,20 @@
 package com.learningpal.entity;
 
 /**
- * Question format type.
- * Currently supporting MCQ; ESSAY reserved for future rubric-based grading.
+ * Supported question format types.
+ * MCQ is retained as a legacy alias for MULTIPLE_CHOICE.
  */
 public enum QuestionType {
-    MCQ,
-    ESSAY
-}
+    MULTIPLE_CHOICE,
+    ENUMERATION,
+    ESSAY,
+    MCQ;
 
+    public boolean isMultipleChoice() {
+        return this == MULTIPLE_CHOICE || this == MCQ;
+    }
+
+    public QuestionType canonical() {
+        return this == MCQ ? MULTIPLE_CHOICE : this;
+    }
+}

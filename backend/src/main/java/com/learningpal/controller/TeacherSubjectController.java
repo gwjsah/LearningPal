@@ -3,6 +3,7 @@ package com.learningpal.controller;
 import com.learningpal.dto.*;
 import com.learningpal.entity.DifficultyLevel;
 import com.learningpal.entity.QuestionStatus;
+import com.learningpal.entity.QuestionType;
 import com.learningpal.entity.ResourceStatus;
 import com.learningpal.service.TeacherContentService;
 import jakarta.validation.Valid;
@@ -158,11 +159,12 @@ public class TeacherSubjectController {
             @RequestParam(required = false) Long topicId,
             @RequestParam(required = false) DifficultyLevel difficulty,
             @RequestParam(required = false) QuestionStatus status,
+            @RequestParam(required = false) QuestionType type,
             @RequestParam(required = false) String search,
             Principal principal
     ) {
         return ResponseEntity.ok(teacherContentService.getQuestions(
-                principal.getName(), subjectId, topicId, difficulty, status, search
+                principal.getName(), subjectId, topicId, difficulty, status, type, search
         ));
     }
 

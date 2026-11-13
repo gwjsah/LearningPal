@@ -1,4 +1,5 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import { useTheme } from '../context/ThemeContext';
@@ -18,8 +19,25 @@ function SectionFallback() {
 }
 
 export default function LandingPage() {
-  const [activeDemoRole, setActiveDemoRole] = useState('student');
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Single source of truth: URL query param governs demo perspective
+  const demoRole = searchParams.get('demo') === 'teacher' ? 'teacher' : 'student';
   const { darkMode, toggleDarkMode } = useTheme();
+
+  const handleSelectDemoRole = useCallback(
+    (role) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('demo', role);
+          next.set('demoTab', role === 'teacher' ? 'overview' : 'workspace');
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-paper text-ink dark:bg-chalkboard dark:text-chalkboard-chalk transition-colors overflow-x-hidden">
@@ -39,12 +57,12 @@ export default function LandingPage() {
 
       {/* Main Page Sections */}
       <main id="main-content" className="flex-1">
-        <Hero onSelectDemoRole={setActiveDemoRole} />
+        <Hero onSelectDemoRole={handleSelectDemoRole} />
 
         <Suspense fallback={<SectionFallback />}>
           <HowItWorks />
-          <InteractiveDemo activeRole={activeDemoRole} onChangeRole={setActiveDemoRole} />
-          <FinalCTA onSelectDemoRole={setActiveDemoRole} />
+          <InteractiveDemo activeRole={demoRole} onChangeRole={handleSelectDemoRole} />
+          <FinalCTA onSelectDemoRole={handleSelectDemoRole} />
         </Suspense>
       </main>
 

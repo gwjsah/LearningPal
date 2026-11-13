@@ -27,6 +27,8 @@ public class TeacherContentService {
     private final AnswerRepository answerRepository;
     private final AttemptRepository attemptRepository;
     private final ClassEntityRepository classEntityRepository;
+    private final QuestionAcceptedAnswerRepository acceptedAnswerRepository;
+    private final EssayRubricCriterionRepository rubricCriterionRepository;
     private final TenantAccess tenantAccess;
 
     public TeacherContentService(
@@ -41,6 +43,8 @@ public class TeacherContentService {
             AnswerRepository answerRepository,
             AttemptRepository attemptRepository,
             ClassEntityRepository classEntityRepository,
+            QuestionAcceptedAnswerRepository acceptedAnswerRepository,
+            EssayRubricCriterionRepository rubricCriterionRepository,
             TenantAccess tenantAccess
     ) {
         this.userRepository = userRepository;
@@ -54,6 +58,8 @@ public class TeacherContentService {
         this.answerRepository = answerRepository;
         this.attemptRepository = attemptRepository;
         this.classEntityRepository = classEntityRepository;
+        this.acceptedAnswerRepository = acceptedAnswerRepository;
+        this.rubricCriterionRepository = rubricCriterionRepository;
         this.tenantAccess = tenantAccess;
     }
 
@@ -386,6 +392,19 @@ public class TeacherContentService {
             QuestionStatus status,
             String search
     ) {
+        return getQuestions(teacherEmail, subjectId, topicId, difficulty, status, null, search);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeacherQuestionDto> getQuestions(
+            String teacherEmail,
+            Long subjectId,
+            Long topicId,
+            DifficultyLevel difficulty,
+            QuestionStatus status,
+            QuestionType type,
+            String search
+    ) {
         User teacher = getActiveTeacher(teacherEmail);
         Subject subject = tenantAccess.requireOwnedSubject(teacher, subjectId, subjectRepository);
 
@@ -397,7 +416,10 @@ public class TeacherContentService {
                 .filter(q -> topicId == null || (q.getTopic() != null && q.getTopic().getId().equals(topicId)))
                 .filter(q -> difficulty == null || q.getDifficulty() == difficulty)
                 .filter(q -> status == null || q.getStatus() == status)
-                .filter(q -> searchLower == null || q.getText().toLowerCase().contains(searchLower) || q.getExplanation().toLowerCase().contains(searchLower))
+                .filter(q -> type == null || (q.getType() != null && q.getType().canonical() == type.canonical()))
+                .filter(q -> searchLower == null
+                        || q.getText().toLowerCase().contains(searchLower)
+                        || (q.getExplanation() != null && q.getExplanation().toLowerCase().contains(searchLower)))
                 .map(this::toQuestionDto)
                 .toList();
     }
@@ -436,14 +458,17 @@ public class TeacherContentService {
             throw new BadRequestException("Topic does not belong to this subject");
         }
 
-        validateChoices(request.choices());
+        QuestionType resolvedType = resolveQuestionType(request.type(), QuestionType.MULTIPLE_CHOICE);
+        double points = validateAndResolvePoints(
+                resolvedType, request.explanation(), request.points(),
+                request.choices(), request.acceptedAnswers(), request.rubricCriteria()
+        );
 
         String trimmedText = request.text().trim();
-        String trimmedExplanation = request.explanation().trim();
-        double points = request.points() != null && request.points() > 0 ? request.points() : 1.0;
+        String trimmedExplanation = trimOrNull(request.explanation());
 
         Question question = new Question(
-                topic, QuestionType.MCQ, trimmedText, trimmedExplanation,
+                topic, resolvedType, trimmedText, trimmedExplanation,
                 request.difficulty(), points, teacher
         );
         question.setSubject(subject);
@@ -456,7 +481,7 @@ public class TeacherContentService {
         saved.setLineageId(saved.getId());
         saved = questionRepository.save(saved);
 
-        saveChoices(saved, request.choices());
+        saveTypeChildren(saved, resolvedType, request.choices(), request.acceptedAnswers(), request.rubricCriteria());
 
         return toQuestionDto(saved);
     }
@@ -477,16 +502,25 @@ public class TeacherContentService {
             throw new BadRequestException("Topic does not belong to this subject");
         }
 
-        validateChoices(request.choices());
+        QuestionType existingType = existing.getType() != null ? existing.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
+        QuestionType targetType = resolveQuestionType(request.type(), existingType);
+        boolean hasAnswers = answerRepository.existsByQuestion(existing);
+
+        if (hasAnswers && targetType != existingType) {
+            throw new BadRequestException("Cannot change question type after students have answered it");
+        }
+
+        double points = validateAndResolvePoints(
+                targetType, request.explanation(), request.points(),
+                request.choices(), request.acceptedAnswers(), request.rubricCriteria()
+        );
 
         String trimmedText = request.text().trim();
-        String trimmedExplanation = request.explanation().trim();
-        double points = request.points() != null && request.points() > 0 ? request.points() : 1.0;
-
-        boolean hasAnswers = answerRepository.existsByQuestion(existing);
+        String trimmedExplanation = trimOrNull(request.explanation());
 
         if (!hasAnswers) {
             // Edit in place
+            existing.setType(targetType);
             existing.setTopic(topic);
             existing.setText(trimmedText);
             existing.setExplanation(trimmedExplanation);
@@ -494,11 +528,8 @@ public class TeacherContentService {
             existing.setPoints(points);
             Question saved = questionRepository.save(existing);
 
-            // Replace choices
-            List<Choice> currentChoices = choiceRepository.findByQuestion(saved);
-            choiceRepository.deleteAll(currentChoices);
-            choiceRepository.flush();
-            saveChoices(saved, request.choices());
+            deleteTypeChildren(saved);
+            saveTypeChildren(saved, targetType, request.choices(), request.acceptedAnswers(), request.rubricCriteria());
 
             return toQuestionDto(saved);
         } else {
@@ -507,7 +538,7 @@ public class TeacherContentService {
             questionRepository.save(existing);
 
             Question newVersion = new Question(
-                    topic, QuestionType.MCQ, trimmedText, trimmedExplanation,
+                    topic, targetType, trimmedText, trimmedExplanation,
                     request.difficulty(), points, teacher
             );
             newVersion.setSubject(subject);
@@ -519,7 +550,7 @@ public class TeacherContentService {
             newVersion.setSourceFile(existing.getSourceFile());
 
             Question savedNew = questionRepository.save(newVersion);
-            saveChoices(savedNew, request.choices());
+            saveTypeChildren(savedNew, targetType, request.choices(), request.acceptedAnswers(), request.rubricCriteria());
 
             return toQuestionDto(savedNew);
         }
@@ -536,12 +567,13 @@ public class TeacherContentService {
         }
 
         String dupText = existing.getText() + " (Copy)";
-        if (dupText.length() > 1000) {
-            dupText = dupText.substring(0, 1000);
+        if (dupText.length() > 2000) {
+            dupText = dupText.substring(0, 2000);
         }
 
+        QuestionType canonicalType = existing.getType() != null ? existing.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
         Question duplicated = new Question(
-                existing.getTopic(), existing.getType(), dupText, existing.getExplanation(),
+                existing.getTopic(), canonicalType, dupText, existing.getExplanation(),
                 existing.getDifficulty(), existing.getPoints(), teacher
         );
         duplicated.setSubject(subject);
@@ -553,9 +585,14 @@ public class TeacherContentService {
         saved.setLineageId(saved.getId());
         saved = questionRepository.save(saved);
 
-        List<Choice> oldChoices = choiceRepository.findByQuestion(existing);
-        for (Choice c : oldChoices) {
+        for (Choice c : choiceRepository.findByQuestion(existing)) {
             choiceRepository.save(new Choice(saved, c.getLabel(), c.getText(), c.isCorrect()));
+        }
+        for (QuestionAcceptedAnswer aa : acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(existing)) {
+            acceptedAnswerRepository.save(new QuestionAcceptedAnswer(saved, aa.getAnswerText(), aa.getDisplayOrder()));
+        }
+        for (EssayRubricCriterion rc : rubricCriterionRepository.findByQuestionOrderByDisplayOrderAsc(existing)) {
+            rubricCriterionRepository.save(new EssayRubricCriterion(saved, rc.getName(), rc.getDescription(), rc.getMaxPoints(), rc.getDisplayOrder()));
         }
 
         return toQuestionDto(saved);
@@ -594,9 +631,135 @@ public class TeacherContentService {
             throw new BadRequestException("Cannot delete question included in quizzes. Remove it from quizzes or retire it instead.");
         }
 
-        List<Choice> choices = choiceRepository.findByQuestion(existing);
-        choiceRepository.deleteAll(choices);
+        deleteTypeChildren(existing);
         questionRepository.delete(existing);
+    }
+
+    private QuestionType resolveQuestionType(QuestionType requested, QuestionType fallback) {
+        QuestionType t = requested != null ? requested : fallback;
+        return t.canonical();
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private double validateAndResolvePoints(
+            QuestionType type,
+            String explanation,
+            Double requestedPoints,
+            List<ChoiceDto> choices,
+            List<String> acceptedAnswers,
+            List<EssayRubricCriterionDto> rubricCriteria
+    ) {
+        if (type == QuestionType.ESSAY) {
+            if (explanation != null && explanation.trim().length() > 2000) {
+                throw new BadRequestException("Explanation must be 2000 characters or fewer");
+            }
+            int sum = validateRubricCriteria(rubricCriteria);
+            if (requestedPoints != null && Math.abs(requestedPoints - sum) > 0.001) {
+                throw new BadRequestException("Question points must equal the sum of rubric criteria maxPoints (" + sum + ")");
+            }
+            return (double) sum;
+        }
+
+        if (explanation == null || explanation.trim().isBlank()) {
+            throw new BadRequestException("Explanation is required");
+        }
+        if (explanation.trim().length() > 2000) {
+            throw new BadRequestException("Explanation must be 2000 characters or fewer");
+        }
+
+        if (type == QuestionType.ENUMERATION) {
+            validateAcceptedAnswers(acceptedAnswers);
+        } else {
+            validateChoices(choices);
+        }
+        return requestedPoints != null && requestedPoints > 0 ? requestedPoints : 1.0;
+    }
+
+    private void validateAcceptedAnswers(List<String> acceptedAnswers) {
+        if (acceptedAnswers == null || acceptedAnswers.isEmpty() || acceptedAnswers.size() > 10) {
+            throw new BadRequestException("Enumeration questions must have between 1 and 10 accepted answers");
+        }
+        for (String ans : acceptedAnswers) {
+            if (ans == null || ans.trim().isBlank()) {
+                throw new BadRequestException("Accepted answer cannot be blank");
+            }
+            if (ans.trim().length() > 100) {
+                throw new BadRequestException("Each accepted answer must be 100 characters or fewer");
+            }
+        }
+    }
+
+    private int validateRubricCriteria(List<EssayRubricCriterionDto> criteria) {
+        if (criteria == null || criteria.isEmpty() || criteria.size() > 8) {
+            throw new BadRequestException("Essay questions must have between 1 and 8 rubric criteria");
+        }
+        int sum = 0;
+        for (EssayRubricCriterionDto c : criteria) {
+            if (c.name() == null || c.name().trim().isBlank()) {
+                throw new BadRequestException("Rubric criterion name cannot be blank");
+            }
+            if (c.name().trim().length() > 100) {
+                throw new BadRequestException("Rubric criterion name must be 100 characters or fewer");
+            }
+            if (c.description() != null && c.description().trim().length() > 500) {
+                throw new BadRequestException("Rubric criterion description must be 500 characters or fewer");
+            }
+            if (c.maxPoints() == null || c.maxPoints() <= 0) {
+                throw new BadRequestException("Rubric criterion maxPoints must be a positive integer");
+            }
+            sum += c.maxPoints();
+        }
+        return sum;
+    }
+
+    private void deleteTypeChildren(Question question) {
+        List<Choice> currentChoices = choiceRepository.findByQuestion(question);
+        if (!currentChoices.isEmpty()) {
+            choiceRepository.deleteAll(currentChoices);
+            choiceRepository.flush();
+        }
+        List<QuestionAcceptedAnswer> currentAccepted = acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(question);
+        if (!currentAccepted.isEmpty()) {
+            acceptedAnswerRepository.deleteAll(currentAccepted);
+            acceptedAnswerRepository.flush();
+        }
+        List<EssayRubricCriterion> currentCriteria = rubricCriterionRepository.findByQuestionOrderByDisplayOrderAsc(question);
+        if (!currentCriteria.isEmpty()) {
+            rubricCriterionRepository.deleteAll(currentCriteria);
+            rubricCriterionRepository.flush();
+        }
+    }
+
+    private void saveTypeChildren(
+            Question question,
+            QuestionType type,
+            List<ChoiceDto> choices,
+            List<String> acceptedAnswers,
+            List<EssayRubricCriterionDto> rubricCriteria
+    ) {
+        if (type == QuestionType.ENUMERATION) {
+            for (int i = 0; i < acceptedAnswers.size(); i++) {
+                acceptedAnswerRepository.save(new QuestionAcceptedAnswer(question, acceptedAnswers.get(i).trim(), i));
+            }
+        } else if (type == QuestionType.ESSAY) {
+            for (int i = 0; i < rubricCriteria.size(); i++) {
+                EssayRubricCriterionDto dto = rubricCriteria.get(i);
+                rubricCriterionRepository.save(new EssayRubricCriterion(
+                        question,
+                        dto.name().trim(),
+                        trimOrNull(dto.description()),
+                        dto.maxPoints(),
+                        i
+                ));
+            }
+        } else {
+            saveChoices(question, choices);
+        }
     }
 
     private void validateChoices(List<ChoiceDto> choices) {
@@ -630,12 +793,23 @@ public class TeacherContentService {
     }
 
     private TeacherQuestionDto toQuestionDto(Question q) {
-        List<ChoiceDto> choices = choiceRepository.findByQuestion(q).stream()
-                .map(ChoiceDto::fromEntity)
-                .toList();
+        QuestionType type = q.getType() != null ? q.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
+        List<ChoiceDto> choices = type == QuestionType.MULTIPLE_CHOICE
+                ? choiceRepository.findByQuestion(q).stream().map(ChoiceDto::fromEntity).toList()
+                : List.of();
+        List<String> acceptedAnswers = type == QuestionType.ENUMERATION
+                ? acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(q).stream()
+                        .map(QuestionAcceptedAnswer::getAnswerText)
+                        .toList()
+                : List.of();
+        List<EssayRubricCriterionDto> rubricCriteria = type == QuestionType.ESSAY
+                ? rubricCriterionRepository.findByQuestionOrderByDisplayOrderAsc(q).stream()
+                        .map(EssayRubricCriterionDto::fromEntity)
+                        .toList()
+                : List.of();
         boolean hasAnswers = answerRepository.existsByQuestion(q);
         boolean inQuiz = assessmentQuestionRepository.existsByQuestion(q);
-        return TeacherQuestionDto.fromEntity(q, choices, hasAnswers, inQuiz);
+        return TeacherQuestionDto.fromEntity(q, choices, acceptedAnswers, rubricCriteria, hasAnswers, inQuiz);
     }
 
     private boolean isQuestionInSubject(Question q, Subject s) {

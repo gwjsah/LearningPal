@@ -22,16 +22,19 @@ public class GradingService {
     private final ChoiceRepository choiceRepository;
     private final AnswerRepository answerRepository;
     private final AttemptRepository attemptRepository;
+    private final QuestionAcceptedAnswerRepository acceptedAnswerRepository;
 
     public GradingService(
             AssessmentQuestionRepository assessmentQuestionRepository,
             ChoiceRepository choiceRepository,
             AnswerRepository answerRepository,
-            AttemptRepository attemptRepository) {
+            AttemptRepository attemptRepository,
+            QuestionAcceptedAnswerRepository acceptedAnswerRepository) {
         this.assessmentQuestionRepository = assessmentQuestionRepository;
         this.choiceRepository = choiceRepository;
         this.answerRepository = answerRepository;
         this.attemptRepository = attemptRepository;
+        this.acceptedAnswerRepository = acceptedAnswerRepository;
     }
 
     /**
@@ -54,7 +57,7 @@ public class GradingService {
         }
 
         // Validate submissions against duplicate question submissions and foreign questions
-        Map<Long, Long> submittedAnswers = new HashMap<>();
+        Map<Long, AnswerSubmissionDto> submittedAnswers = new HashMap<>();
         if (submissions != null) {
             for (AnswerSubmissionDto sub : submissions) {
                 if (sub == null || sub.questionId() == null) continue;
@@ -67,7 +70,7 @@ public class GradingService {
                     throw new BadRequestException("Duplicate answer submitted for question ID: " + sub.questionId());
                 }
 
-                submittedAnswers.put(sub.questionId(), sub.selectedChoiceId());
+                submittedAnswers.put(sub.questionId(), sub);
             }
         }
 
@@ -80,30 +83,57 @@ public class GradingService {
             double questionPoints = question.getPoints() != null ? question.getPoints() : 1.0;
             maxScore += questionPoints;
 
-            Long selectedChoiceId = submittedAnswers.get(question.getId());
-            Choice selectedChoice = null;
-            double autoScore = 0.0;
+            AnswerSubmissionDto sub = submittedAnswers.get(question.getId());
+            QuestionType type = question.getType() != null ? question.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
 
-            if (selectedChoiceId != null) {
-                selectedChoice = choiceRepository.findById(selectedChoiceId)
-                        .orElseThrow(() -> new BadRequestException("Choice not found: " + selectedChoiceId));
+            Answer answer;
+            if (type == QuestionType.ENUMERATION) {
+                String trimmed = sub != null && sub.textAnswer() != null ? sub.textAnswer().trim() : null;
+                if (trimmed != null && trimmed.length() > 200) {
+                    throw new BadRequestException("Enumeration answer must be 200 characters or fewer");
+                }
+                List<String> accepted = acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(question).stream()
+                        .map(QuestionAcceptedAnswer::getAnswerText)
+                        .toList();
+                double autoScore = (trimmed != null && !trimmed.isEmpty() && EnumerationNormalizer.matchesAny(trimmed, accepted))
+                        ? questionPoints
+                        : 0.0;
+                answer = new Answer(attempt, question, trimmed);
+                answer.applyAutoScore(autoScore);
+            } else if (type == QuestionType.ESSAY) {
+                String trimmed = sub != null && sub.textAnswer() != null ? sub.textAnswer().trim() : null;
+                if (trimmed != null && trimmed.length() > 5000) {
+                    throw new BadRequestException("Essay answer must be 5000 characters or fewer");
+                }
+                // Essays start ungraded (autoScore, teacherScore, finalScore remain null)
+                answer = new Answer(attempt, question, trimmed);
+            } else {
+                Long selectedChoiceId = sub != null ? sub.selectedChoiceId() : null;
+                Choice selectedChoice = null;
+                double autoScore = 0.0;
 
-                // Validate that choice belongs to this question
-                if (!selectedChoice.getQuestion().getId().equals(question.getId())) {
-                    throw new BadRequestException("Choice ID " + selectedChoiceId + " does not belong to Question ID " + question.getId());
+                if (selectedChoiceId != null) {
+                    selectedChoice = choiceRepository.findById(selectedChoiceId)
+                            .orElseThrow(() -> new BadRequestException("Choice not found: " + selectedChoiceId));
+
+                    // Validate that choice belongs to this question
+                    if (!selectedChoice.getQuestion().getId().equals(question.getId())) {
+                        throw new BadRequestException("Choice ID " + selectedChoiceId + " does not belong to Question ID " + question.getId());
+                    }
+
+                    if (selectedChoice.isCorrect()) {
+                        autoScore = questionPoints;
+                    }
                 }
 
-                if (selectedChoice.isCorrect()) {
-                    autoScore = questionPoints;
-                }
+                answer = new Answer(attempt, question, selectedChoice);
+                answer.applyAutoScore(autoScore); // Centralized finalScore recalculation inside Answer entity
             }
 
-            // Create and persist answer
-            Answer answer = new Answer(attempt, question, selectedChoice);
-            answer.applyAutoScore(autoScore); // Centralized finalScore recalculation inside Answer entity
             answerRepository.save(answer);
-
-            totalScore += answer.getFinalScore();
+            if (answer.getFinalScore() != null) {
+                totalScore += answer.getFinalScore();
+            }
         }
 
         attempt.setTotalScore(totalScore);

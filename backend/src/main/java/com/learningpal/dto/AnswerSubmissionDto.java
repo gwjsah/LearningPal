@@ -8,6 +8,11 @@ import jakarta.validation.constraints.NotNull;
 public record AnswerSubmissionDto(
         @NotNull(message = "Question ID is required")
         Long questionId,
-        Long selectedChoiceId
-) {}
+        Long selectedChoiceId,
+        String textAnswer
+) {
+    public AnswerSubmissionDto(Long questionId, Long selectedChoiceId) {
+        this(questionId, selectedChoiceId, null);
+    }
+}
 

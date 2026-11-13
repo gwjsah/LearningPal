@@ -31,6 +31,8 @@ public class StudentAssessmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final ClassAssessmentSettingRepository classAssessmentSettingRepository;
     private final AssessmentAccessRepository assessmentAccessRepository;
+    private final QuestionAcceptedAnswerRepository acceptedAnswerRepository;
+    private final AnswerRubricScoreRepository answerRubricScoreRepository;
 
     public StudentAssessmentService(
             AssessmentRepository assessmentRepository,
@@ -44,7 +46,9 @@ public class StudentAssessmentService {
             SubjectRepository subjectRepository,
             EnrollmentRepository enrollmentRepository,
             ClassAssessmentSettingRepository classAssessmentSettingRepository,
-            AssessmentAccessRepository assessmentAccessRepository) {
+            AssessmentAccessRepository assessmentAccessRepository,
+            QuestionAcceptedAnswerRepository acceptedAnswerRepository,
+            AnswerRubricScoreRepository answerRubricScoreRepository) {
         this.assessmentRepository = assessmentRepository;
         this.assessmentQuestionRepository = assessmentQuestionRepository;
         this.attemptRepository = attemptRepository;
@@ -57,6 +61,8 @@ public class StudentAssessmentService {
         this.enrollmentRepository = enrollmentRepository;
         this.classAssessmentSettingRepository = classAssessmentSettingRepository;
         this.assessmentAccessRepository = assessmentAccessRepository;
+        this.acceptedAnswerRepository = acceptedAnswerRepository;
+        this.answerRubricScoreRepository = answerRubricScoreRepository;
     }
 
     /**
@@ -172,6 +178,11 @@ public class StudentAssessmentService {
                 canStart = false;
             }
 
+            boolean awaitingGrading = latest != null
+                    && latest.getStatus() == AttemptStatus.SUBMITTED
+                    && answerRepository.findByAttempt(latest).stream()
+                            .anyMatch(ans -> ans.getQuestion().getType() == QuestionType.ESSAY && ans.getFinalScore() == null);
+
             list.add(new StudentAssessmentDto(
                     a.getId(),
                     a.getTitle(),
@@ -185,7 +196,8 @@ public class StudentAssessmentService {
                     latest != null ? latest.getSubmittedAt() : null,
                     accessStatus,
                     lockReason,
-                    canStart
+                    canStart,
+                    awaitingGrading
             ));
         }
         return list;
@@ -278,11 +290,14 @@ public class StudentAssessmentService {
         List<QuestionItemDto> questions = new ArrayList<>();
         for (AssessmentQuestion aq : assessmentQuestions) {
             Question q = aq.getQuestion();
-            List<Choice> choices = choiceRepository.findByQuestion(q);
+            QuestionType type = q.getType() != null ? q.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
 
+            // SECURITY: Never return accepted answers or rubric criteria in quiz-taking payloads
             List<ChoiceItemDto> choiceDtos = new ArrayList<>();
-            for (Choice c : choices) {
-                choiceDtos.add(new ChoiceItemDto(c.getId(), c.getLabel(), c.getText()));
+            if (type == QuestionType.MULTIPLE_CHOICE) {
+                for (Choice c : choiceRepository.findByQuestion(q)) {
+                    choiceDtos.add(new ChoiceItemDto(c.getId(), c.getLabel(), c.getText()));
+                }
             }
 
             questions.add(new QuestionItemDto(
@@ -290,7 +305,8 @@ public class StudentAssessmentService {
                     q.getTopic().getName(),
                     q.getText(),
                     q.getPoints(),
-                    choiceDtos
+                    choiceDtos,
+                    type.name()
             ));
         }
 
@@ -363,30 +379,63 @@ public class StudentAssessmentService {
         // Topic breakdown aggregation: topicName -> [correctCount, totalCount]
         Map<String, int[]> topicCounts = new LinkedHashMap<>();
         List<QuestionReviewDto> questionReviews = new ArrayList<>();
+        int ungradedEssayCount = 0;
 
         for (Answer ans : answers) {
             Question q = ans.getQuestion();
+            QuestionType type = q.getType() != null ? q.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
             String topicName = q.getTopic().getName();
             topicCounts.putIfAbsent(topicName, new int[]{0, 0});
 
             int[] counts = topicCounts.get(topicName);
             counts[1]++; // total in topic
 
-            List<Choice> choices = choiceRepository.findByQuestion(q);
-            Long correctChoiceId = null;
             List<ChoiceReviewDto> choiceReviews = new ArrayList<>();
+            Long correctChoiceId = null;
+            Long studentChoiceId = null;
+            List<String> acceptedAnswers = List.of();
+            List<StudentRubricScoreDto> rubricScores = List.of();
+            boolean graded = true;
 
-            for (Choice c : choices) {
-                if (c.isCorrect()) {
-                    correctChoiceId = c.getId();
+            if (type == QuestionType.MULTIPLE_CHOICE) {
+                for (Choice c : choiceRepository.findByQuestion(q)) {
+                    if (c.isCorrect()) {
+                        correctChoiceId = c.getId();
+                    }
+                    choiceReviews.add(new ChoiceReviewDto(c.getId(), c.getLabel(), c.getText()));
                 }
-                choiceReviews.add(new ChoiceReviewDto(c.getId(), c.getLabel(), c.getText()));
+                studentChoiceId = ans.getSelectedChoice() != null ? ans.getSelectedChoice().getId() : null;
+            } else if (type == QuestionType.ENUMERATION) {
+                acceptedAnswers = acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(q).stream()
+                        .map(QuestionAcceptedAnswer::getAnswerText)
+                        .toList();
+            } else if (type == QuestionType.ESSAY) {
+                graded = ans.getFinalScore() != null;
+                if (!graded) {
+                    ungradedEssayCount++;
+                } else {
+                    // Show rubric criteria and per-criterion points to student ONLY after grading
+                    rubricScores = answerRubricScoreRepository.findByAnswer(ans).stream()
+                            .sorted(Comparator.comparingInt(s -> s.getCriterion().getDisplayOrder()))
+                            .map(s -> new StudentRubricScoreDto(
+                                    s.getCriterion().getId(),
+                                    s.getCriterion().getName(),
+                                    s.getCriterion().getDescription(),
+                                    s.getCriterion().getMaxPoints(),
+                                    s.getPointsAwarded()
+                            ))
+                            .toList();
+                }
             }
 
-            Long studentChoiceId = ans.getSelectedChoice() != null ? ans.getSelectedChoice().getId() : null;
-            boolean isCorrect = (ans.getFinalScore() != null && q.getPoints() != null)
-                    ? ans.getFinalScore() >= q.getPoints()
-                    : (correctChoiceId != null && correctChoiceId.equals(studentChoiceId));
+            boolean isCorrect;
+            if (!graded) {
+                isCorrect = false;
+            } else if (ans.getFinalScore() != null && q.getPoints() != null) {
+                isCorrect = ans.getFinalScore() >= q.getPoints();
+            } else {
+                isCorrect = correctChoiceId != null && correctChoiceId.equals(studentChoiceId);
+            }
 
             if (isCorrect) {
                 counts[0]++; // correct in topic
@@ -401,14 +450,20 @@ public class StudentAssessmentService {
                     choiceReviews,
                     studentChoiceId,
                     correctChoiceId,
-                    q.getExplanation(),
+                    // Hide ESSAY model-answer note (explanation) until the teacher grades the answer
+                    (type == QuestionType.ESSAY && !graded) ? null : q.getExplanation(),
                     ans.getFinalScore(),
                     q.getPoints(),
                     isCorrect,
                     adjusted,
                     ans.getTeacherComment(),
                     ans.getAutoScore(),
-                    ans.getTeacherScore()
+                    ans.getTeacherScore(),
+                    type.name(),
+                    ans.getTextAnswer(),
+                    acceptedAnswers,
+                    rubricScores,
+                    graded
             ));
         }
 
@@ -430,7 +485,9 @@ public class StudentAssessmentService {
                 Math.round(percentage * 10.0) / 10.0,
                 attempt.getSubmittedAt(),
                 topicBreakdowns,
-                questionReviews
+                questionReviews,
+                ungradedEssayCount > 0,
+                ungradedEssayCount
         );
     }
 

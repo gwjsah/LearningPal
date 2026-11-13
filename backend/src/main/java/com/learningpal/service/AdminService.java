@@ -128,14 +128,15 @@ public class AdminService {
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + targetUserId));
 
+        // Enforce tenant boundary before role/self checks so foreign or SUPER_ADMIN IDs return uniform 404
+        tenantAccess.requireSameInstitution(admin, target);
+
         if (target.getId().equals(admin.getId())) {
             throw new BadRequestException("You cannot deactivate your own account");
         }
         if (target.getRole() == Role.SUPER_ADMIN) {
             throw new BadRequestException("Cannot deactivate a platform super administrator");
         }
-
-        tenantAccess.requireSameInstitution(admin, target);
 
         target.setStatus(UserStatus.DEACTIVATED);
         userRepository.save(target);

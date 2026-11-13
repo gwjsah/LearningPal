@@ -11,6 +11,11 @@ public record QuestionItemDto(
         String topicName,
         String text,
         Double points,
-        List<ChoiceItemDto> choices
-) {}
+        List<ChoiceItemDto> choices,
+        String type
+) {
+    public QuestionItemDto(Long id, String topicName, String text, Double points, List<ChoiceItemDto> choices) {
+        this(id, topicName, text, points, choices, "MULTIPLE_CHOICE");
+    }
+}
 

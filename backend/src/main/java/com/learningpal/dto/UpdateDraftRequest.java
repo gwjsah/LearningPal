@@ -1,27 +1,43 @@
 package com.learningpal.dto;
 
 import com.learningpal.entity.DifficultyLevel;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
 public record UpdateDraftRequest(
         @NotBlank(message = "Question text cannot be blank")
-        @Size(max = 1000, message = "Question text cannot exceed 1000 characters")
+        @Size(max = 2000, message = "Question text cannot exceed 2000 characters")
         String questionText,
 
-        @NotNull(message = "Choices list is required")
-        @Size(min = 4, max = 4, message = "Exactly 4 choices are required")
         List<String> choices,
 
-        @NotNull(message = "Correct index is required")
         Integer correctIndex,
 
-        @NotBlank(message = "Explanation cannot be blank")
-        @Size(max = 1000, message = "Explanation cannot exceed 1000 characters")
+        List<String> acceptedAnswers,
+
+        @Valid
+        List<EssayRubricCriterionDto> rubricCriteria,
+
+        Double points,
+
+        @Size(max = 2000, message = "Explanation cannot exceed 2000 characters")
         String explanation,
 
+        @Size(max = 2000, message = "Model answer note cannot exceed 2000 characters")
+        String modelAnswerNote,
+
         DifficultyLevel difficulty
-) {}
+) {
+    // Backward-compatible 5-arg constructor for existing MULTIPLE_CHOICE tests
+    public UpdateDraftRequest(
+            String questionText,
+            List<String> choices,
+            Integer correctIndex,
+            String explanation,
+            DifficultyLevel difficulty) {
+        this(questionText, choices, correctIndex, null, null, null, explanation, null, difficulty);
+    }
+}

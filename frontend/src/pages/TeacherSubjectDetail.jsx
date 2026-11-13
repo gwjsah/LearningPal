@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
+  ArrowLeft,
   BookOpen,
   Layers,
   FileQuestion,
@@ -41,6 +42,16 @@ import {
   PortalShell,
 } from '../components/NotebookPrimitives';
 import { ConfirmModal } from '../components/ConfirmModal';
+import EnumerationQuestionEditor from '../components/EnumerationQuestionEditor';
+import EssayRubricEditor from '../components/EssayRubricEditor';
+import CreateQuizModal from '../components/CreateQuizModal';
+
+const QUESTION_TYPE_LABELS = {
+  MULTIPLE_CHOICE: 'Multiple Choice',
+  MCQ: 'Multiple Choice',
+  ENUMERATION: 'Enumeration',
+  ESSAY: 'Essay',
+};
 
 export default function TeacherSubjectDetail() {
   const { subjectId } = useParams();
@@ -66,8 +77,10 @@ export default function TeacherSubjectDetail() {
   const [questionFilterTopic, setQuestionFilterTopic] = useState('');
   const [questionFilterDifficulty, setQuestionFilterDifficulty] = useState('');
   const [questionFilterStatus, setQuestionFilterStatus] = useState('ACTIVE');
+  const [questionFilterType, setQuestionFilterType] = useState('');
   const [questionSearch, setQuestionSearch] = useState('');
   const [questionModal, setQuestionModal] = useState(null); // { mode: 'create' } or { mode: 'edit', question }
+  const [qType, setQType] = useState('MULTIPLE_CHOICE');
   const [qTopicId, setQTopicId] = useState('');
   const [qText, setQText] = useState('');
   const [qExplanation, setQExplanation] = useState('');
@@ -79,6 +92,8 @@ export default function TeacherSubjectDetail() {
     { label: 'C', text: '', isCorrect: false },
     { label: 'D', text: '', isCorrect: false },
   ]);
+  const [qAcceptedAnswers, setQAcceptedAnswers] = useState(['']);
+  const [qRubricCriteria, setQRubricCriteria] = useState([{ name: '', description: '', maxPoints: 1 }]);
   const [qModalLoading, setQModalLoading] = useState(false);
   const [qModalError, setQModalError] = useState('');
 
@@ -123,6 +138,7 @@ export default function TeacherSubjectDetail() {
   const [aiStatus, setAiStatus] = useState({ enabled: false, available: false, model: 'qwen/qwen3-14b', note: '' });
   const [aiSetupModal, setAiSetupModal] = useState(null); // { file }
   const [aiTopicId, setAiTopicId] = useState('');
+  const [aiQuestionType, setAiQuestionType] = useState('MULTIPLE_CHOICE');
   const [aiQuestionCount, setAiQuestionCount] = useState(AI_QUESTION_RULES.DEFAULT);
   const [aiSetupLoading, setAiSetupLoading] = useState(false);
   const [aiSetupError, setAiSetupError] = useState('');
@@ -337,6 +353,7 @@ export default function TeacherSubjectDetail() {
 
   const handleOpenCreateQuestion = () => {
     const activeTopics = topics.filter((t) => t.status === 'ACTIVE');
+    setQType('MULTIPLE_CHOICE');
     setQTopicId(activeTopics.length > 0 ? activeTopics[0].id.toString() : '');
     setQText('');
     setQExplanation('');
@@ -348,11 +365,15 @@ export default function TeacherSubjectDetail() {
       { label: 'C', text: '', isCorrect: false },
       { label: 'D', text: '', isCorrect: false },
     ]);
+    setQAcceptedAnswers(['']);
+    setQRubricCriteria([{ name: '', description: '', maxPoints: 1 }]);
     setQModalError('');
     setQuestionModal({ mode: 'create' });
   };
 
   const handleOpenEditQuestion = (q) => {
+    const canonicalType = q.type === 'MCQ' || !q.type ? 'MULTIPLE_CHOICE' : q.type;
+    setQType(canonicalType);
     setQTopicId(q.topicId ? q.topicId.toString() : '');
     setQText(q.text);
     setQExplanation(q.explanation || '');
@@ -369,6 +390,12 @@ export default function TeacherSubjectDetail() {
             { label: 'A', text: '', isCorrect: true },
             { label: 'B', text: '', isCorrect: false },
           ]
+    );
+    setQAcceptedAnswers(q.acceptedAnswers && q.acceptedAnswers.length > 0 ? [...q.acceptedAnswers] : ['']);
+    setQRubricCriteria(
+      q.rubricCriteria && q.rubricCriteria.length > 0
+        ? q.rubricCriteria.map((c) => ({ name: c.name, description: c.description || '', maxPoints: c.maxPoints }))
+        : [{ name: '', description: '', maxPoints: 1 }]
     );
     setQModalError('');
     setQuestionModal({ mode: 'edit', question: q });
@@ -421,29 +448,89 @@ export default function TeacherSubjectDetail() {
       setQModalError('Please select a topic.');
       return;
     }
-    const emptyChoices = qChoices.some((c) => !c.text.trim());
-    if (emptyChoices) {
-      setQModalError('All choices must have text.');
-      return;
-    }
-    const correctCount = qChoices.filter((c) => c.isCorrect).length;
-    if (correctCount !== 1) {
-      setQModalError('Exactly one choice must be marked as correct.');
+
+    const trimmedExplanation = qExplanation.trim();
+    if (qType !== 'ESSAY' && !trimmedExplanation) {
+      setQModalError('Explanation is required.');
       return;
     }
 
-    const payload = {
-      topicId: Number(qTopicId),
-      text: trimmedText,
-      explanation: qExplanation.trim() || '',
-      difficulty: qDifficulty,
-      points: Number(qPoints) > 0 ? Number(qPoints) : 1.0,
-      choices: qChoices.map((c) => ({
-        label: c.label,
-        text: c.text.trim(),
-        isCorrect: c.isCorrect,
-      })),
-    };
+    let payload;
+    if (qType === 'ENUMERATION') {
+      const cleaned = qAcceptedAnswers.map((a) => a.trim()).filter(Boolean);
+      if (cleaned.length < 1 || cleaned.length > 10) {
+        setQModalError('Provide between 1 and 10 non-blank accepted answers.');
+        return;
+      }
+      if (cleaned.some((a) => a.length > 100)) {
+        setQModalError('Each accepted answer must be 100 characters or fewer.');
+        return;
+      }
+      payload = {
+        topicId: Number(qTopicId),
+        type: 'ENUMERATION',
+        text: trimmedText,
+        explanation: trimmedExplanation,
+        difficulty: qDifficulty,
+        points: Number(qPoints) > 0 ? Number(qPoints) : 1.0,
+        acceptedAnswers: cleaned,
+      };
+    } else if (qType === 'ESSAY') {
+      if (qRubricCriteria.length < 1 || qRubricCriteria.length > 8) {
+        setQModalError('Provide between 1 and 8 rubric criteria.');
+        return;
+      }
+      for (const c of qRubricCriteria) {
+        if (!c.name || !c.name.trim()) {
+          setQModalError('All rubric criteria must have a name.');
+          return;
+        }
+        if (!Number.isInteger(Number(c.maxPoints)) || Number(c.maxPoints) < 1) {
+          setQModalError('Rubric criterion max points must be a positive integer.');
+          return;
+        }
+      }
+      const rubricCriteria = qRubricCriteria.map((c, idx) => ({
+        name: c.name.trim(),
+        description: c.description ? c.description.trim() : null,
+        maxPoints: parseInt(c.maxPoints, 10),
+        displayOrder: idx,
+      }));
+      const totalPts = rubricCriteria.reduce((sum, c) => sum + c.maxPoints, 0);
+      payload = {
+        topicId: Number(qTopicId),
+        type: 'ESSAY',
+        text: trimmedText,
+        explanation: trimmedExplanation || null,
+        difficulty: qDifficulty,
+        points: totalPts,
+        rubricCriteria,
+      };
+    } else {
+      const emptyChoices = qChoices.some((c) => !c.text.trim());
+      if (emptyChoices) {
+        setQModalError('All choices must have text.');
+        return;
+      }
+      const correctCount = qChoices.filter((c) => c.isCorrect).length;
+      if (correctCount !== 1) {
+        setQModalError('Exactly one choice must be marked as correct.');
+        return;
+      }
+      payload = {
+        topicId: Number(qTopicId),
+        type: 'MULTIPLE_CHOICE',
+        text: trimmedText,
+        explanation: trimmedExplanation,
+        difficulty: qDifficulty,
+        points: Number(qPoints) > 0 ? Number(qPoints) : 1.0,
+        choices: qChoices.map((c) => ({
+          label: c.label,
+          text: c.text.trim(),
+          isCorrect: c.isCorrect,
+        })),
+      };
+    }
 
     setQModalLoading(true);
     setQModalError('');
@@ -532,9 +619,7 @@ export default function TeacherSubjectDetail() {
     setQuizDescription('');
     setQuizKind('QUIZ');
     setQuizTimeLimit(30);
-    // default select first 5 active questions
-    const activeQIds = questions.filter((q) => q.status === 'ACTIVE').slice(0, 5).map((q) => q.id);
-    setQuizSelectedQuestionIds(activeQIds);
+    setQuizSelectedQuestionIds([]);
     setQuizModalError('');
     setQuizModal({ mode: 'create' });
   };
@@ -547,12 +632,6 @@ export default function TeacherSubjectDetail() {
     setQuizSelectedQuestionIds(quiz.questions ? quiz.questions.map((q) => q.questionId) : []);
     setQuizModalError('');
     setQuizModal({ mode: 'edit', quiz });
-  };
-
-  const handleToggleQuizQuestion = (qId) => {
-    setQuizSelectedQuestionIds((prev) =>
-      prev.includes(qId) ? prev.filter((id) => id !== qId) : [...prev, qId]
-    );
   };
 
   const handleQuizSubmit = async (e) => {
@@ -967,6 +1046,7 @@ export default function TeacherSubjectDetail() {
     if (f.extractionStatus !== 'READY') return;
     setAiSetupModal({ file: f });
     setAiTopicId(f.topicId ? f.topicId.toString() : (topics[0]?.id?.toString() || ''));
+    setAiQuestionType('MULTIPLE_CHOICE');
     setAiQuestionCount(AI_QUESTION_RULES.DEFAULT);
     setAiSetupError('');
   };
@@ -981,9 +1061,12 @@ export default function TeacherSubjectDetail() {
     setAiSetupLoading(true);
     setAiSetupError('');
     try {
+      const maxForType = AI_QUESTION_RULES.MAX_BY_TYPE[aiQuestionType] || AI_QUESTION_RULES.MAX;
+      const clampedCount = Math.min(Math.max(Number(aiQuestionCount) || AI_QUESTION_RULES.DEFAULT, AI_QUESTION_RULES.MIN), maxForType);
       const payload = {
         topicId: Number(aiTopicId),
-        count: Number(aiQuestionCount) || AI_QUESTION_RULES.DEFAULT,
+        count: clampedCount,
+        questionType: aiQuestionType,
       };
       const job = await aiService.createJob(subjectId, aiSetupModal.file.id, payload);
       setAiSetupModal(null);
@@ -1110,12 +1193,20 @@ export default function TeacherSubjectDetail() {
   };
 
   const handleOpenEditDraft = (draft) => {
+    const type = draft.questionType || 'MULTIPLE_CHOICE';
     setEditDraftModal({
       draft,
+      questionType: type,
       questionText: draft.questionText,
-      choices: [...draft.choices],
-      correctIndex: draft.correctIndex,
-      explanation: draft.explanation,
+      choices: draft.choices?.length === 4 ? [...draft.choices] : ['', '', '', ''],
+      correctIndex: draft.correctIndex ?? 0,
+      acceptedAnswers: draft.acceptedAnswers?.length ? [...draft.acceptedAnswers] : [''],
+      rubricCriteria: draft.rubricCriteria?.length
+        ? draft.rubricCriteria.map((c) => ({ ...c }))
+        : [{ name: '', description: '', maxPoints: 5 }],
+      points: draft.points ?? 1,
+      explanation: draft.explanation || '',
+      modelAnswerNote: draft.modelAnswerNote || draft.explanation || '',
       difficulty: draft.difficulty,
       loading: false,
       error: '',
@@ -1125,23 +1216,77 @@ export default function TeacherSubjectDetail() {
   const handleSaveEditDraft = async (e) => {
     e.preventDefault();
     if (!editDraftModal) return;
+    const type = editDraftModal.questionType || 'MULTIPLE_CHOICE';
     if (!editDraftModal.questionText.trim()) {
       setEditDraftModal((prev) => ({ ...prev, error: 'Question text is required.' }));
       return;
     }
-    if (editDraftModal.choices.some((c) => !c.trim())) {
-      setEditDraftModal((prev) => ({ ...prev, error: 'All 4 choices must have text.' }));
-      return;
-    }
-    setEditDraftModal((prev) => ({ ...prev, loading: true, error: '' }));
-    try {
-      const payload = {
+
+    let payload;
+    if (type === 'ENUMERATION') {
+      const cleanedVariants = (editDraftModal.acceptedAnswers || []).map((a) => a.trim()).filter(Boolean);
+      if (cleanedVariants.length < 1 || cleanedVariants.length > 10) {
+        setEditDraftModal((prev) => ({ ...prev, error: 'Enumeration requires 1 to 10 non-blank accepted answers.' }));
+        return;
+      }
+      if (cleanedVariants.some((v) => v.length > 100)) {
+        setEditDraftModal((prev) => ({ ...prev, error: 'Each accepted answer must be 100 characters or fewer.' }));
+        return;
+      }
+      if (!editDraftModal.explanation.trim()) {
+        setEditDraftModal((prev) => ({ ...prev, error: 'Explanation is required for enumeration questions.' }));
+        return;
+      }
+      payload = {
+        questionText: editDraftModal.questionText.trim(),
+        acceptedAnswers: cleanedVariants,
+        points: Number(editDraftModal.points) > 0 ? Number(editDraftModal.points) : 1,
+        explanation: editDraftModal.explanation.trim(),
+        difficulty: editDraftModal.difficulty,
+      };
+    } else if (type === 'ESSAY') {
+      const criteria = editDraftModal.rubricCriteria || [];
+      if (criteria.length < 1 || criteria.length > 8) {
+        setEditDraftModal((prev) => ({ ...prev, error: 'Essay rubric requires 1 to 8 criteria.' }));
+        return;
+      }
+      for (const c of criteria) {
+        if (!c.name?.trim()) {
+          setEditDraftModal((prev) => ({ ...prev, error: 'Every rubric criterion needs a name.' }));
+          return;
+        }
+        if (!Number.isInteger(Number(c.maxPoints)) || Number(c.maxPoints) < 1) {
+          setEditDraftModal((prev) => ({ ...prev, error: 'Each criterion max points must be a positive whole number.' }));
+          return;
+        }
+      }
+      payload = {
+        questionText: editDraftModal.questionText.trim(),
+        rubricCriteria: criteria.map((c, idx) => ({
+          name: c.name.trim(),
+          description: (c.description || '').trim(),
+          maxPoints: Number(c.maxPoints),
+          displayOrder: idx,
+        })),
+        modelAnswerNote: editDraftModal.modelAnswerNote.trim() || null,
+        difficulty: editDraftModal.difficulty,
+      };
+    } else {
+      if (editDraftModal.choices.some((c) => !c.trim())) {
+        setEditDraftModal((prev) => ({ ...prev, error: 'All 4 choices must have text.' }));
+        return;
+      }
+      payload = {
         questionText: editDraftModal.questionText.trim(),
         choices: editDraftModal.choices.map((c) => c.trim()),
         correctIndex: editDraftModal.correctIndex,
         explanation: editDraftModal.explanation.trim() || 'No explanation provided.',
         difficulty: editDraftModal.difficulty,
       };
+    }
+
+    setEditDraftModal((prev) => ({ ...prev, loading: true, error: '' }));
+    try {
       const updated = await aiService.updateDraft(editDraftModal.draft.id, payload);
       setReviewModal((prev) => {
         if (!prev) return null;
@@ -1167,9 +1312,11 @@ export default function TeacherSubjectDetail() {
 
   // Filtered Questions
   const filteredQuestions = questions.filter((q) => {
+    const qCanonicalType = q.type === 'MCQ' || !q.type ? 'MULTIPLE_CHOICE' : q.type;
     if (questionFilterTopic && String(q.topicId) !== String(questionFilterTopic)) return false;
     if (questionFilterDifficulty && q.difficulty !== questionFilterDifficulty) return false;
     if (questionFilterStatus && q.status !== questionFilterStatus) return false;
+    if (questionFilterType && qCanonicalType !== questionFilterType) return false;
     if (questionSearch.trim()) {
       const s = questionSearch.trim().toLowerCase();
       const inText = q.text && q.text.toLowerCase().includes(s);
@@ -1194,8 +1341,12 @@ export default function TeacherSubjectDetail() {
       <div className="w-full space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link to="/teacher" className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk">
-            Teacher Home
+          <Link
+            to="/teacher"
+            className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Teacher Home</span>
           </Link>
           <span>/</span>
           <Link to="/teacher/subjects" className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk">
@@ -1526,6 +1677,18 @@ export default function TeacherSubjectDetail() {
                   </select>
 
                   <select
+                    value={questionFilterType}
+                    onChange={(e) => setQuestionFilterType(e.target.value)}
+                    className="px-3 py-1.5 text-xs rounded-xl border border-ink/20 dark:border-chalkboard-border bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-mono"
+                    aria-label="Filter by question type"
+                  >
+                    <option value="">All Types</option>
+                    <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                    <option value="ENUMERATION">Enumeration</option>
+                    <option value="ESSAY">Essay</option>
+                  </select>
+
+                  <select
                     value={questionFilterStatus}
                     onChange={(e) => setQuestionFilterStatus(e.target.value)}
                     className="px-3 py-1.5 text-xs rounded-xl border border-ink/20 dark:border-chalkboard-border bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-mono"
@@ -1556,6 +1719,9 @@ export default function TeacherSubjectDetail() {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-2.5">
                           <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border border-ink/25">
+                              {QUESTION_TYPE_LABELS[q.type] || 'Multiple Choice'}
+                            </span>
                             <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink border border-ink/20">
                               {q.topicName}
                             </span>
@@ -2311,7 +2477,11 @@ export default function TeacherSubjectDetail() {
                       : `Edit Question (v${questionModal.question.version})`}
                   </h3>
                   <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
-                    Multiple-choice question with 2 to 6 choices and exactly one correct answer.
+                    {qType === 'ENUMERATION'
+                      ? 'Short-answer enumeration auto-graded by normalized exact match.'
+                      : qType === 'ESSAY'
+                      ? 'Open-ended essay graded manually by teacher rubric criteria.'
+                      : 'Multiple-choice question with 2 to 6 choices and exactly one correct answer.'}
                   </p>
                 </div>
                 <button
@@ -2345,7 +2515,23 @@ export default function TeacherSubjectDetail() {
               )}
 
               <form onSubmit={handleQuestionSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
+                      Question Type
+                    </label>
+                    <select
+                      value={qType}
+                      disabled={questionModal.mode === 'edit' && questionModal.question?.hasAnswers}
+                      onChange={(e) => setQType(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono disabled:opacity-60"
+                    >
+                      <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                      <option value="ENUMERATION">Enumeration</option>
+                      <option value="ESSAY">Essay</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
                       Topic <span className="text-redpen">*</span>
@@ -2391,9 +2577,14 @@ export default function TeacherSubjectDetail() {
                       min="0.5"
                       max="100"
                       step="0.5"
-                      value={qPoints}
+                      disabled={qType === 'ESSAY'}
+                      value={
+                        qType === 'ESSAY'
+                          ? qRubricCriteria.reduce((s, r) => s + (parseInt(r.maxPoints, 10) || 0), 0)
+                          : qPoints
+                      }
                       onChange={(e) => setQPoints(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono"
+                      className="w-full px-3 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -2416,80 +2607,93 @@ export default function TeacherSubjectDetail() {
                   </div>
                 </div>
 
-                {/* Choices list */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
-                      Answer Choices (2 to 6, select single correct answer) <span className="text-redpen">*</span>
-                    </label>
-                    {qChoices.length < 6 && (
-                      <button
-                        type="button"
-                        onClick={handleAddChoice}
-                        className="text-xs font-mono font-bold text-redpen hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Choice</span>
-                      </button>
-                    )}
-                  </div>
-
+                {/* Type-specific answer / rubric editor */}
+                {qType === 'ENUMERATION' ? (
+                  <EnumerationQuestionEditor
+                    acceptedAnswers={qAcceptedAnswers}
+                    onChange={setQAcceptedAnswers}
+                  />
+                ) : qType === 'ESSAY' ? (
+                  <EssayRubricEditor
+                    criteria={qRubricCriteria}
+                    onChange={setQRubricCriteria}
+                  />
+                ) : (
                   <div className="space-y-2">
-                    {qChoices.map((choice, idx) => (
-                      <div
-                        key={choice.label}
-                        className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-colors ${
-                          choice.isCorrect
-                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500'
-                            : 'bg-paper-warm dark:bg-chalkboard-surface border-ink/20 dark:border-chalkboard-borderSubtle'
-                        }`}
-                      >
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
+                        Answer Choices (2 to 6, select single correct answer) <span className="text-redpen">*</span>
+                      </label>
+                      {qChoices.length < 6 && (
                         <button
                           type="button"
-                          onClick={() => handleSetCorrectChoice(idx)}
-                          className={`w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center cursor-pointer transition-all ${
-                            choice.isCorrect
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'bg-ink/10 text-ink-muted hover:bg-ink/20'
-                          }`}
-                          title={choice.isCorrect ? 'Correct choice' : 'Click to mark as correct'}
+                          onClick={handleAddChoice}
+                          className="text-xs font-mono font-bold text-redpen hover:underline flex items-center gap-1 cursor-pointer"
                         >
-                          {choice.label}
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Choice</span>
                         </button>
+                      )}
+                    </div>
 
-                        <input
-                          type="text"
-                          required
-                          value={choice.text}
-                          onChange={(e) => handleChoiceTextChange(idx, e.target.value)}
-                          placeholder={`Option ${choice.label} text…`}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-redpen"
-                        />
-
-                        {choice.isCorrect && (
-                          <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50">
-                            Correct
-                          </span>
-                        )}
-
-                        {qChoices.length > 2 && (
+                    <div className="space-y-2">
+                      {qChoices.map((choice, idx) => (
+                        <div
+                          key={choice.label}
+                          className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-colors ${
+                            choice.isCorrect
+                              ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500'
+                              : 'bg-paper-warm dark:bg-chalkboard-surface border-ink/20 dark:border-chalkboard-borderSubtle'
+                          }`}
+                        >
                           <button
                             type="button"
-                            onClick={() => handleRemoveChoice(idx)}
-                            className="p-1 text-ink-muted hover:text-redpen cursor-pointer"
-                            title="Remove choice"
+                            onClick={() => handleSetCorrectChoice(idx)}
+                            className={`w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center cursor-pointer transition-all ${
+                              choice.isCorrect
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-ink/10 text-ink-muted hover:bg-ink/20'
+                            }`}
+                            title={choice.isCorrect ? 'Correct choice' : 'Click to mark as correct'}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            {choice.label}
                           </button>
-                        )}
-                      </div>
-                    ))}
+
+                          <input
+                            type="text"
+                            required
+                            value={choice.text}
+                            onChange={(e) => handleChoiceTextChange(idx, e.target.value)}
+                            placeholder={`Option ${choice.label} text…`}
+                            className="flex-1 px-3 py-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-redpen"
+                          />
+
+                          {choice.isCorrect && (
+                            <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50">
+                              Correct
+                            </span>
+                          )}
+
+                          {qChoices.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveChoice(idx)}
+                              className="p-1 text-ink-muted hover:text-redpen cursor-pointer"
+                              title="Remove choice"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
-                    Explanation & Misconception Review
+                    {qType === 'ESSAY' ? 'Model Answer / Explanation (Optional)' : 'Explanation & Misconception Review'}
+                    {qType !== 'ESSAY' && <span className="text-redpen"> *</span>}
                   </label>
                   <textarea
                     rows={2}
@@ -2530,168 +2734,27 @@ export default function TeacherSubjectDetail() {
         {/* MODAL: QUIZ CREATE / EDIT */}
         {/* ================================================================= */}
         {quizModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs overflow-y-auto">
-            <div className="w-full max-w-2xl rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4 my-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
-                    {quizModal.mode === 'create' ? 'Create New Quiz' : 'Edit Quiz'}
-                  </h3>
-                  <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
-                    Select active questions from your subject bank.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setQuizModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {quizModalError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{quizModalError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleQuizSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
-                      Quiz Title <span className="text-redpen">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={120}
-                      value={quizTitle}
-                      onChange={(e) => setQuizTitle(e.target.value)}
-                      placeholder="e.g. Midterm Diagnostic Assessment"
-                      className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
-                      Time Limit (Mins)
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="180"
-                      value={quizTimeLimit}
-                      onChange={(e) => setQuizTimeLimit(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    rows={2}
-                    maxLength={1000}
-                    value={quizDescription}
-                    onChange={(e) => setQuizDescription(e.target.value)}
-                    placeholder="Instructions or scope for students taking this quiz…"
-                    className="w-full px-3.5 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-redpen"
-                  />
-                </div>
-
-                {/* Question Picker */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
-                      Select Questions ({quizSelectedQuestionIds.length} selected) <span className="text-redpen">*</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setQuizSelectedQuestionIds(
-                            questions.filter((q) => q.status === 'ACTIVE').map((q) => q.id)
-                          )
-                        }
-                        className="text-[10px] font-mono text-redpen hover:underline cursor-pointer"
-                      >
-                        Select All Active
-                      </button>
-                      <span className="text-ink-muted">·</span>
-                      <button
-                        type="button"
-                        onClick={() => setQuizSelectedQuestionIds([])}
-                        className="text-[10px] font-mono text-ink-muted hover:underline cursor-pointer"
-                      >
-                        Clear All
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto space-y-1.5 p-2 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface">
-                    {questions
-                      .filter((q) => q.status === 'ACTIVE')
-                      .map((q) => {
-                        const checked = quizSelectedQuestionIds.includes(q.id);
-                        return (
-                          <label
-                            key={q.id}
-                            className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 cursor-pointer transition-colors ${
-                              checked
-                                ? 'bg-paper-card dark:bg-chalkboard-card border-redpen shadow-xs'
-                                : 'bg-transparent border-transparent hover:bg-paper-card/60'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => handleToggleQuizQuestion(q.id)}
-                              className="mt-0.5"
-                            />
-                            <div className="flex-1 space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-highlighter-yellow/30 text-ink">
-                                  {q.topicName}
-                                </span>
-                                <span className="text-[10px] font-mono text-ink-muted">v{q.version}</span>
-                                <span className="text-[10px] font-mono text-ink-muted">({q.difficulty})</span>
-                              </div>
-                              <p className="text-ink dark:text-chalkboard-chalk font-medium line-clamp-2">
-                                {q.text}
-                              </p>
-                            </div>
-                          </label>
-                        );
-                      })}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-ink/10 flex items-center justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    onClick={() => setQuizModal(null)}
-                    disabled={quizModalLoading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    disabled={quizModalLoading}
-                    className="shadow-notebook"
-                  >
-                    {quizModalLoading ? 'Saving…' : 'Save Quiz'}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <CreateQuizModal
+            mode={quizModal.mode}
+            title={quizTitle}
+            onTitleChange={setQuizTitle}
+            timeLimit={quizTimeLimit}
+            onTimeLimitChange={setQuizTimeLimit}
+            description={quizDescription}
+            onDescriptionChange={setQuizDescription}
+            questions={questions}
+            topics={topics}
+            selectedQuestionIds={quizSelectedQuestionIds}
+            onSelectedQuestionIdsChange={setQuizSelectedQuestionIds}
+            loading={quizModalLoading}
+            error={quizModalError}
+            onSubmit={handleQuizSubmit}
+            onClose={() => setQuizModal(null)}
+            onGoToQuestions={() => {
+              setQuizModal(null);
+              setActiveTab('questions');
+            }}
+          />
         )}
 
         {/* ================================================================= */}
@@ -3296,7 +3359,7 @@ export default function TeacherSubjectDetail() {
               <div className="flex items-start justify-between border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                 <div>
                   <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
-                    Draft Questions with Local AI
+                    {aiStatus.provider === 'gemini' ? 'Draft Questions with Google Gemini' : 'Draft Questions with Local AI'}
                   </h3>
                   <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-1">
                     Source: <span className="font-mono font-bold text-ink dark:text-chalkboard-chalk">{aiSetupModal.file?.title}</span>
@@ -3313,20 +3376,28 @@ export default function TeacherSubjectDetail() {
                 </button>
               </div>
 
-              {/* Local AI Architecture & Privacy Callout */}
+              {/* AI Architecture, Provider & Privacy Callout */}
               <div className="p-3.5 rounded-xl border border-ink/15 dark:border-chalkboard-border bg-paper-warm/70 dark:bg-chalkboard-surface/60 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 font-bold font-mono text-xs text-ink dark:text-chalkboard-chalk">
                     <Bot className="w-4 h-4 text-ink-blue dark:text-highlighter-sky shrink-0" />
-                    <span>Model: {aiStatus.model || 'qwen/qwen3-14b'}</span>
+                    <span>Provider: {aiStatus.provider === 'gemini' ? 'Google AI Studio (Gemini)' : 'Local LM Studio'}</span>
+                    <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
+                    <span>Model: {aiStatus.configuredModel || aiStatus.model || (aiStatus.provider === 'gemini' ? 'gemini-3.5-flash-lite' : 'qwen/qwen3-14b')}</span>
                   </div>
                   <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-paper-card dark:bg-chalkboard-card border border-ink/20 dark:border-chalkboard-border text-ink-muted dark:text-chalkboard-muted">
-                    Local Offline
+                    {aiStatus.provider === 'gemini' ? 'Cloud Mode' : 'Local Offline'}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed text-ink-muted dark:text-chalkboard-muted">
-                  Served locally via LM Studio. Your document text never leaves your local machine. Every generated question will be held as a draft for your review and approval before students can see it.
-                </p>
+                {aiStatus.provider === 'gemini' ? (
+                  <p className="text-xs leading-relaxed text-ink dark:text-chalkboard-chalk font-medium">
+                    Cloud mode: this file's text is sent to Google to generate questions. Every generated question will be held as a draft for your review and approval before students can see it.
+                  </p>
+                ) : (
+                  <p className="text-xs leading-relaxed text-ink-muted dark:text-chalkboard-muted">
+                    Served locally via LM Studio. Your document text never leaves your local machine. Every generated question will be held as a draft for your review and approval before students can see it.
+                  </p>
+                )}
               </div>
 
               {aiSetupError && (
@@ -3359,6 +3430,40 @@ export default function TeacherSubjectDetail() {
                 </div>
 
                 <div>
+                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1.5">
+                    Question Type <span className="text-redpen">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {AI_QUESTION_RULES.QUESTION_TYPE_OPTIONS.map((opt) => {
+                      const active = aiQuestionType === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setAiQuestionType(opt.value);
+                            const maxForType = AI_QUESTION_RULES.MAX_BY_TYPE[opt.value] || AI_QUESTION_RULES.MAX;
+                            if (aiQuestionCount > maxForType) {
+                              setAiQuestionCount(maxForType);
+                            }
+                          }}
+                          className={`px-3 py-2 rounded-xl border-2 text-xs font-mono font-bold transition-colors cursor-pointer ${
+                            active
+                              ? 'border-ink dark:border-chalkboard-chalk bg-ink text-paper-card dark:bg-chalkboard-chalk dark:text-chalkboard-bg'
+                              : 'border-ink/20 dark:border-chalkboard-border bg-paper-warm/40 dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk hover:border-ink/50'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-xs text-ink-muted dark:text-chalkboard-muted">
+                    {AI_QUESTION_RULES.QUESTION_TYPE_OPTIONS.find((o) => o.value === aiQuestionType)?.help}
+                  </p>
+                </div>
+
+                <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label
                       htmlFor="ai-question-count-slider"
@@ -3374,7 +3479,7 @@ export default function TeacherSubjectDetail() {
                       </span>
                     </label>
                     <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
-                      {AI_QUESTION_RULES.MIN} to {AI_QUESTION_RULES.MAX}
+                      {AI_QUESTION_RULES.MIN} to {AI_QUESTION_RULES.MAX_BY_TYPE[aiQuestionType] || AI_QUESTION_RULES.MAX}
                     </span>
                   </div>
 
@@ -3382,20 +3487,20 @@ export default function TeacherSubjectDetail() {
                     id="ai-question-count-slider"
                     type="range"
                     min={AI_QUESTION_RULES.MIN}
-                    max={AI_QUESTION_RULES.MAX}
+                    max={AI_QUESTION_RULES.MAX_BY_TYPE[aiQuestionType] || AI_QUESTION_RULES.MAX}
                     step="1"
                     value={aiQuestionCount}
                     onChange={(e) => setAiQuestionCount(Number(e.target.value))}
                     aria-label="Number of Questions to Draft"
                     aria-valuemin={AI_QUESTION_RULES.MIN}
-                    aria-valuemax={AI_QUESTION_RULES.MAX}
+                    aria-valuemax={AI_QUESTION_RULES.MAX_BY_TYPE[aiQuestionType] || AI_QUESTION_RULES.MAX}
                     aria-valuenow={aiQuestionCount}
                     aria-valuetext={`${aiQuestionCount} questions`}
                     className="w-full accent-ink dark:accent-chalkboard-chalk cursor-pointer focus:outline-none focus:ring-2 focus:ring-ink/30 dark:focus:ring-chalkboard-chalk/30 rounded"
                   />
 
                   <div className="flex justify-between text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1.5 px-0.5">
-                    {AI_QUESTION_RULES.TICK_MARKS.map((tick) => (
+                    {(aiQuestionType === 'ESSAY' ? AI_QUESTION_RULES.ESSAY_TICK_MARKS : AI_QUESTION_RULES.TICK_MARKS).map((tick) => (
                       <span
                         key={tick.value}
                         className={aiQuestionCount === tick.value ? 'font-bold text-ink dark:text-chalkboard-chalk underline decoration-ink/40 dark:decoration-chalkboard-chalk/40' : ''}
@@ -3454,7 +3559,7 @@ export default function TeacherSubjectDetail() {
                       {activeAiJob.status === 'QUEUED' ? 'Job Queued...' : 'Drafting Questions...'}
                     </h3>
                     <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
-                      Analyzing document text with local model
+                      {aiStatus.provider === 'gemini' ? 'Analyzing document text with Google Gemini' : 'Analyzing document text with local model'}
                     </p>
                   </div>
                 </div>
@@ -3636,6 +3741,11 @@ export default function TeacherSubjectDetail() {
               </div>
 
               {/* Draft Cards Scrollable Area */}
+              {reviewModal.job?.droppedCount > 0 && (
+                <div className="px-3 py-2 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30 text-xs font-mono text-amber-900 dark:text-amber-200">
+                  {reviewModal.job.droppedCount} invalid or near-duplicate draft(s) were automatically dropped during validation.
+                </div>
+              )}
               <div className="flex-1 overflow-y-auto space-y-4 pr-1">
                 {reviewModal.loading ? (
                   <div className="py-12 text-center text-xs text-ink-muted dark:text-chalkboard-muted flex items-center justify-center gap-2">
@@ -3687,6 +3797,13 @@ export default function TeacherSubjectDetail() {
                               <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk">
                                 Draft #{index + 1}
                               </span>
+                              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-paper-card dark:bg-chalkboard-card border border-ink/20 text-ink dark:text-chalkboard-chalk">
+                                {d.questionType === 'ENUMERATION'
+                                  ? 'Enumeration'
+                                  : d.questionType === 'ESSAY'
+                                  ? 'Essay'
+                                  : 'Multiple Choice'}
+                              </span>
                               <span className="text-[10px] font-mono text-ink-muted">
                                 Section {d.sectionIndex + 1}
                               </span>
@@ -3736,40 +3853,98 @@ export default function TeacherSubjectDetail() {
                             </p>
                           </div>
 
-                          {/* 4 Choices */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {d.choices.map((choice, cIdx) => {
-                              const isCorrect = cIdx === d.correctIndex;
-                              const label = ['A', 'B', 'C', 'D'][cIdx];
-                              return (
-                                <div
-                                  key={cIdx}
-                                  className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 ${
-                                    isCorrect
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 text-emerald-950 dark:text-emerald-200 font-semibold'
-                                      : 'bg-paper-card dark:bg-chalkboard-card border-ink/20 text-ink dark:text-chalkboard-chalk'
-                                  }`}
-                                >
-                                  <span
-                                    className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
-                                      isCorrect
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 text-ink-muted'
-                                    }`}
-                                  >
-                                    {label}
-                                  </span>
-                                  <span className="flex-1 break-words">{choice}</span>
+                          {/* Type-Specific Body */}
+                          {d.questionType === 'ENUMERATION' ? (
+                            <div className="space-y-2">
+                              <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/20 space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-ink-muted">
+                                  <span>Accepted Answer Variants ({d.acceptedAnswers?.length || 0})</span>
+                                  <span>{d.points || 1} pt(s)</span>
                                 </div>
-                              );
-                            })}
-                          </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(d.acceptedAnswers || []).map((ans, aIdx) => (
+                                    <span
+                                      key={aIdx}
+                                      className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs font-mono text-emerald-950 dark:text-emerald-200"
+                                    >
+                                      {ans}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/10 text-xs text-ink-muted dark:text-chalkboard-muted">
+                                <span className="font-bold text-ink dark:text-chalkboard-chalk">Explanation: </span>
+                                <span>{d.explanation}</span>
+                              </div>
+                            </div>
+                          ) : d.questionType === 'ESSAY' ? (
+                            <div className="space-y-2">
+                              <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/20 space-y-1.5">
+                                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-ink-muted">
+                                  <span>Grading Rubric ({d.rubricCriteria?.length || 0} criteria)</span>
+                                  <span>Total: {d.points || 0} pts</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {(d.rubricCriteria || []).map((c, cIdx) => (
+                                    <div key={cIdx} className="flex items-start justify-between gap-3 text-xs py-1 border-t border-ink/10 first:border-t-0">
+                                      <div>
+                                        <span className="font-semibold text-ink dark:text-chalkboard-chalk">{c.name}</span>
+                                        {c.description && (
+                                          <p className="text-[11px] text-ink-muted dark:text-chalkboard-muted">{c.description}</p>
+                                        )}
+                                      </div>
+                                      <span className="font-mono font-bold text-ink dark:text-chalkboard-chalk shrink-0">
+                                        {c.maxPoints} pts
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              {(d.modelAnswerNote || d.explanation) && (
+                                <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/10 text-xs text-ink-muted dark:text-chalkboard-muted">
+                                  <span className="font-bold text-ink dark:text-chalkboard-chalk">Teacher Model-Answer Note: </span>
+                                  <span>{d.modelAnswerNote || d.explanation}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {/* 4 Choices */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {d.choices.map((choice, cIdx) => {
+                                  const isCorrect = cIdx === d.correctIndex;
+                                  const label = ['A', 'B', 'C', 'D'][cIdx];
+                                  return (
+                                    <div
+                                      key={cIdx}
+                                      className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 ${
+                                        isCorrect
+                                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 text-emerald-950 dark:text-emerald-200 font-semibold'
+                                          : 'bg-paper-card dark:bg-chalkboard-card border-ink/20 text-ink dark:text-chalkboard-chalk'
+                                      }`}
+                                    >
+                                      <span
+                                        className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
+                                          isCorrect
+                                            ? 'bg-emerald-600 text-white'
+                                            : 'bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 text-ink-muted'
+                                        }`}
+                                      >
+                                        {label}
+                                      </span>
+                                      <span className="flex-1 break-words">{choice}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
 
-                          {/* Explanation */}
-                          <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/10 text-xs text-ink-muted dark:text-chalkboard-muted">
-                            <span className="font-bold text-ink dark:text-chalkboard-chalk">Explanation: </span>
-                            <span>{d.explanation}</span>
-                          </div>
+                              {/* Explanation */}
+                              <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/10 text-xs text-ink-muted dark:text-chalkboard-muted">
+                                <span className="font-bold text-ink dark:text-chalkboard-chalk">Explanation: </span>
+                                <span>{d.explanation}</span>
+                              </div>
+                            </>
+                          )}
 
                           {/* Cited Evidence Quote Text */}
                           {d.evidenceQuote && (
@@ -3882,38 +4057,50 @@ export default function TeacherSubjectDetail() {
                   />
                 </div>
 
-                {/* 4 Choices with correct answer selector */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
-                    Choices (Select the correct answer) <span className="text-redpen">*</span>
-                  </label>
-                  {editDraftModal.choices.map((cText, idx) => (
-                    <div key={idx} className="flex items-center gap-2.5">
-                      <input
-                        type="radio"
-                        name="correctChoice"
-                        checked={editDraftModal.correctIndex === idx}
-                        onChange={() => setEditDraftModal((prev) => ({ ...prev, correctIndex: idx }))}
-                        className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                      />
-                      <span className="w-6 text-center text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk">
-                        {['A', 'B', 'C', 'D'][idx]}
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        value={cText}
-                        onChange={(e) => {
-                          const next = [...editDraftModal.choices];
-                          next[idx] = e.target.value;
-                          setEditDraftModal((prev) => ({ ...prev, choices: next }));
-                        }}
-                        placeholder={`Option ${['A', 'B', 'C', 'D'][idx]}`}
-                        className="flex-1 px-3 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-ink dark:focus:border-chalkboard-chalk focus:ring-1 focus:ring-ink"
-                      />
-                    </div>
-                  ))}
-                </div>
+                {/* Type-Specific Draft Editor */}
+                {editDraftModal.questionType === 'ENUMERATION' ? (
+                  <EnumerationQuestionEditor
+                    acceptedAnswers={editDraftModal.acceptedAnswers}
+                    onChange={(next) => setEditDraftModal((prev) => ({ ...prev, acceptedAnswers: next }))}
+                  />
+                ) : editDraftModal.questionType === 'ESSAY' ? (
+                  <EssayRubricEditor
+                    criteria={editDraftModal.rubricCriteria}
+                    onChange={(next) => setEditDraftModal((prev) => ({ ...prev, rubricCriteria: next }))}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk">
+                      Choices (Select the correct answer) <span className="text-redpen">*</span>
+                    </label>
+                    {editDraftModal.choices.map((cText, idx) => (
+                      <div key={idx} className="flex items-center gap-2.5">
+                        <input
+                          type="radio"
+                          name="correctChoice"
+                          checked={editDraftModal.correctIndex === idx}
+                          onChange={() => setEditDraftModal((prev) => ({ ...prev, correctIndex: idx }))}
+                          className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <span className="w-6 text-center text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk">
+                          {['A', 'B', 'C', 'D'][idx]}
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          value={cText}
+                          onChange={(e) => {
+                            const next = [...editDraftModal.choices];
+                            next[idx] = e.target.value;
+                            setEditDraftModal((prev) => ({ ...prev, choices: next }));
+                          }}
+                          placeholder={`Option ${['A', 'B', 'C', 'D'][idx]}`}
+                          className="flex-1 px-3 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-ink dark:focus:border-chalkboard-chalk focus:ring-1 focus:ring-ink"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -3930,16 +4117,37 @@ export default function TeacherSubjectDetail() {
                       <option value="HARD">Hard</option>
                     </select>
                   </div>
+                  {editDraftModal.questionType === 'ENUMERATION' && (
+                    <div>
+                      <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
+                        Points
+                      </label>
+                      <input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        value={editDraftModal.points}
+                        onChange={(e) => setEditDraftModal((prev) => ({ ...prev, points: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk mb-1">
-                    Explanation
+                    {editDraftModal.questionType === 'ESSAY' ? 'Model-Answer Note (Teacher Only, Optional)' : 'Explanation'}
                   </label>
                   <textarea
                     rows={2}
-                    value={editDraftModal.explanation}
-                    onChange={(e) => setEditDraftModal((prev) => ({ ...prev, explanation: e.target.value }))}
+                    value={editDraftModal.questionType === 'ESSAY' ? editDraftModal.modelAnswerNote : editDraftModal.explanation}
+                    onChange={(e) =>
+                      setEditDraftModal((prev) =>
+                        prev.questionType === 'ESSAY'
+                          ? { ...prev, modelAnswerNote: e.target.value }
+                          : { ...prev, explanation: e.target.value }
+                      )
+                    }
                     className="w-full px-3.5 py-2 rounded-xl border border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-ink dark:focus:border-chalkboard-chalk focus:ring-1 focus:ring-ink"
                   />
                 </div>

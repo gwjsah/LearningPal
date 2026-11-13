@@ -5,6 +5,7 @@ import com.learningpal.entity.*;
 import com.learningpal.exception.BadRequestException;
 import com.learningpal.exception.ResourceNotFoundException;
 import com.learningpal.repository.*;
+import com.learningpal.service.ai.AiGradeSuggestionService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,10 +36,14 @@ public class TeacherClassService {
     private final InterventionRepository interventionRepository;
     private final AnswerRepository answerRepository;
     private final ChoiceRepository choiceRepository;
+    private final QuestionAcceptedAnswerRepository acceptedAnswerRepository;
+    private final EssayRubricCriterionRepository rubricCriterionRepository;
+    private final AnswerRubricScoreRepository answerRubricScoreRepository;
     private final GapAnalysisService gapAnalysisService;
     private final StudentResourceService studentResourceService;
     private final JoinCodeGenerator joinCodeGenerator;
     private final TenantAccess tenantAccess;
+    private final AiGradeSuggestionService aiGradeSuggestionService;
 
     /**
      * Threshold for flagging students who require immediate academic intervention.
@@ -66,10 +71,14 @@ public class TeacherClassService {
             InterventionRepository interventionRepository,
             AnswerRepository answerRepository,
             ChoiceRepository choiceRepository,
+            QuestionAcceptedAnswerRepository acceptedAnswerRepository,
+            EssayRubricCriterionRepository rubricCriterionRepository,
+            AnswerRubricScoreRepository answerRubricScoreRepository,
             GapAnalysisService gapAnalysisService,
             StudentResourceService studentResourceService,
             JoinCodeGenerator joinCodeGenerator,
-            TenantAccess tenantAccess) {
+            TenantAccess tenantAccess,
+            AiGradeSuggestionService aiGradeSuggestionService) {
         this.userRepository = userRepository;
         this.subjectRepository = subjectRepository;
         this.classEntityRepository = classEntityRepository;
@@ -83,10 +92,14 @@ public class TeacherClassService {
         this.interventionRepository = interventionRepository;
         this.answerRepository = answerRepository;
         this.choiceRepository = choiceRepository;
+        this.acceptedAnswerRepository = acceptedAnswerRepository;
+        this.rubricCriterionRepository = rubricCriterionRepository;
+        this.answerRubricScoreRepository = answerRubricScoreRepository;
         this.gapAnalysisService = gapAnalysisService;
         this.studentResourceService = studentResourceService;
         this.joinCodeGenerator = joinCodeGenerator;
         this.tenantAccess = tenantAccess;
+        this.aiGradeSuggestionService = aiGradeSuggestionService;
     }
 
     /**
@@ -520,6 +533,19 @@ public class TeacherClassService {
         Map<Long, ClassAssessmentSetting> settingByAssessmentId = settings.stream()
                 .collect(Collectors.toMap(s -> s.getAssessment().getId(), s -> s));
 
+        List<Attempt> classSubmittedAttempts = attemptRepository.findByClassId(cls.getId()).stream()
+                .filter(att -> att.getStatus() == AttemptStatus.SUBMITTED)
+                .toList();
+        Map<Long, Integer> ungradedByAssessment = new HashMap<>();
+        for (Attempt att : classSubmittedAttempts) {
+            int ungraded = (int) answerRepository.findByAttempt(att).stream()
+                    .filter(ans -> ans.getQuestion().getType() == QuestionType.ESSAY && ans.getFinalScore() == null)
+                    .count();
+            if (ungraded > 0 && att.getAssessment() != null) {
+                ungradedByAssessment.merge(att.getAssessment().getId(), ungraded, Integer::sum);
+            }
+        }
+
         List<TeacherClassAssessmentDto> result = new ArrayList<>();
         for (Assessment a : assessments) {
             ClassAssessmentSetting setting = settingByAssessmentId.get(a.getId());
@@ -536,7 +562,8 @@ public class TeacherClassService {
                     availableFrom,
                     availableUntil,
                     allowRetakes,
-                    hasCustom
+                    hasCustom,
+                    ungradedByAssessment.getOrDefault(a.getId(), 0)
             ));
         }
         return result;
@@ -710,11 +737,22 @@ public class TeacherClassService {
                             }
                         }
 
-                        String correctAnswer = choiceRepository.findByQuestion(q).stream()
-                                .filter(Choice::isCorrect)
-                                .map(Choice::getText)
-                                .findFirst()
-                                .orElse("N/A");
+                        QuestionType qType = q.getType() != null ? q.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
+                        String correctAnswer;
+                        if (qType == QuestionType.ENUMERATION) {
+                            List<String> accepted = acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(q).stream()
+                                    .map(QuestionAcceptedAnswer::getAnswerText)
+                                    .toList();
+                            correctAnswer = accepted.isEmpty() ? "N/A" : String.join(" / ", accepted);
+                        } else if (qType == QuestionType.ESSAY) {
+                            correctAnswer = "Rubric-graded essay";
+                        } else {
+                            correctAnswer = choiceRepository.findByQuestion(q).stream()
+                                    .filter(Choice::isCorrect)
+                                    .map(Choice::getText)
+                                    .findFirst()
+                                    .orElse("N/A");
+                        }
 
                         topicMisses.add(new MissedQuestionDto(
                                 q.getId(),
@@ -813,54 +851,14 @@ public class TeacherClassService {
 
         List<Answer> answers = answerRepository.findByAttempt(attempt);
         List<TeacherAnswerReviewDto> answerReviews = new ArrayList<>();
+        int ungradedEssayCount = 0;
 
         for (Answer ans : answers) {
-            Question q = ans.getQuestion();
-            Topic t = q.getTopic();
-
-            List<Choice> choices = choiceRepository.findByQuestion(q);
-            Long correctChoiceId = null;
-            String correctChoiceLabel = null;
-            String correctChoiceText = null;
-            List<ChoiceReviewDto> choiceReviews = new ArrayList<>();
-
-            for (Choice c : choices) {
-                if (c.isCorrect()) {
-                    correctChoiceId = c.getId();
-                    correctChoiceLabel = c.getLabel();
-                    correctChoiceText = c.getText();
-                }
-                choiceReviews.add(new ChoiceReviewDto(c.getId(), c.getLabel(), c.getText()));
+            TeacherAnswerReviewDto dto = buildTeacherAnswerReviewDto(ans);
+            if ("ESSAY".equals(dto.type()) && !dto.graded()) {
+                ungradedEssayCount++;
             }
-
-            Long studentChoiceId = ans.getSelectedChoice() != null ? ans.getSelectedChoice().getId() : null;
-            String studentChoiceLabel = ans.getSelectedChoice() != null ? ans.getSelectedChoice().getLabel() : null;
-            String studentChoiceText = ans.getSelectedChoice() != null ? ans.getSelectedChoice().getText() : null;
-
-            boolean adjusted = ans.getTeacherScore() != null;
-
-            answerReviews.add(new TeacherAnswerReviewDto(
-                    ans.getId(),
-                    q.getId(),
-                    q.getText(),
-                    t != null ? t.getId() : null,
-                    t != null ? t.getName() : "General",
-                    q.getPoints(),
-                    choiceReviews,
-                    studentChoiceId,
-                    studentChoiceLabel,
-                    studentChoiceText,
-                    correctChoiceId,
-                    correctChoiceLabel,
-                    correctChoiceText,
-                    q.getExplanation(),
-                    ans.getAutoScore(),
-                    ans.getTeacherScore(),
-                    ans.getFinalScore(),
-                    ans.getTeacherComment(),
-                    ans.getGradedAt(),
-                    adjusted
-            ));
+            answerReviews.add(dto);
         }
 
         double score = attempt.getTotalScore() != null ? attempt.getTotalScore() : 0.0;
@@ -881,7 +879,96 @@ public class TeacherClassService {
                 maxScore,
                 percentage,
                 attempt.getSubmittedAt(),
-                answerReviews
+                answerReviews,
+                ungradedEssayCount > 0,
+                ungradedEssayCount
+        );
+    }
+
+    private TeacherAnswerReviewDto buildTeacherAnswerReviewDto(Answer ans) {
+        Question q = ans.getQuestion();
+        Topic t = q.getTopic();
+        QuestionType type = q.getType() != null ? q.getType().canonical() : QuestionType.MULTIPLE_CHOICE;
+
+        Long correctChoiceId = null;
+        String correctChoiceLabel = null;
+        String correctChoiceText = null;
+        List<ChoiceReviewDto> choiceReviews = new ArrayList<>();
+        Long studentChoiceId = null;
+        String studentChoiceLabel = null;
+        String studentChoiceText = null;
+        List<String> acceptedAnswers = List.of();
+        List<TeacherRubricCriterionScoreDto> rubricCriteria = List.of();
+
+        if (type == QuestionType.MULTIPLE_CHOICE) {
+            for (Choice c : choiceRepository.findByQuestion(q)) {
+                if (c.isCorrect()) {
+                    correctChoiceId = c.getId();
+                    correctChoiceLabel = c.getLabel();
+                    correctChoiceText = c.getText();
+                }
+                choiceReviews.add(new ChoiceReviewDto(c.getId(), c.getLabel(), c.getText()));
+            }
+            if (ans.getSelectedChoice() != null) {
+                studentChoiceId = ans.getSelectedChoice().getId();
+                studentChoiceLabel = ans.getSelectedChoice().getLabel();
+                studentChoiceText = ans.getSelectedChoice().getText();
+            }
+        } else if (type == QuestionType.ENUMERATION) {
+            acceptedAnswers = acceptedAnswerRepository.findByQuestionOrderByDisplayOrderAsc(q).stream()
+                    .map(QuestionAcceptedAnswer::getAnswerText)
+                    .toList();
+        } else if (type == QuestionType.ESSAY) {
+            Map<Long, Integer> awardedByCriterion = answerRubricScoreRepository.findByAnswer(ans).stream()
+                    .collect(Collectors.toMap(
+                            s -> s.getCriterion().getId(),
+                            AnswerRubricScore::getPointsAwarded,
+                            (a, b) -> b
+                    ));
+            rubricCriteria = rubricCriterionRepository.findByQuestionOrderByDisplayOrderAsc(q).stream()
+                    .map(c -> new TeacherRubricCriterionScoreDto(
+                            c.getId(),
+                            c.getName(),
+                            c.getDescription(),
+                            c.getMaxPoints(),
+                            awardedByCriterion.get(c.getId())
+                    ))
+                    .toList();
+        }
+
+        boolean adjusted = ans.getTeacherScore() != null;
+        boolean graded = ans.getFinalScore() != null;
+        AiGradeSuggestionDto aiSuggestion = type == QuestionType.ESSAY
+                ? aiGradeSuggestionService.getLatestVisibleSuggestion(ans)
+                : null;
+
+        return new TeacherAnswerReviewDto(
+                ans.getId(),
+                q.getId(),
+                q.getText(),
+                t != null ? t.getId() : null,
+                t != null ? t.getName() : "General",
+                q.getPoints(),
+                choiceReviews,
+                studentChoiceId,
+                studentChoiceLabel,
+                studentChoiceText,
+                correctChoiceId,
+                correctChoiceLabel,
+                correctChoiceText,
+                q.getExplanation(),
+                ans.getAutoScore(),
+                ans.getTeacherScore(),
+                ans.getFinalScore(),
+                ans.getTeacherComment(),
+                ans.getGradedAt(),
+                adjusted,
+                type.name(),
+                ans.getTextAnswer(),
+                acceptedAnswers,
+                rubricCriteria,
+                graded,
+                aiSuggestion
         );
     }
 
@@ -913,28 +1000,42 @@ public class TeacherClassService {
             throw new ResourceNotFoundException("Answer does not belong to attempt: " + answerId);
         }
 
-        Double score = request.teacherScore();
-        if (score != null) {
-            if (score < 0.0) {
-                throw new BadRequestException("Score cannot be negative");
-            }
-            double maxPoints = answer.getQuestion().getPoints() != null ? answer.getQuestion().getPoints() : 1.0;
-            if (score > maxPoints) {
-                throw new BadRequestException("Score cannot exceed question maximum points of " + maxPoints);
-            }
-            if (BigDecimal.valueOf(score).stripTrailingZeros().scale() > 2) {
-                throw new BadRequestException("Score cannot have more than 2 decimal places");
-            }
-        }
+        QuestionType qType = answer.getQuestion().getType() != null
+                ? answer.getQuestion().getType().canonical()
+                : QuestionType.MULTIPLE_CHOICE;
 
         String comment = request.teacherComment() != null ? request.teacherComment().trim() : null;
-        if (comment != null && comment.length() > 500) {
-            throw new BadRequestException("Teacher comment cannot exceed 500 characters");
+        int maxCommentLen = qType == QuestionType.ESSAY ? 2000 : 500;
+        if (comment != null && comment.length() > maxCommentLen) {
+            throw new BadRequestException("Teacher comment cannot exceed " + maxCommentLen + " characters");
+        }
+
+        Double score;
+        if (qType == QuestionType.ESSAY) {
+            score = gradeEssayByRubric(answer, request.rubricScores());
+        } else {
+            score = request.teacherScore();
+            if (score != null) {
+                if (score < 0.0) {
+                    throw new BadRequestException("Score cannot be negative");
+                }
+                double maxPoints = answer.getQuestion().getPoints() != null ? answer.getQuestion().getPoints() : 1.0;
+                if (score > maxPoints) {
+                    throw new BadRequestException("Score cannot exceed question maximum points of " + maxPoints);
+                }
+                if (BigDecimal.valueOf(score).stripTrailingZeros().scale() > 2) {
+                    throw new BadRequestException("Score cannot have more than 2 decimal places");
+                }
+            }
         }
 
         // Apply override (centralized in Answer entity)
         answer.applyTeacherOverride(score, comment, teacher);
         Answer savedAnswer = answerRepository.save(answer);
+
+        if (qType == QuestionType.ESSAY) {
+            aiGradeSuggestionService.resolveActiveSuggestionOnSave(savedAnswer, request.rubricScores(), comment);
+        }
 
         // Recalculate attempt totalScore
         List<Answer> allAnswers = answerRepository.findByAttempt(attempt);
@@ -963,41 +1064,7 @@ public class TeacherClassService {
                     .orElse(null);
         }
 
-        Question q = answer.getQuestion();
-        List<ChoiceReviewDto> choiceReviews = choiceRepository.findByQuestion(q).stream()
-                .map(c -> new ChoiceReviewDto(c.getId(), c.getLabel(), c.getText()))
-                .toList();
-
-        Long correctChoiceId = choiceRepository.findByQuestion(q).stream()
-                .filter(Choice::isCorrect)
-                .map(Choice::getId)
-                .findFirst()
-                .orElse(null);
-
-        Long studentChoiceId = answer.getSelectedChoice() != null ? answer.getSelectedChoice().getId() : null;
-
-        TeacherAnswerReviewDto answerDto = new TeacherAnswerReviewDto(
-                savedAnswer.getId(),
-                q.getId(),
-                q.getText(),
-                topic.getId(),
-                topic.getName(),
-                q.getPoints(),
-                choiceReviews,
-                studentChoiceId,
-                answer.getSelectedChoice() != null ? answer.getSelectedChoice().getLabel() : null,
-                answer.getSelectedChoice() != null ? answer.getSelectedChoice().getText() : null,
-                correctChoiceId,
-                null,
-                null,
-                q.getExplanation(),
-                savedAnswer.getAutoScore(),
-                savedAnswer.getTeacherScore(),
-                savedAnswer.getFinalScore(),
-                savedAnswer.getTeacherComment(),
-                savedAnswer.getGradedAt(),
-                savedAnswer.getTeacherScore() != null
-        );
+        TeacherAnswerReviewDto answerDto = buildTeacherAnswerReviewDto(savedAnswer);
 
         double pct = attempt.getMaxScore() != null && attempt.getMaxScore() > 0
                 ? Math.round((newTotal / attempt.getMaxScore()) * 1000.0) / 10.0
@@ -1012,6 +1079,51 @@ public class TeacherClassService {
                 updatedMastery != null ? updatedMastery.getMasteryPercent() : null,
                 updatedMastery != null ? updatedMastery.getStatus() : null
         );
+    }
+
+    private Double gradeEssayByRubric(Answer answer, List<CriterionScoreRequest> rubricScores) {
+        List<EssayRubricCriterion> criteria = rubricCriterionRepository.findByQuestionOrderByDisplayOrderAsc(answer.getQuestion());
+        if (criteria.isEmpty()) {
+            throw new BadRequestException("Essay question has no rubric criteria configured");
+        }
+        if (rubricScores == null || rubricScores.isEmpty()) {
+            throw new BadRequestException("Rubric criterion scores are required to grade an essay");
+        }
+
+        Map<Long, EssayRubricCriterion> criteriaById = criteria.stream()
+                .collect(Collectors.toMap(EssayRubricCriterion::getId, c -> c));
+        Map<Long, Integer> pointsByCriterionId = new LinkedHashMap<>();
+
+        for (CriterionScoreRequest req : rubricScores) {
+            if (req.criterionId() == null || !criteriaById.containsKey(req.criterionId())) {
+                throw new BadRequestException("Unknown rubric criterion ID: " + req.criterionId());
+            }
+            if (pointsByCriterionId.containsKey(req.criterionId())) {
+                throw new BadRequestException("Duplicate rubric criterion ID: " + req.criterionId());
+            }
+            EssayRubricCriterion criterion = criteriaById.get(req.criterionId());
+            if (req.points() == null || req.points() < 0 || req.points() > criterion.getMaxPoints()) {
+                throw new BadRequestException(
+                        "Points for criterion '" + criterion.getName() + "' must be between 0 and " + criterion.getMaxPoints()
+                );
+            }
+            pointsByCriterionId.put(req.criterionId(), req.points());
+        }
+
+        if (pointsByCriterionId.size() != criteria.size()) {
+            throw new BadRequestException("All rubric criteria must be scored");
+        }
+
+        answerRubricScoreRepository.deleteByAnswer(answer);
+        answerRubricScoreRepository.flush();
+
+        int total = 0;
+        for (EssayRubricCriterion criterion : criteria) {
+            int pts = pointsByCriterionId.get(criterion.getId());
+            answerRubricScoreRepository.save(new AnswerRubricScore(answer, criterion, pts));
+            total += pts;
+        }
+        return (double) total;
     }
 
     // =========================================================================

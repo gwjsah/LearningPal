@@ -186,10 +186,13 @@ export default function Signup() {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 text-center mb-6">
-        <Link to="/" className="inline-flex items-center gap-2 group mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded">
-          <LearningPalLogo className="w-9 h-9 transition-transform group-hover:scale-105" />
-          <span className="font-heading text-2xl font-bold tracking-tight text-ink dark:text-chalkboard-chalk">
-            Learning<span className="text-redpen italic">Pal</span>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1"
+        >
+          <LearningPalLogo className="w-10 h-10 transition-transform group-hover:-rotate-6" />
+          <span className="font-bold text-2xl tracking-tight text-ink dark:text-chalkboard-chalk flex items-center">
+            Learning<span className="font-hand text-3xl text-redpen -mt-1">Pal</span>
           </span>
         </Link>
         <h1 className="mt-2 text-2xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight font-sans">

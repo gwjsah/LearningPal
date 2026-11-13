@@ -193,6 +193,12 @@ export default function ClassAssessmentsTab({
                         <span className="font-bold text-sm text-ink dark:text-chalkboard-chalk block">
                           {asm.title}
                         </span>
+                        {asm.ungradedEssayCount > 0 && (
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-400">
+                            <Clock className="w-3 h-3" aria-hidden="true" />
+                            {asm.ungradedEssayCount} ungraded essay{asm.ungradedEssayCount === 1 ? '' : 's'}
+                          </span>
+                        )}
                         {asm.description && (
                           <span className="text-[11px] text-ink-muted dark:text-chalkboard-muted line-clamp-1 font-sans">
                             {asm.description}

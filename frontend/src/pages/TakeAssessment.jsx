@@ -32,7 +32,7 @@ export default function TakeAssessment() {
   // Current question index in questions array (0-based)
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Selected answers: map of questionId -> selectedChoiceId
+  // Selected answers: map of questionId -> { selectedChoiceId?, textAnswer? }
   const [answers, setAnswers] = useState({});
 
   // Submit modal / confirmation state
@@ -47,6 +47,14 @@ export default function TakeAssessment() {
       try {
         const data = await studentService.startAttempt(id);
         setAttemptData(data);
+        try {
+          const savedDraft = localStorage.getItem(`lp_attempt_draft_${data.attemptId}`);
+          if (savedDraft) {
+            setAnswers(JSON.parse(savedDraft));
+          }
+        } catch {
+          // Ignore malformed local draft
+        }
       } catch (err) {
         if (err.status === 401 || err.message?.includes('authentication is required')) {
           logout();
@@ -65,14 +73,38 @@ export default function TakeAssessment() {
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
 
-  const handleSelectChoice = (questionId, choiceId) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: choiceId,
-    }));
+  const updateAnswerState = (questionId, patch) => {
+    setAnswers((prev) => {
+      const next = {
+        ...prev,
+        [questionId]: { ...(prev[questionId] || {}), ...patch },
+      };
+      if (attemptData?.attemptId) {
+        try {
+          localStorage.setItem(`lp_attempt_draft_${attemptData.attemptId}`, JSON.stringify(next));
+        } catch {
+          // Ignore storage quota errors
+        }
+      }
+      return next;
+    });
   };
 
-  const answeredCount = Object.keys(answers).length;
+  const handleSelectChoice = (questionId, choiceId) => {
+    updateAnswerState(questionId, { selectedChoiceId: choiceId });
+  };
+
+  const handleTextAnswerChange = (questionId, textAnswer) => {
+    updateAnswerState(questionId, { textAnswer });
+  };
+
+  const isQuestionAnswered = (qId) => {
+    const entry = answers[qId];
+    if (!entry) return false;
+    return entry.selectedChoiceId != null || (entry.textAnswer != null && entry.textAnswer.trim().length > 0);
+  };
+
+  const answeredCount = questions.filter((q) => isQuestionAnswered(q.id)).length;
   const unansweredCount = totalQuestions - answeredCount;
   const progressPercent = totalQuestions > 0 ? Math.round(((currentIndex + 1) / totalQuestions) * 100) : 0;
 
@@ -81,12 +113,18 @@ export default function TakeAssessment() {
     setSubmitError('');
 
     try {
-      const payload = Object.entries(answers).map(([qId, cId]) => ({
+      const payload = Object.entries(answers).map(([qId, entry]) => ({
         questionId: Number(qId),
-        selectedChoiceId: cId,
+        selectedChoiceId: entry.selectedChoiceId ?? null,
+        textAnswer: entry.textAnswer ?? null,
       }));
 
       const response = await studentService.submitAttempt(attemptData.attemptId, payload);
+      try {
+        localStorage.removeItem(`lp_attempt_draft_${attemptData.attemptId}`);
+      } catch {
+        // Ignore storage errors
+      }
       const target = validSubjectId
         ? `/student/subjects/${validSubjectId}/attempts/${response.attemptId}/result`
         : `/student/attempts/${response.attemptId}/result`;
@@ -227,7 +265,7 @@ export default function TakeAssessment() {
           </div>
           <div className="flex flex-wrap gap-2">
             {questions.map((q, idx) => {
-              const isAnswered = answers[q.id] != null;
+              const isAnswered = isQuestionAnswered(q.id);
               const isCurrent = idx === currentIndex;
 
               let pillStyle =
@@ -271,43 +309,90 @@ export default function TakeAssessment() {
           {/* Formatted Question Text */}
           {renderFormattedQuestion(currentQuestion.text)}
 
-          {/* Choices Radio Group */}
+          {/* Answer Input Area (by question type) */}
           <div className="space-y-3 pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
-            <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block">
-              Choose the best answer:
-            </span>
+            {currentQuestion.type === 'ENUMERATION' ? (
+              <div className="space-y-2">
+                <label
+                  htmlFor={`enum-input-${currentQuestion.id}`}
+                  className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block"
+                >
+                  Your Short Answer (max 200 characters):
+                </label>
+                <input
+                  id={`enum-input-${currentQuestion.id}`}
+                  type="text"
+                  maxLength={200}
+                  value={answers[currentQuestion.id]?.textAnswer || ''}
+                  onChange={(e) => handleTextAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="Type your answer…"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm sm:text-base focus:outline-none focus:border-redpen"
+                />
+                <div className="text-right text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                  {(answers[currentQuestion.id]?.textAnswer || '').length} / 200
+                </div>
+              </div>
+            ) : currentQuestion.type === 'ESSAY' ? (
+              <div className="space-y-2">
+                <label
+                  htmlFor={`essay-input-${currentQuestion.id}`}
+                  className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block"
+                >
+                  Your Essay Response (plain text, max 5000 characters):
+                </label>
+                <textarea
+                  id={`essay-input-${currentQuestion.id}`}
+                  rows={7}
+                  maxLength={5000}
+                  value={answers[currentQuestion.id]?.textAnswer || ''}
+                  onChange={(e) => handleTextAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="Write your response clearly…"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm sm:text-base leading-relaxed focus:outline-none focus:border-redpen"
+                />
+                <div className="flex items-center justify-between text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                  <span>Essays are graded by your teacher after submission.</span>
+                  <span>{(answers[currentQuestion.id]?.textAnswer || '').length} / 5000</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block">
+                  Choose the best answer:
+                </span>
 
-            <div role="radiogroup" aria-label="Multiple choice options" className="space-y-2.5">
-              {currentQuestion.choices.map((choice) => {
-                const isSelected = answers[currentQuestion.id] === choice.id;
+                <div role="radiogroup" aria-label="Multiple choice options" className="space-y-2.5">
+                  {currentQuestion.choices.map((choice) => {
+                    const isSelected = answers[currentQuestion.id]?.selectedChoiceId === choice.id;
 
-                return (
-                  <label
-                    key={choice.id}
-                    className={`flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer select-none ${
-                      isSelected
-                        ? 'border-ink dark:border-chalkboard-borderStrong bg-highlighter-yellow/40 dark:bg-chalkboard-surface shadow-notebook-sm font-semibold'
-                        : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestion.id}`}
-                      value={choice.id}
-                      checked={isSelected}
-                      onChange={() => handleSelectChoice(currentQuestion.id, choice.id)}
-                      className="mt-1 w-4 h-4 text-redpen focus:ring-redpen"
-                    />
-                    <div className="flex-1 text-sm sm:text-base leading-relaxed">
-                      <span className="font-mono font-bold text-redpen mr-2">
-                        {choice.label})
-                      </span>
-                      <span>{choice.text}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
+                    return (
+                      <label
+                        key={choice.id}
+                        className={`flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer select-none ${
+                          isSelected
+                            ? 'border-ink dark:border-chalkboard-borderStrong bg-highlighter-yellow/40 dark:bg-chalkboard-surface shadow-notebook-sm font-semibold'
+                            : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${currentQuestion.id}`}
+                          value={choice.id}
+                          checked={isSelected}
+                          onChange={() => handleSelectChoice(currentQuestion.id, choice.id)}
+                          className="mt-1 w-4 h-4 text-redpen focus:ring-redpen"
+                        />
+                        <div className="flex-1 text-sm sm:text-base leading-relaxed">
+                          <span className="font-mono font-bold text-redpen mr-2">
+                            {choice.label})
+                          </span>
+                          <span>{choice.text}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </NotebookCard>
       </main>

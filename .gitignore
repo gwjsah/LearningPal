@@ -40,6 +40,8 @@ application.properties
 # Agent tooling & local skills cache
 .agents/
 .claude/
+.impeccable/
+frontend/.impeccable/
 skills-lock.json
 
 LearningPal_Handoff.md

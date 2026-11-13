@@ -441,7 +441,7 @@ public class ValidationLabTests {
                         .header("Authorization", teacherToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req1)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
 
         // 5. Validation: Student not enrolled in class rejected (404)
         User unenrolledStudent = userRepository.save(new User(
@@ -917,6 +917,66 @@ public class ValidationLabTests {
         assertThat(prelimRep.targetCheck().sentence()).contains("Preliminary: 4 of 30 students labeled");
         assertThat(prelimRep.eligibleStudents()).isEqualTo(5);
         assertThat(prelimRep.notYetEligible()).isEqualTo(15);
+    }
+
+    // =========================================================================
+    // 17. ADMIN BREAKDOWN ELIGIBLE-ONLY DENOMINATOR TEST
+    // =========================================================================
+    @Test
+    @DisplayName("Admin validation breakdown: per-class rows use eligible-only denominator and honest targetStatus")
+    void testAdminBreakdownEligibleOnlyDenominator() {
+        User admin = userRepository.save(new User(
+                "Admin Denominator Check", "admin.denom@insta.com", passwordEncoder.encode("Pass123!"),
+                Role.ADMIN, UserStatus.ACTIVE, instA
+        ));
+
+        Subject sci = subjectRepository.save(new Subject("Physics", "PHY101", "Physics"));
+        Topic top1 = topicRepository.save(new Topic(sci, "Kinematics", "Kin", 1));
+        ClassEntity cls = classEntityRepository.save(new ClassEntity(instA, sci, teacherA, "Physics Sec A", "PHY01"));
+
+        // Enroll 10 students in cls, but only 2 are eligible (have >= 3 answered questions / non-INSUFFICIENT_DATA mastery)
+        List<User> students = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            User s = userRepository.save(new User(
+                    "Phy Student " + i, "phy.student" + i + "@insta.com", passwordEncoder.encode("pw"),
+                    Role.STUDENT, UserStatus.ACTIVE, instA
+            ));
+            enrollmentRepository.save(new Enrollment(s, cls));
+            students.add(s);
+        }
+
+        // Before any student is eligible: breakdown for cls shows 0 / 0 and NO_ELIGIBLE_STUDENTS
+        ValidationReportDto adminRepZero = validationService.getAdminValidationReport("TEACHER", false, admin.getEmail());
+        ValidationClassBreakdownDto cbZero = adminRepZero.classBreakdowns().stream()
+                .filter(b -> b.classId().equals(cls.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(cbZero.studentsLabeled()).isEqualTo(0);
+        assertThat(cbZero.totalStudents()).isEqualTo(0);
+        assertThat(cbZero.targetStatus()).isEqualTo("NO_ELIGIBLE_STUDENTS");
+
+        // Make 2 of the 10 enrolled students eligible and fully label both
+        for (int i = 0; i < 2; i++) {
+            User s = students.get(i);
+            studentTopicMasteryRepository.save(new StudentTopicMastery(s, cls, top1, 80.0, MasteryStatus.STRENGTH));
+            validationService.getOrAssignTopicsForStudent(cls, s);
+            gapValidationLabelRepository.save(new GapValidationLabel(
+                    s, top1, ValidationLabel.NOT_WEAK, ValidationSource.TEACHER, teacherA, Instant.now(),
+                    cls, "Matched", 0, MasteryStatus.STRENGTH, 80.0
+            ));
+        }
+
+        ValidationReportDto adminRepComplete = validationService.getAdminValidationReport("TEACHER", false, admin.getEmail());
+        ValidationClassBreakdownDto cbComplete = adminRepComplete.classBreakdowns().stream()
+                .filter(b -> b.classId().equals(cls.getId()))
+                .findFirst()
+                .orElseThrow();
+
+        // Eligible-only denominator is 2 (not 10 enrolled), and status is COMPLETED / SMALL_CLASS_COMPLETE
+        assertThat(cbComplete.studentsLabeled()).isEqualTo(2);
+        assertThat(cbComplete.totalStudents()).isEqualTo(2);
+        assertThat(cbComplete.status()).isEqualTo("COMPLETED");
+        assertThat(cbComplete.targetStatus()).isEqualTo("SMALL_CLASS_COMPLETE");
     }
 
     // =========================================================================

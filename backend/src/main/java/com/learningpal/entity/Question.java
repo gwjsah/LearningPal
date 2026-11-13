@@ -30,7 +30,7 @@ public class Question {
     @Column(name = "text", nullable = false, columnDefinition = "TEXT")
     private String text;
 
-    @Column(name = "explanation", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "explanation", columnDefinition = "TEXT")
     private String explanation;
 
     @Enumerated(EnumType.STRING)
@@ -91,6 +91,9 @@ public class Question {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = Instant.now();
+        }
+        if (this.type == null) {
+            this.type = QuestionType.MULTIPLE_CHOICE;
         }
         if (this.points == null) {
             this.points = 1.0;

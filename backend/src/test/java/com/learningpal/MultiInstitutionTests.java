@@ -202,7 +202,7 @@ public class MultiInstitutionTests {
     }
 
     @Test
-    @DisplayName("Admin cannot deactivate self or a SUPER_ADMIN (400 Bad Request)")
+    @DisplayName("Admin cannot deactivate self (400) or a SUPER_ADMIN (404 zero-leakage)")
     void testAdminCannotDeactivateSelfOrSuperAdmin() throws Exception {
         // Self
         mockMvc.perform(post("/api/admin/users/" + adminA.getId() + "/deactivate")
@@ -210,11 +210,10 @@ public class MultiInstitutionTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("You cannot deactivate your own account")));
 
-        // Super Admin
+        // Super Admin (foreign/platform account -> uniform 404)
         mockMvc.perform(post("/api/admin/users/" + superAdmin.getId() + "/deactivate")
                         .header("Authorization", "Bearer " + adminAToken))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Cannot deactivate a platform super administrator")));
+                .andExpect(status().isNotFound());
     }
 
     // =========================================================================

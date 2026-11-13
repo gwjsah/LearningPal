@@ -7,11 +7,38 @@ export const AI_QUESTION_RULES = {
   MIN: 5,
   DEFAULT: 10,
   MAX: 30,
+  MAX_ESSAY: 10,
+  MAX_BY_TYPE: {
+    MULTIPLE_CHOICE: 30,
+    ENUMERATION: 30,
+    ESSAY: 10,
+  },
   TICK_MARKS: [
     { value: 5, label: '5 min' },
     { value: 10, label: '10 (default)' },
     { value: 20, label: '20' },
     { value: 30, label: '30 max' },
+  ],
+  ESSAY_TICK_MARKS: [
+    { value: 5, label: '5 min' },
+    { value: 10, label: '10 max (default)' },
+  ],
+  QUESTION_TYPE_OPTIONS: [
+    {
+      value: 'MULTIPLE_CHOICE',
+      label: 'Multiple Choice',
+      help: 'Auto-graded 4-option questions with one correct choice and an explanation.',
+    },
+    {
+      value: 'ENUMERATION',
+      label: 'Enumeration',
+      help: 'Short text questions auto-graded against accepted answer variants and synonyms.',
+    },
+    {
+      value: 'ESSAY',
+      label: 'Essay',
+      help: 'Open-ended prompts with a 2–5 criterion rubric and optional teacher model-answer note (max 10 drafts).',
+    },
   ],
 };
 

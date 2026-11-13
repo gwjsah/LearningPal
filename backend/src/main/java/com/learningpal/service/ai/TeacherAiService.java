@@ -1,5 +1,6 @@
 package com.learningpal.service.ai;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learningpal.config.AiConfigProperties;
 import com.learningpal.dto.*;
 import com.learningpal.entity.*;
@@ -41,6 +42,7 @@ public class TeacherAiService {
     private final TeacherFileService teacherFileService;
     private final TeacherContentService teacherContentService;
     private final TenantAccess tenantAccess;
+    private final ObjectMapper objectMapper;
 
     public TeacherAiService(
             AiConfigProperties aiConfig,
@@ -54,7 +56,8 @@ public class TeacherAiService {
             QuestionRepository questionRepository,
             TeacherFileService teacherFileService,
             TeacherContentService teacherContentService,
-            TenantAccess tenantAccess) {
+            TenantAccess tenantAccess,
+            ObjectMapper objectMapper) {
         this.aiConfig = aiConfig;
         this.llmClient = llmClient;
         this.workerService = workerService;
@@ -67,6 +70,7 @@ public class TeacherAiService {
         this.teacherFileService = teacherFileService;
         this.teacherContentService = teacherContentService;
         this.tenantAccess = tenantAccess;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -78,16 +82,27 @@ public class TeacherAiService {
         boolean enabled = aiConfig.isEnabled();
         boolean reachable = false;
         boolean modelFound = false;
+        String provider = aiConfig.getProvider();
 
         if (enabled) {
-            reachable = llmClient.isAvailable();
-            if (reachable) {
-                List<String> availableModels = llmClient.listModels();
-                modelFound = availableModels.contains(aiConfig.getModel());
+            if (aiConfig.isGeminiProvider() && (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isBlank())) {
+                reachable = false;
+                modelFound = false;
+            } else {
+                reachable = llmClient.isAvailable();
+                if (reachable) {
+                    List<String> availableModels = llmClient.listModels();
+                    String targetModel = aiConfig.getActiveModel();
+                    modelFound = availableModels.stream().anyMatch(m ->
+                            m.equalsIgnoreCase(targetModel) ||
+                            m.equalsIgnoreCase("models/" + targetModel) ||
+                            targetModel.equalsIgnoreCase("models/" + m)
+                    );
+                }
             }
         }
 
-        return new AiStatusDto(enabled, reachable, aiConfig.getModel(), modelFound);
+        return new AiStatusDto(enabled, reachable, aiConfig.getActiveModel(), modelFound, provider);
     }
 
     /**
@@ -102,6 +117,10 @@ public class TeacherAiService {
 
         if (!aiConfig.isEnabled()) {
             throw new ServiceUnavailableException("AI question drafting is currently disabled in server configuration.");
+        }
+
+        if (aiConfig.isGeminiProvider() && (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isBlank())) {
+            throw new ServiceUnavailableException("AI question drafting is unavailable: Gemini API key is not configured.");
         }
 
         User teacher = getActiveTeacher(teacherEmail);
@@ -128,16 +147,24 @@ public class TeacherAiService {
             throw new ConflictException("You already have a generation job in progress. Please wait for it to complete or cancel it.");
         }
 
-        // Enforce hourly rate limit per teacher
+        // Enforce hourly rate limit per teacher (fall back to 5 if configured <= 0)
+        int maxJobsPerHour = aiConfig.getMaxJobsPerTeacherPerHour() > 0 ? aiConfig.getMaxJobsPerTeacherPerHour() : 5;
         Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
         long recentJobs = jobRepository.countByTeacherAndCreatedAtAfter(teacher, oneHourAgo);
-        if (recentJobs >= aiConfig.getMaxJobsPerTeacherPerHour()) {
-            throw new RateLimitException("Hourly generation limit reached (" + aiConfig.getMaxJobsPerTeacherPerHour() + " jobs/hour). Please try again later.");
+        if (recentJobs >= maxJobsPerHour) {
+            throw new RateLimitException("Hourly generation limit reached (" + maxJobsPerHour + " jobs/hour). Please try again later.");
         }
 
-        // Enforce strict question count rules (no silent clamping)
+        QuestionType targetType = request.questionType() != null
+                ? request.questionType().canonical()
+                : QuestionType.MULTIPLE_CHOICE;
+
+        // Enforce strict question count rules (max 10 for ESSAY, max 30 for MULTIPLE_CHOICE / ENUMERATION)
         int count = request.count() != null ? request.count() : CreateAiJobRequest.DEFAULT_QUESTIONS;
-        int maxAllowed = Math.min(CreateAiJobRequest.MAX_QUESTIONS, aiConfig.getMaxDraftsPerJob());
+        int typeMax = targetType == QuestionType.ESSAY
+                ? CreateAiJobRequest.MAX_ESSAY_QUESTIONS
+                : CreateAiJobRequest.MAX_QUESTIONS;
+        int maxAllowed = Math.min(typeMax, aiConfig.getMaxDraftsPerJob());
         if (count < CreateAiJobRequest.MIN_QUESTIONS || count > maxAllowed) {
             throw new BadRequestException("Question count must be between " + CreateAiJobRequest.MIN_QUESTIONS + " and " + maxAllowed);
         }
@@ -148,7 +175,8 @@ public class TeacherAiService {
                 topic,
                 resourceFile,
                 count,
-                aiConfig.getModel()
+                targetType,
+                aiConfig.getActiveModel()
         );
 
         AiGenerationJob saved = jobRepository.save(job);
@@ -242,16 +270,91 @@ public class TeacherAiService {
             throw new BadRequestException("Approved drafts cannot be edited directly. Edit the approved question in the question bank instead.");
         }
 
+        QuestionType type = draft.getQuestionType();
         draft.setQuestionText(request.questionText().trim());
-        List<String> choices = request.choices();
-        draft.setChoiceA(choices.get(0).trim());
-        draft.setChoiceB(choices.get(1).trim());
-        draft.setChoiceC(choices.get(2).trim());
-        draft.setChoiceD(choices.get(3).trim());
-        draft.setCorrectIndex(request.correctIndex());
-        draft.setExplanation(request.explanation().trim());
         if (request.difficulty() != null) {
             draft.setDifficulty(request.difficulty());
+        }
+
+        switch (type) {
+            case ENUMERATION -> {
+                List<String> variants = request.acceptedAnswers();
+                if (variants == null || variants.isEmpty() || variants.size() > 10) {
+                    throw new BadRequestException("Enumeration drafts require 1 to 10 accepted answer variants.");
+                }
+                List<String> cleaned = new ArrayList<>(variants.size());
+                for (String v : variants) {
+                    if (v == null || v.isBlank() || v.trim().length() > 100) {
+                        throw new BadRequestException("Each accepted answer variant must be non-blank and at most 100 characters.");
+                    }
+                    cleaned.add(v.trim());
+                }
+                if (request.explanation() == null || request.explanation().isBlank()) {
+                    throw new BadRequestException("Explanation is required for enumeration drafts.");
+                }
+                double pts = request.points() != null ? request.points() : draft.getPoints();
+                if (pts <= 0) {
+                    throw new BadRequestException("Points must be positive.");
+                }
+                try {
+                    draft.setAcceptedAnswersJson(objectMapper.writeValueAsString(cleaned));
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to serialize accepted answers", e);
+                }
+                draft.setPoints(pts);
+                draft.setExplanation(request.explanation().trim());
+            }
+            case ESSAY -> {
+                List<EssayRubricCriterionDto> criteria = request.rubricCriteria();
+                if (criteria == null || criteria.isEmpty() || criteria.size() > 8) {
+                    throw new BadRequestException("Essay drafts require 1 to 8 rubric criteria.");
+                }
+                List<EssayRubricCriterionDto> cleaned = new ArrayList<>(criteria.size());
+                int totalPoints = 0;
+                for (EssayRubricCriterionDto c : criteria) {
+                    if (c == null || c.name() == null || c.name().isBlank() || c.name().trim().length() > 100) {
+                        throw new BadRequestException("Each rubric criterion requires a non-blank name (max 100 chars).");
+                    }
+                    String desc = c.description() != null ? c.description().trim() : "";
+                    if (desc.length() > 500) {
+                        throw new BadRequestException("Rubric criterion description cannot exceed 500 characters.");
+                    }
+                    if (c.maxPoints() == null || c.maxPoints() <= 0) {
+                        throw new BadRequestException("Rubric criterion maxPoints must be a positive integer.");
+                    }
+                    totalPoints += c.maxPoints();
+                    cleaned.add(new EssayRubricCriterionDto(null, c.name().trim(), desc, c.maxPoints(), cleaned.size()));
+                }
+                try {
+                    draft.setRubricCriteriaJson(objectMapper.writeValueAsString(cleaned));
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to serialize rubric criteria", e);
+                }
+                draft.setPoints(totalPoints);
+                String note = request.modelAnswerNote() != null ? request.modelAnswerNote() : request.explanation();
+                draft.setExplanation(note != null && !note.isBlank() ? note.trim() : null);
+            }
+            default -> {
+                List<String> choices = request.choices();
+                if (choices == null || choices.size() != 4 || choices.stream().anyMatch(c -> c == null || c.isBlank())) {
+                    throw new BadRequestException("Exactly 4 non-blank choices are required.");
+                }
+                if (request.correctIndex() == null || request.correctIndex() < 0 || request.correctIndex() > 3) {
+                    throw new BadRequestException("Correct index must be between 0 and 3.");
+                }
+                if (request.explanation() == null || request.explanation().isBlank()) {
+                    throw new BadRequestException("Explanation cannot be blank.");
+                }
+                draft.setChoiceA(choices.get(0).trim());
+                draft.setChoiceB(choices.get(1).trim());
+                draft.setChoiceC(choices.get(2).trim());
+                draft.setChoiceD(choices.get(3).trim());
+                draft.setCorrectIndex(request.correctIndex());
+                draft.setExplanation(request.explanation().trim());
+                if (request.points() != null && request.points() > 0) {
+                    draft.setPoints(request.points());
+                }
+            }
         }
 
         AiQuestionDraft saved = draftRepository.save(draft);
@@ -278,22 +381,57 @@ public class TeacherAiService {
         AiGenerationJob job = draft.getJob();
         Long subjectId = job.getSubject().getId();
         Long topicId = job.getTopic().getId();
+        QuestionType type = draft.getQuestionType();
+        AiQuestionDraftDto dto = AiQuestionDraftDto.fromEntity(draft);
 
-        List<ChoiceDto> choiceRequests = List.of(
-                new ChoiceDto(null, "A", draft.getChoiceA(), draft.getCorrectIndex() == 0),
-                new ChoiceDto(null, "B", draft.getChoiceB(), draft.getCorrectIndex() == 1),
-                new ChoiceDto(null, "C", draft.getChoiceC(), draft.getCorrectIndex() == 2),
-                new ChoiceDto(null, "D", draft.getChoiceD(), draft.getCorrectIndex() == 3)
-        );
-
-        CreateQuestionRequest createReq = new CreateQuestionRequest(
-                topicId,
-                draft.getQuestionText(),
-                draft.getExplanation(),
-                draft.getDifficulty(),
-                1.0,
-                choiceRequests
-        );
+        CreateQuestionRequest createReq = switch (type) {
+            case ENUMERATION -> new CreateQuestionRequest(
+                    topicId,
+                    draft.getQuestionText(),
+                    draft.getExplanation(),
+                    draft.getDifficulty(),
+                    draft.getPoints() > 0 ? draft.getPoints() : 1.0,
+                    null,
+                    QuestionType.ENUMERATION,
+                    dto.acceptedAnswers(),
+                    null
+            );
+            case ESSAY -> {
+                int rubricSum = dto.rubricCriteria().stream()
+                        .mapToInt(c -> c.maxPoints() != null ? c.maxPoints() : 0)
+                        .sum();
+                yield new CreateQuestionRequest(
+                        topicId,
+                        draft.getQuestionText(),
+                        draft.getExplanation(),
+                        draft.getDifficulty(),
+                        (double) rubricSum,
+                        null,
+                        QuestionType.ESSAY,
+                        null,
+                        dto.rubricCriteria()
+                );
+            }
+            default -> {
+                List<ChoiceDto> choiceRequests = List.of(
+                        new ChoiceDto(null, "A", draft.getChoiceA(), draft.getCorrectIndex() == 0),
+                        new ChoiceDto(null, "B", draft.getChoiceB(), draft.getCorrectIndex() == 1),
+                        new ChoiceDto(null, "C", draft.getChoiceC(), draft.getCorrectIndex() == 2),
+                        new ChoiceDto(null, "D", draft.getChoiceD(), draft.getCorrectIndex() == 3)
+                );
+                yield new CreateQuestionRequest(
+                        topicId,
+                        draft.getQuestionText(),
+                        draft.getExplanation(),
+                        draft.getDifficulty(),
+                        draft.getPoints() > 0 ? draft.getPoints() : 1.0,
+                        choiceRequests,
+                        QuestionType.MULTIPLE_CHOICE,
+                        null,
+                        null
+                );
+            }
+        };
 
         TeacherQuestionDto created = teacherContentService.createQuestion(
                 teacherEmail,

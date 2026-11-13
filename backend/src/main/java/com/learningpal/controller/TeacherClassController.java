@@ -4,6 +4,7 @@ import com.learningpal.dto.*;
 import com.learningpal.entity.InterventionStatus;
 import com.learningpal.repository.SubjectRepository;
 import com.learningpal.service.TeacherClassService;
+import com.learningpal.service.ai.AiGradeSuggestionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +24,15 @@ public class TeacherClassController {
 
     private final TeacherClassService teacherClassService;
     private final SubjectRepository subjectRepository;
+    private final AiGradeSuggestionService aiGradeSuggestionService;
 
-    public TeacherClassController(TeacherClassService teacherClassService, SubjectRepository subjectRepository) {
+    public TeacherClassController(
+            TeacherClassService teacherClassService,
+            SubjectRepository subjectRepository,
+            AiGradeSuggestionService aiGradeSuggestionService) {
         this.teacherClassService = teacherClassService;
         this.subjectRepository = subjectRepository;
+        this.aiGradeSuggestionService = aiGradeSuggestionService;
     }
 
 
@@ -179,6 +185,33 @@ public class TeacherClassController {
             @Valid @RequestBody GradeAnswerRequest request,
             Principal principal) {
         return ResponseEntity.ok(teacherClassService.gradeAnswer(principal.getName(), classId, attemptId, answerId, request));
+    }
+
+    /**
+     * Requests an on-demand AI rubric grade suggestion for an ESSAY answer.
+     * Never writes any final score; only TeacherClassService.gradeAnswer sets grades.
+     */
+    @PostMapping("/classes/{classId}/attempts/{attemptId}/answers/{answerId}/ai-suggest")
+    public ResponseEntity<AiGradeSuggestionDto> suggestEssayGrade(
+            @PathVariable Long classId,
+            @PathVariable Long attemptId,
+            @PathVariable Long answerId,
+            Principal principal) {
+        return ResponseEntity.ok(aiGradeSuggestionService.suggestEssayGrade(principal.getName(), classId, attemptId, answerId));
+    }
+
+    /**
+     * Discards an active AI grade suggestion for an ESSAY answer.
+     */
+    @PostMapping("/classes/{classId}/attempts/{attemptId}/answers/{answerId}/ai-suggest/{suggestionId}/discard")
+    public ResponseEntity<AiGradeSuggestionDto> discardEssaySuggestion(
+            @PathVariable Long classId,
+            @PathVariable Long attemptId,
+            @PathVariable Long answerId,
+            @PathVariable Long suggestionId,
+            Principal principal) {
+        return ResponseEntity.ok(aiGradeSuggestionService.discardSuggestion(
+                principal.getName(), classId, attemptId, answerId, suggestionId));
     }
 
     /**

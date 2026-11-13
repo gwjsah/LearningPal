@@ -12,6 +12,23 @@ public record AttemptResultDto(
         Double percentage,
         Instant submittedAt,
         List<TopicBreakdownDto> topicBreakdowns,
-        List<QuestionReviewDto> questionReviews
-) {}
+        List<QuestionReviewDto> questionReviews,
+        boolean awaitingTeacherGrading,
+        int ungradedEssayCount
+) {
+    public AttemptResultDto(
+            Long attemptId,
+            Long assessmentId,
+            String assessmentTitle,
+            Double score,
+            Double maxScore,
+            Double percentage,
+            Instant submittedAt,
+            List<TopicBreakdownDto> topicBreakdowns,
+            List<QuestionReviewDto> questionReviews
+    ) {
+        this(attemptId, assessmentId, assessmentTitle, score, maxScore, percentage,
+                submittedAt, topicBreakdowns, questionReviews, false, 0);
+    }
+}
 

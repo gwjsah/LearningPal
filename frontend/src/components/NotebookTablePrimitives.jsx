@@ -64,7 +64,7 @@ export function NotebookTabs({
           >
             {Icon && (
               <Icon
-                className={`w-4 h-4 shrink-0 ${isActive ? 'text-highlighter-yellow dark:text-ink' : ''}`}
+                className={`w-4 h-4 shrink-0 ${isActive ? 'text-white dark:text-ink' : ''}`}
                 aria-hidden="true"
               />
             )}
@@ -179,7 +179,7 @@ export function PaginationControls({
 
   return (
     <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t-2 border-ink/10 dark:border-chalkboard-borderSubtle bg-paper-warm/40 dark:bg-chalkboard-surface/40 text-xs font-mono text-ink-muted dark:text-chalkboard-muted ${className}`}
+      className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-2 py-3 text-xs font-mono text-ink-muted dark:text-chalkboard-muted ${className}`}
       aria-label="Table pagination"
     >
       <div className="flex items-center gap-3">

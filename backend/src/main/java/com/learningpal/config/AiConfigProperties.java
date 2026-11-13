@@ -16,6 +16,9 @@ public class AiConfigProperties {
     @Value("${app.llm.enabled:false}")
     private boolean enabled;
 
+    @Value("${app.llm.provider:local}")
+    private String provider;
+
     @Value("${app.llm.base-url:http://localhost:1234}")
     private String baseUrl;
 
@@ -40,11 +43,72 @@ public class AiConfigProperties {
     @Value("${app.llm.max-jobs-per-teacher-per-hour:5}")
     private int maxJobsPerTeacherPerHour;
 
+    @Value("${app.llm.max-suggestions-per-teacher-per-hour:30}")
+    private int maxSuggestionsPerTeacherPerHour;
+
+    // Google AI Studio (Gemini) cloud configuration
+    @Value("${GEMINI_API_KEY:${app.llm.gemini.api-key:}}")
+    private String geminiApiKey;
+
+    @Value("${app.llm.gemini.base-url:https://generativelanguage.googleapis.com/v1beta}")
+    private String geminiBaseUrl;
+
+    @Value("${app.llm.gemini.model:gemini-3.5-flash-lite}")
+    private String geminiModel;
+
+    @Value("${app.llm.gemini.chunk-chars:12000}")
+    private int geminiChunkChars;
+
+    @Value("${app.llm.gemini.max-retries:3}")
+    private int geminiMaxRetries;
+
     @PostConstruct
     public void init() {
         if (enabled) {
-            checkLoopback(baseUrl);
+            if (isGeminiProvider()) {
+                if (geminiApiKey == null || geminiApiKey.isBlank()) {
+                    log.warn("app.llm.provider is configured to 'gemini' but app.llm.gemini.api-key is missing or blank! AI drafting will be unavailable.");
+                }
+            } else {
+                // Non-loopback warning applies only to local provider
+                checkLoopback(baseUrl);
+            }
         }
+    }
+
+    public boolean isGeminiProvider() {
+        return "gemini".equalsIgnoreCase(provider);
+    }
+
+    public String getActiveBaseUrl() {
+        if (isGeminiProvider()) {
+            return geminiBaseUrl != null && !geminiBaseUrl.isBlank()
+                    ? geminiBaseUrl.trim()
+                    : "https://generativelanguage.googleapis.com/v1beta";
+        }
+        return baseUrl != null && !baseUrl.isBlank() ? baseUrl.trim() : "http://localhost:1234";
+    }
+
+    public String getActiveModel() {
+        if (isGeminiProvider()) {
+            return geminiModel != null && !geminiModel.isBlank() ? geminiModel.trim() : "gemini-3.5-flash-lite";
+        }
+        return model != null && !model.isBlank() ? model.trim() : "qwen/qwen3-14b";
+    }
+
+    public int getActiveChunkChars() {
+        if (isGeminiProvider()) {
+            return geminiChunkChars > 0 ? geminiChunkChars : 12000;
+        }
+        return chunkChars > 0 ? chunkChars : 5000;
+    }
+
+    public String getActiveUserSuffix() {
+        if (isGeminiProvider()) {
+            // /no_think suffix applies only to local models (e.g. Qwen in LM Studio)
+            return "";
+        }
+        return userSuffix != null ? userSuffix : "";
     }
 
     public void checkLoopback(String url) {
@@ -133,5 +197,61 @@ public class AiConfigProperties {
 
     public void setMaxJobsPerTeacherPerHour(int maxJobsPerTeacherPerHour) {
         this.maxJobsPerTeacherPerHour = maxJobsPerTeacherPerHour;
+    }
+
+    public String getProvider() {
+        return provider != null ? provider.trim() : "local";
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getGeminiApiKey() {
+        return geminiApiKey;
+    }
+
+    public void setGeminiApiKey(String geminiApiKey) {
+        this.geminiApiKey = geminiApiKey;
+    }
+
+    public String getGeminiBaseUrl() {
+        return geminiBaseUrl;
+    }
+
+    public void setGeminiBaseUrl(String geminiBaseUrl) {
+        this.geminiBaseUrl = geminiBaseUrl;
+    }
+
+    public String getGeminiModel() {
+        return geminiModel;
+    }
+
+    public void setGeminiModel(String geminiModel) {
+        this.geminiModel = geminiModel;
+    }
+
+    public int getGeminiChunkChars() {
+        return geminiChunkChars;
+    }
+
+    public void setGeminiChunkChars(int geminiChunkChars) {
+        this.geminiChunkChars = geminiChunkChars;
+    }
+
+    public int getGeminiMaxRetries() {
+        return geminiMaxRetries;
+    }
+
+    public void setGeminiMaxRetries(int geminiMaxRetries) {
+        this.geminiMaxRetries = geminiMaxRetries;
+    }
+
+    public int getMaxSuggestionsPerTeacherPerHour() {
+        return maxSuggestionsPerTeacherPerHour;
+    }
+
+    public void setMaxSuggestionsPerTeacherPerHour(int maxSuggestionsPerTeacherPerHour) {
+        this.maxSuggestionsPerTeacherPerHour = maxSuggestionsPerTeacherPerHour;
     }
 }
