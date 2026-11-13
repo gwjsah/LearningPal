@@ -136,9 +136,9 @@ app.llm.user-suffix=/no_think
 # Gemini API key: obtain a free key at https://aistudio.google.com/
 # Can be supplied via environment variable GEMINI_API_KEY or configured here. NEVER commit real keys!
 app.llm.gemini.api-key=${GEMINI_API_KEY:YOUR_GEMINI_API_KEY_HERE}
-# OpenAI-compatible base URL for Gemini API (server-configured only)
-app.llm.gemini.base-url=https://generativelanguage.googleapis.com/v1beta/openai
-# Free-tier Flash-class model supporting structured output (default: gemini-3.5-flash-lite)
+# Gemini Interactions API base URL (server-configured only)
+app.llm.gemini.base-url=https://generativelanguage.googleapis.com/v1beta
+# Cost-effective Flash-Lite model supporting Interactions API & structured output (default: gemini-3.5-flash-lite)
 app.llm.gemini.model=gemini-3.5-flash-lite
 # Character limit per document text chunk analyzed for Gemini (larger context window, default: 12000)
 app.llm.gemini.chunk-chars=12000

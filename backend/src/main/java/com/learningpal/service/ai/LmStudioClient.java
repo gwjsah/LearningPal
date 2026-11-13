@@ -16,14 +16,15 @@ import java.time.Duration;
 import java.util.*;
 
 /**
- * Communicates with an OpenAI-compatible LLM endpoint (local LM Studio or Google Gemini API)
- * using JDK HttpClient.
+ * Communicates with either a local OpenAI-compatible LLM endpoint (LM Studio)
+ * or the Google Gemini Interactions API using JDK HttpClient.
  * Strictly avoids logging prompt content, extracted text, model outputs, or API keys.
  */
 @Component
 public class LmStudioClient implements LlmClient {
 
     private static final Logger log = LoggerFactory.getLogger(LmStudioClient.class);
+    private static final String GEMINI_API_REVISION = "2026-05-20";
 
     @FunctionalInterface
     public interface Sleeper {
@@ -78,8 +79,9 @@ public class LmStudioClient implements LlmClient {
         if (aiConfig.isGeminiProvider()) {
             String key = aiConfig.getGeminiApiKey();
             if (key != null && !key.isBlank()) {
-                builder.header("Authorization", "Bearer " + key.trim());
+                builder.header("x-goog-api-key", key.trim());
             }
+            builder.header("Api-Revision", GEMINI_API_REVISION);
         }
         return builder;
     }
@@ -126,12 +128,24 @@ public class LmStudioClient implements LlmClient {
             }
 
             JsonNode root = objectMapper.readTree(response.body());
+            List<String> models = new ArrayList<>();
+
+            JsonNode modelsNode = root.get("models");
+            if (modelsNode != null && modelsNode.isArray()) {
+                for (JsonNode item : modelsNode) {
+                    JsonNode nameNode = item.get("name");
+                    if (nameNode != null && !nameNode.asText().isBlank()) {
+                        models.add(nameNode.asText());
+                    }
+                }
+                return models;
+            }
+
             JsonNode dataNode = root.get("data");
             if (dataNode == null || !dataNode.isArray()) {
                 return Collections.emptyList();
             }
 
-            List<String> models = new ArrayList<>();
             for (JsonNode item : dataNode) {
                 JsonNode idNode = item.get("id");
                 if (idNode != null && !idNode.asText().isBlank()) {
@@ -160,9 +174,12 @@ public class LmStudioClient implements LlmClient {
         while (true) {
             attempt++;
             try {
-                Map<String, Object> payload = buildPayload(systemPrompt, userPrompt, temperature);
+                boolean isGemini = aiConfig.isGeminiProvider();
+                Map<String, Object> payload = isGemini
+                        ? buildGeminiInteractionsPayload(systemPrompt, userPrompt)
+                        : buildPayload(systemPrompt, userPrompt, temperature);
                 String jsonBody = objectMapper.writeValueAsString(payload);
-                String endpoint = resolveEndpoint("/chat/completions");
+                String endpoint = resolveEndpoint(isGemini ? "/interactions" : "/chat/completions");
 
                 HttpRequest request = createRequestBuilder(
                         endpoint,
@@ -177,6 +194,9 @@ public class LmStudioClient implements LlmClient {
 
                 if (statusCode == 200) {
                     JsonNode root = objectMapper.readTree(response.body());
+                    if (isGemini) {
+                        return extractInteractionOutputText(root);
+                    }
                     JsonNode choices = root.get("choices");
                     if (choices == null || !choices.isArray() || choices.isEmpty()) {
                         throw new IllegalStateException("Empty or malformed completion response from LLM.");
@@ -260,6 +280,52 @@ public class LmStudioClient implements LlmClient {
         return Math.min(attempt * 1000L, 10000L);
     }
 
+    private String extractInteractionOutputText(JsonNode root) {
+        JsonNode steps = root.get("steps");
+        if (steps != null && steps.isArray()) {
+            StringBuilder sb = new StringBuilder();
+            for (JsonNode step : steps) {
+                JsonNode typeNode = step.get("type");
+                if (typeNode != null && "model_output".equals(typeNode.asText())) {
+                    JsonNode content = step.get("content");
+                    if (content != null && content.isArray()) {
+                        for (JsonNode part : content) {
+                            JsonNode partType = part.get("type");
+                            JsonNode textNode = part.get("text");
+                            if ((partType == null || "text".equals(partType.asText())) && textNode != null && !textNode.isNull()) {
+                                sb.append(textNode.asText());
+                            }
+                        }
+                    }
+                }
+            }
+            if (!sb.isEmpty()) {
+                return sb.toString();
+            }
+        }
+        JsonNode outputText = root.get("output_text");
+        if (outputText != null && !outputText.isNull() && !outputText.asText().isBlank()) {
+            return outputText.asText();
+        }
+        throw new IllegalStateException("Empty or malformed interaction response from Gemini.");
+    }
+
+    private Map<String, Object> buildGeminiInteractionsPayload(String systemPrompt, String userPrompt) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("model", aiConfig.getActiveModel());
+        payload.put("system_instruction", systemPrompt);
+        payload.put("input", userPrompt);
+        payload.put("store", false);
+
+        Map<String, Object> responseFormat = new LinkedHashMap<>();
+        responseFormat.put("type", "text");
+        responseFormat.put("mime_type", "application/json");
+        responseFormat.put("schema", buildQuestionsSchema());
+        payload.put("response_format", responseFormat);
+
+        return payload;
+    }
+
     private Map<String, Object> buildPayload(String systemPrompt, String userPrompt, double temperature) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", aiConfig.getActiveModel());
@@ -270,7 +336,16 @@ public class LmStudioClient implements LlmClient {
         messages.add(Map.of("role", "user", "content", userPrompt));
         payload.put("messages", messages);
 
-        // Structured JSON schema enforcement for OpenAI/LM Studio/Gemini compatible endpoints
+        Map<String, Object> jsonSchema = new LinkedHashMap<>();
+        jsonSchema.put("name", "questions_response");
+        jsonSchema.put("schema", buildQuestionsSchema());
+
+        payload.put("response_format", Map.of("type", "json_schema", "json_schema", jsonSchema));
+
+        return payload;
+    }
+
+    private Map<String, Object> buildQuestionsSchema() {
         Map<String, Object> questionItemProperties = new LinkedHashMap<>();
         questionItemProperties.put("question", Map.of("type", "string"));
         questionItemProperties.put("choices", Map.of("type", "array", "items", Map.of("type", "string")));
@@ -292,13 +367,6 @@ public class LmStudioClient implements LlmClient {
         schema.put("type", "object");
         schema.put("properties", Map.of("questions", questionsArrayProperty));
         schema.put("required", List.of("questions"));
-
-        Map<String, Object> jsonSchema = new LinkedHashMap<>();
-        jsonSchema.put("name", "questions_response");
-        jsonSchema.put("schema", schema);
-
-        payload.put("response_format", Map.of("type", "json_schema", "json_schema", jsonSchema));
-
-        return payload;
+        return schema;
     }
 }

@@ -47,7 +47,7 @@ public class AiConfigProperties {
     @Value("${GEMINI_API_KEY:${app.llm.gemini.api-key:}}")
     private String geminiApiKey;
 
-    @Value("${app.llm.gemini.base-url:https://generativelanguage.googleapis.com/v1beta/openai}")
+    @Value("${app.llm.gemini.base-url:https://generativelanguage.googleapis.com/v1beta}")
     private String geminiBaseUrl;
 
     @Value("${app.llm.gemini.model:gemini-3.5-flash-lite}")
@@ -81,7 +81,7 @@ public class AiConfigProperties {
         if (isGeminiProvider()) {
             return geminiBaseUrl != null && !geminiBaseUrl.isBlank()
                     ? geminiBaseUrl.trim()
-                    : "https://generativelanguage.googleapis.com/v1beta/openai";
+                    : "https://generativelanguage.googleapis.com/v1beta";
         }
         return baseUrl != null && !baseUrl.isBlank() ? baseUrl.trim() : "http://localhost:1234";
     }

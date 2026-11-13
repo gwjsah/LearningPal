@@ -3325,7 +3325,7 @@ export default function TeacherSubjectDetail() {
                     <Bot className="w-4 h-4 text-ink-blue dark:text-highlighter-sky shrink-0" />
                     <span>Provider: {aiStatus.provider === 'gemini' ? 'Google AI Studio (Gemini)' : 'Local LM Studio'}</span>
                     <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
-                    <span>Model: {aiStatus.configuredModel || aiStatus.model || (aiStatus.provider === 'gemini' ? 'gemini-2.5-flash' : 'qwen/qwen3-14b')}</span>
+                    <span>Model: {aiStatus.configuredModel || aiStatus.model || (aiStatus.provider === 'gemini' ? 'gemini-3.5-flash-lite' : 'qwen/qwen3-14b')}</span>
                   </div>
                   <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-paper-card dark:bg-chalkboard-card border border-ink/20 dark:border-chalkboard-border text-ink-muted dark:text-chalkboard-muted">
                     {aiStatus.provider === 'gemini' ? 'Cloud Mode' : 'Local Offline'}

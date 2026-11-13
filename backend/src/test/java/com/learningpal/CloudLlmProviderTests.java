@@ -149,6 +149,26 @@ public class CloudLlmProviderTests {
             }
             """;
 
+    private static final String SAMPLE_VALID_INTERACTION = """
+            {
+              "id": "v1_test_interaction_123",
+              "status": "completed",
+              "object": "interaction",
+              "model": "gemini-4-hydrogen",
+              "steps": [
+                {
+                  "type": "model_output",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "{\\"questions\\": [{\\"question\\": \\"What is the primary role of the CPU in modern computing?\\", \\"choices\\": [\\"Executes instructions and manages system calculations\\", \\"Permanently preserves data\\"], \\"correctIndex\\": 0, \\"explanation\\": \\"CPU executes instructions\\", \\"difficulty\\": \\"EASY\\", \\"evidenceQuote\\": \\"CPU executes program instructions\\"}]}"
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
     @BeforeEach
     void setUp() {
         fakeLlm = (FakeLlmClient) llmClient;
@@ -160,8 +180,8 @@ public class CloudLlmProviderTests {
         aiConfig.setModel("qwen/qwen3-14b");
         aiConfig.setUserSuffix("/no_think");
         aiConfig.setChunkChars(5000);
-        aiConfig.setGeminiBaseUrl("https://generativelanguage.googleapis.com/v1beta/openai");
-        aiConfig.setGeminiModel("gemini-2.5-flash");
+        aiConfig.setGeminiBaseUrl("https://generativelanguage.googleapis.com/v1beta");
+        aiConfig.setGeminiModel("gemini-3.5-flash-lite");
         aiConfig.setGeminiApiKey("");
         aiConfig.setGeminiChunkChars(12000);
         aiConfig.setGeminiMaxRetries(3);
@@ -201,7 +221,7 @@ public class CloudLlmProviderTests {
         ));
     }
 
-    record CapturedRequest(String path, String method, String authHeader, String body) {}
+    record CapturedRequest(String path, String method, String authHeader, String apiKeyHeader, String apiRevisionHeader, String body) {}
 
     private static HttpServer createMockServer(int statusCode, String responseBody, Map<String, String> responseHeaders, List<CapturedRequest> capturedList) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -209,9 +229,11 @@ public class CloudLlmProviderTests {
             String path = exchange.getRequestURI().getPath();
             String method = exchange.getRequestMethod();
             String auth = exchange.getRequestHeaders().getFirst("Authorization");
+            String apiKey = exchange.getRequestHeaders().getFirst("x-goog-api-key");
+            String apiRevision = exchange.getRequestHeaders().getFirst("Api-Revision");
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
             if (capturedList != null) {
-                capturedList.add(new CapturedRequest(path, method, auth, body));
+                capturedList.add(new CapturedRequest(path, method, auth, apiKey, apiRevision, body));
             }
             if (responseHeaders != null) {
                 for (Map.Entry<String, String> entry : responseHeaders.entrySet()) {
@@ -263,18 +285,18 @@ public class CloudLlmProviderTests {
     }
 
     @Test
-    @DisplayName("Provider switch: gemini builds cloud request (Bearer header, no /no_think suffix)")
+    @DisplayName("Provider switch: gemini builds cloud Interactions API request (x-goog-api-key header, no /no_think suffix)")
     void testProviderSwitchGeminiBuildsCloudRequestWithBearerAndWithoutNoThinkSuffix() throws Exception {
         List<CapturedRequest> captured = new ArrayList<>();
-        HttpServer server = createMockServer(200, SAMPLE_VALID_COMPLETION, Map.of("Content-Type", "application/json"), captured);
+        HttpServer server = createMockServer(200, SAMPLE_VALID_INTERACTION, Map.of("Content-Type", "application/json"), captured);
         int port = server.getAddress().getPort();
         try {
             AiConfigProperties config = new AiConfigProperties();
             config.setEnabled(true);
             config.setProvider("gemini");
             config.setGeminiApiKey("AIzaSyTestGeminiKey12345");
-            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta/openai");
-            config.setGeminiModel("gemini-2.5-flash");
+            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta");
+            config.setGeminiModel("gemini-4-hydrogen");
             config.setUserSuffix("/no_think"); // Configured, but must be suppressed for cloud
             config.setGeminiChunkChars(12000);
 
@@ -284,10 +306,13 @@ public class CloudLlmProviderTests {
 
             assertEquals(1, captured.size());
             CapturedRequest req = captured.get(0);
-            assertEquals("/v1beta/openai/chat/completions", req.path());
-            assertEquals("Bearer AIzaSyTestGeminiKey12345", req.authHeader(), "Gemini cloud request must send Authorization header");
+            assertEquals("/v1beta/interactions", req.path());
+            assertNull(req.authHeader(), "Gemini Interactions API request should use x-goog-api-key instead of Bearer");
+            assertEquals("AIzaSyTestGeminiKey12345", req.apiKeyHeader(), "Gemini cloud request must send x-goog-api-key header");
+            assertEquals("2026-05-20", req.apiRevisionHeader(), "Gemini Interactions API request must send Api-Revision header");
             assertFalse(req.body().contains("/no_think"), "Gemini prompt must not include /no_think local suffix");
-            assertTrue(req.body().contains("gemini-2.5-flash"), "Gemini payload must specify Gemini model");
+            assertTrue(req.body().contains("gemini-4-hydrogen"), "Gemini payload must specify Gemini 4 model");
+            assertTrue(req.body().contains("\"store\":false"), "Gemini Interactions API payload should opt out of server-side storage");
         } finally {
             server.stop(0);
         }
@@ -415,7 +440,7 @@ public class CloudLlmProviderTests {
             config.setEnabled(true);
             config.setProvider("gemini");
             config.setGeminiApiKey("AIzaSyDummyKey");
-            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta/openai");
+            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta");
             config.setGeminiMaxRetries(3);
 
             AtomicInteger sleepCalls = new AtomicInteger(0);
@@ -450,7 +475,7 @@ public class CloudLlmProviderTests {
                 }
             } else {
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
-                byte[] bytes = SAMPLE_VALID_COMPLETION.getBytes(StandardCharsets.UTF_8);
+                byte[] bytes = SAMPLE_VALID_INTERACTION.getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, bytes.length);
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(bytes);
@@ -464,7 +489,7 @@ public class CloudLlmProviderTests {
             config.setEnabled(true);
             config.setProvider("gemini");
             config.setGeminiApiKey("AIzaSyDummyKey");
-            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta/openai");
+            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta");
             config.setGeminiMaxRetries(3);
 
             AtomicInteger sleepCalls = new AtomicInteger(0);
@@ -489,14 +514,14 @@ public class CloudLlmProviderTests {
     @DisplayName("Request body contains only the prompt and file chunks")
     void testOutgoingRequestBodyContainsOnlyPromptAndFileChunksNeverStudentData() throws Exception {
         List<CapturedRequest> captured = new ArrayList<>();
-        HttpServer server = createMockServer(200, SAMPLE_VALID_COMPLETION, Map.of("Content-Type", "application/json"), captured);
+        HttpServer server = createMockServer(200, SAMPLE_VALID_INTERACTION, Map.of("Content-Type", "application/json"), captured);
         int port = server.getAddress().getPort();
         try {
             AiConfigProperties config = new AiConfigProperties();
             config.setEnabled(true);
             config.setProvider("gemini");
             config.setGeminiApiKey("AIzaSyKey");
-            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta/openai");
+            config.setGeminiBaseUrl("http://localhost:" + port + "/v1beta");
 
             LmStudioClient client = new LmStudioClient(config, objectMapper);
 
@@ -510,17 +535,14 @@ public class CloudLlmProviderTests {
             String jsonPayload = captured.get(0).body();
             JsonNode root = objectMapper.readTree(jsonPayload);
 
-            // Payload structure must only have model, temperature, messages, and response_format
+            // Interactions API payload structure must only have model, system_instruction, input, store, and response_format
             assertTrue(root.has("model"));
-            assertTrue(root.has("temperature"));
-            assertTrue(root.has("messages"));
+            assertTrue(root.has("system_instruction"));
+            assertTrue(root.has("input"));
+            assertTrue(root.has("store"));
             assertTrue(root.has("response_format"));
 
-            JsonNode messages = root.get("messages");
-            assertEquals(2, messages.size());
-
-            String sys = messages.get(0).get("content").asText();
-            String usr = messages.get(1).get("content").asText();
+            String usr = root.get("input").asText();
 
             // Contains the file text chunk
             assertTrue(usr.contains("Operating Systems: CPU Scheduling fundamentals"));
@@ -564,7 +586,7 @@ public class CloudLlmProviderTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(true))
                 .andExpect(jsonPath("$.provider").value("gemini"))
-                .andExpect(jsonPath("$.configuredModel").value("gemini-2.5-flash"))
+                .andExpect(jsonPath("$.configuredModel").value("gemini-3.5-flash-lite"))
                 .andExpect(jsonPath("$.baseUrl").doesNotExist())
                 .andExpect(jsonPath("$.geminiBaseUrl").doesNotExist())
                 .andExpect(jsonPath("$.geminiApiKey").doesNotExist())

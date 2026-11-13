@@ -31,7 +31,7 @@ public class RealGeminiVerificationTest {
         config.setEnabled(true);
         config.setProvider("gemini");
         config.setGeminiApiKey(apiKey);
-        config.setGeminiBaseUrl("https://generativelanguage.googleapis.com/v1beta/openai");
+        config.setGeminiBaseUrl("https://generativelanguage.googleapis.com/v1beta");
         config.setGeminiModel("gemini-3.5-flash-lite");
         config.setGeminiMaxRetries(3);
         config.setRequestTimeoutSeconds(60);
