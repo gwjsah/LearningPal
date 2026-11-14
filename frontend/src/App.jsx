@@ -17,6 +17,7 @@ import TeacherHome from './pages/TeacherHome';
 import TeacherSubjects from './pages/TeacherSubjects';
 import TeacherSubjectDetail from './pages/TeacherSubjectDetail';
 import TeacherClassDetail from './pages/TeacherClassDetail';
+import TeacherAssessmentSubmissions from './pages/TeacherAssessmentSubmissions';
 import TeacherStudentDetail from './pages/TeacherStudentDetail';
 import TeacherAttemptReview from './pages/TeacherAttemptReview';
 import TeacherValidationHub from './pages/TeacherValidationHub';
@@ -26,6 +27,7 @@ import AdminHome from './pages/AdminHome';
 import AdminValidationReport from './pages/AdminValidationReport';
 import UsabilitySurvey from './pages/UsabilitySurvey';
 import AdminEvaluationDashboard from './pages/AdminEvaluationDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 
 /**
  * Main application router wiring:
@@ -190,6 +192,14 @@ export default function App() {
               }
             />
             <Route
+              path="/teacher/classes/:classId/assessments/:assessmentId/submissions"
+              element={
+                <ProtectedRoute allowedRole="TEACHER">
+                  <TeacherAssessmentSubmissions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/teacher/classes/:classId/students/:studentId"
               element={
                 <ProtectedRoute allowedRole="TEACHER">
@@ -251,6 +261,16 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRole="ADMIN">
                   <AdminEvaluationDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Super Admin Console */}
+            <Route
+              path="/super"
+              element={
+                <ProtectedRoute allowedRole="SUPER_ADMIN">
+                  <SuperAdminDashboard />
                 </ProtectedRoute>
               }
             />

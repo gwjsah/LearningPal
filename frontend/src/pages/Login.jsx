@@ -6,6 +6,13 @@ import { ThemeToggleButton } from '../context/ThemeContext';
 import { LearningPalLogo } from '../components/Doodles';
 import { Button, Field, NotebookCard } from '../components/NotebookPrimitives';
 
+const ROLE_HOME_MAP = {
+  STUDENT: '/student',
+  TEACHER: '/teacher',
+  ADMIN: '/admin',
+  SUPER_ADMIN: '/super',
+};
+
 export default function Login() {
   const { login, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -17,12 +24,7 @@ export default function Login() {
   // If already authenticated, redirect immediately to the user's role workspace
   useEffect(() => {
     if (isAuthenticated && user?.role) {
-      const roleHomeMap = {
-        STUDENT: '/student',
-        TEACHER: '/teacher',
-        ADMIN: '/admin',
-      };
-      const dest = roleHomeMap[user.role] || '/';
+      const dest = ROLE_HOME_MAP[user.role] || '/';
       navigate(dest, { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
@@ -50,14 +52,8 @@ export default function Login() {
         password: formData.password,
       });
 
-      const roleHomeMap = {
-        STUDENT: '/student',
-        TEACHER: '/teacher',
-        ADMIN: '/admin',
-      };
-
-      // Always redirect cleanly to role home: STUDENT -> /student, TEACHER -> /teacher, ADMIN -> /admin
-      const destination = roleHomeMap[response.user?.role] || '/';
+      // Always redirect cleanly to role home: STUDENT -> /student, TEACHER -> /teacher, ADMIN -> /admin, SUPER_ADMIN -> /super
+      const destination = ROLE_HOME_MAP[response.user?.role] || '/';
       navigate(destination, { replace: true });
     } catch (err) {
       setServerError(err.message || 'Login failed. Please check your credentials.');

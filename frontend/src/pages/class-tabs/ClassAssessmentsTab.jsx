@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BookOpenCheck,
   Search,
@@ -8,6 +9,7 @@ import {
   AlertCircle,
   Calendar,
   Lock,
+  ArrowRight,
 } from 'lucide-react';
 import {
   SearchInput,
@@ -26,6 +28,7 @@ export default function ClassAssessmentsTab({
   onOpenScheduleModal,
   onOpenUnlockModal,
 }) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'PUBLISHED' | 'SCHEDULED' | 'CLOSED' | 'DRAFT'
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -170,8 +173,8 @@ export default function ClassAssessmentsTab({
             <NotebookTableHead>
               <NotebookTableRow hover={false}>
                 <NotebookTableHeaderCell>Assessment Title</NotebookTableHeaderCell>
-                <NotebookTableHeaderCell>Status</NotebookTableHeaderCell>
-                <NotebookTableHeaderCell>Schedule Window</NotebookTableHeaderCell>
+                <NotebookTableHeaderCell align="center">Status</NotebookTableHeaderCell>
+                <NotebookTableHeaderCell align="center">Schedule Window</NotebookTableHeaderCell>
                 <NotebookTableHeaderCell align="center">Questions</NotebookTableHeaderCell>
                 <NotebookTableHeaderCell align="center">Attempts</NotebookTableHeaderCell>
                 <NotebookTableHeaderCell align="center">Retakes</NotebookTableHeaderCell>
@@ -185,18 +188,24 @@ export default function ClassAssessmentsTab({
                 const isScheduled = asm.status === 'SCHEDULED';
                 const retakesAllowed = asm.allowRetakes ?? true;
 
+                const submissionsUrl = `/teacher/classes/${classId}/assessments/${asm.assessmentId}/submissions`;
+
                 return (
-                  <NotebookTableRow key={asm.assessmentId}>
+                  <NotebookTableRow
+                    key={asm.assessmentId}
+                    onClick={() => navigate(submissionsUrl)}
+                    className="cursor-pointer group"
+                  >
                     {/* Title & Description */}
                     <NotebookTableCell>
                       <div>
-                        <span className="font-bold text-sm text-ink dark:text-chalkboard-chalk block">
+                        <span className="font-bold text-sm text-ink dark:text-chalkboard-chalk group-hover:text-redpen dark:group-hover:text-highlighter-yellow transition-colors block">
                           {asm.title}
                         </span>
                         {asm.ungradedEssayCount > 0 && (
                           <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-400">
                             <Clock className="w-3 h-3" aria-hidden="true" />
-                            {asm.ungradedEssayCount} ungraded essay{asm.ungradedEssayCount === 1 ? '' : 's'}
+                            {asm.ungradedEssayCount} Needs Review
                           </span>
                         )}
                         {asm.description && (
@@ -208,7 +217,7 @@ export default function ClassAssessmentsTab({
                     </NotebookTableCell>
 
                     {/* Status Badge */}
-                    <NotebookTableCell>
+                    <NotebookTableCell align="center">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
                           isPublished
@@ -230,7 +239,7 @@ export default function ClassAssessmentsTab({
                     </NotebookTableCell>
 
                     {/* Window / Dates */}
-                    <NotebookTableCell>
+                    <NotebookTableCell align="center">
                       <div className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted space-y-0.5">
                         {asm.availableFrom || asm.availableUntil ? (
                           <>
@@ -250,11 +259,17 @@ export default function ClassAssessmentsTab({
                       </span>
                     </NotebookTableCell>
 
-                    {/* Attempts */}
+                    {/* Attempts / Submissions Progress */}
                     <NotebookTableCell align="center">
-                      <span className="font-mono text-xs text-ink dark:text-chalkboard-chalk">
-                        {asm.attemptCount ?? 0}
-                      </span>
+                      {asm.enrolledCount > 0 ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border border-ink/20 dark:border-chalkboard-borderSubtle">
+                          {asm.submittedStudentCount ?? 0}/{asm.enrolledCount} Submitted
+                        </span>
+                      ) : (
+                        <span className="font-mono text-xs text-ink dark:text-chalkboard-chalk">
+                          {asm.attemptCount ?? 0}
+                        </span>
+                      )}
                     </NotebookTableCell>
 
                     {/* Retakes */}
@@ -277,12 +292,28 @@ export default function ClassAssessmentsTab({
                       </span>
                     </NotebookTableCell>
 
-                    {/* Actions: Schedule & Unlock Retake */}
+                    {/* Actions: View Submissions, Schedule & Unlock Retake */}
                     <NotebookTableCell align="right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
-                          onClick={() => onOpenScheduleModal && onOpenScheduleModal(asm)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(submissionsUrl);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-ink dark:border-chalkboard-border bg-ink text-white dark:bg-highlighter-mint dark:text-ink hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                          title="Open enrolled student submissions and grade attempts"
+                        >
+                          <span>Submissions</span>
+                          <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenScheduleModal && onOpenScheduleModal(asm);
+                          }}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Configure availability dates and retake permissions"
                         >
@@ -292,7 +323,10 @@ export default function ClassAssessmentsTab({
 
                         <button
                           type="button"
-                          onClick={() => onOpenUnlockModal && onOpenUnlockModal(asm)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenUnlockModal && onOpenUnlockModal(asm);
+                          }}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Grant an individual retake unlock or deadline extension"
                         >

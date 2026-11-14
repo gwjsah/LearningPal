@@ -344,75 +344,72 @@ export default function TeacherHome() {
                       {activeClasses.map((cls) => {
                         const isCopied = copiedId === cls.id;
                         return (
-                          <NotebookCard
+                          <div
                             key={cls.id}
-                            pattern="grid"
-                            borderStyle="sketch"
-                            className="flex flex-col justify-between p-6 space-y-5 bg-paper-card dark:bg-chalkboard-card hover:shadow-notebook transition-shadow"
+                            className="rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card p-6 flex flex-col justify-between space-y-5 shadow-paper hover:shadow-lifted transition-all"
                           >
                             <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink border border-ink/20">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-mono text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
                                   {cls.subject.code}
                                 </span>
-                                <span className="text-[11px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase text-emerald-800 dark:text-emerald-300 bg-highlighter-mintSoft dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/30">
                                   Active
                                 </span>
                               </div>
 
                               <div>
-                                <h3 className="font-bold text-xl text-ink dark:text-chalkboard-chalk leading-snug">
+                                <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk tracking-tight">
                                   {cls.name}
                                 </h3>
-                                <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-0.5">
+                                <p className="text-xs font-medium text-ink-muted dark:text-chalkboard-muted mt-0.5">
                                   {cls.subject.name}
                                 </p>
                               </div>
 
-                              {/* Prominent Monospace Join Code Box */}
-                              <div className="p-3 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border-2 border-ink dark:border-chalkboard-border space-y-1.5">
-                                <span className="block text-[10px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
-                                  Student Join Code
+                              <div className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint shrink-0" aria-hidden="true" />
+                                <span>Enrolled:</span>
+                                <span className="font-bold text-ink dark:text-chalkboard-chalk">
+                                  {cls.studentCount} {cls.studentCount === 1 ? 'Student' : 'Students'}
                                 </span>
-                                <div className="flex items-center justify-between">
-                                  <span className="font-mono text-xl sm:text-2xl tracking-wider font-extrabold text-redpen dark:text-highlighter-yellow select-all">
+                              </div>
+
+                              <div className="p-3 rounded-xl bg-paper-warm/80 dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <span className="block text-[10px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
+                                    Student Join Code
+                                  </span>
+                                  <span className="font-mono text-lg sm:text-xl tracking-wider font-extrabold text-redpen dark:text-highlighter-yellow select-all">
                                     {cls.joinCode}
                                   </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCopyCode(cls.joinCode, cls.id)}
-                                    aria-label={`Copy join code for ${cls.name}`}
-                                    className="p-1.5 rounded-lg border border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 text-ink dark:text-chalkboard-chalk transition-colors cursor-pointer"
-                                    title="Copy code"
-                                  >
-                                    {isCopied ? (
-                                      <Check className="w-4 h-4 text-emerald-700" />
-                                    ) : (
-                                      <Copy className="w-4 h-4" />
-                                    )}
-                                  </button>
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCode(cls.joinCode, cls.id)}
+                                  aria-label={`Copy join code for ${cls.name}`}
+                                  className="p-2 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 text-ink dark:text-chalkboard-chalk transition-colors cursor-pointer shrink-0"
+                                  title="Copy code"
+                                >
+                                  {isCopied ? (
+                                    <Check className="w-4 h-4 text-emerald-700" />
+                                  ) : (
+                                    <Copy className="w-4 h-4" />
+                                  )}
+                                </button>
                               </div>
                             </div>
 
-                            <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between">
-                              <Link
-                                to={`/teacher/classes/${cls.id}`}
-                                className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk"
-                              >
-                                <Users className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" />
-                                <span>{cls.studentCount} Students</span>
-                              </Link>
-
-                              <Link
-                                to={`/teacher/classes/${cls.id}`}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold border border-ink/30 bg-paper-warm dark:bg-chalkboard-surface hover:bg-paper-card text-ink dark:text-chalkboard-chalk transition-colors"
-                              >
-                                <span>View Roster</span>
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </Link>
-                            </div>
-                          </NotebookCard>
+                            <Button
+                              to={`/teacher/classes/${cls.id}`}
+                              variant="primary"
+                              size="sm"
+                              className="w-full justify-between mt-2"
+                            >
+                              <span>Open Class Workspace</span>
+                              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                            </Button>
+                          </div>
                         );
                       })}
                     </div>

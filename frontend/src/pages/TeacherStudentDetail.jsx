@@ -30,7 +30,7 @@ import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimiti
 
 export default function TeacherStudentDetail() {
   const { classId, studentId } = useParams();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [data, setData] = useState(null);
@@ -209,6 +209,8 @@ export default function TeacherStudentDetail() {
       portalName="LearningPal Teacher"
       portalSubtitle="Student Diagnostic Profile & Learning Progress"
       badgeLabel="Student Progress"
+      user={user}
+      onLogout={logout}
     >
       <div className="space-y-8 max-w-5xl mx-auto pb-12">
         {/* Navigation Breadcrumbs */}

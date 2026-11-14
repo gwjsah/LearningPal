@@ -1930,8 +1930,9 @@ export default function TeacherSubjectDetail() {
                         {/* Actions */}
                         <div className="pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex flex-wrap items-center justify-between gap-2">
                           <button
+                            type="button"
                             onClick={() => setPreviewQuiz(quiz)}
-                            className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink flex items-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink dark:text-chalkboard-chalk/85 dark:hover:text-chalkboard-chalk flex items-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crayon-red/70 cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Preview</span>
@@ -1941,8 +1942,9 @@ export default function TeacherSubjectDetail() {
                             {quiz.status === 'DRAFT' && (
                               <>
                                 <button
+                                  type="button"
                                   onClick={() => handleOpenEditQuiz(quiz)}
-                                  className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink cursor-pointer"
+                                  className="px-2.5 py-1 text-xs font-bold rounded-lg border border-ink/15 dark:border-chalkboard-borderSubtle hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crayon-red/70 cursor-pointer"
                                 >
                                   Edit
                                 </button>
@@ -1960,24 +1962,27 @@ export default function TeacherSubjectDetail() {
                               <>
                                 {quiz.attemptCount === 0 && (
                                   <button
+                                    type="button"
                                     onClick={() => handleUnpublishQuiz(quiz)}
-                                    className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm text-amber-700 cursor-pointer"
+                                    className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-amber-700 dark:text-amber-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crayon-red/70 cursor-pointer"
                                     title="Return to draft to edit questions"
                                   >
                                     Unpublish
                                   </button>
                                 )}
                                 <button
+                                  type="button"
                                   onClick={() => handleDuplicateQuiz(quiz)}
-                                  className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink flex items-center gap-1 cursor-pointer"
+                                  className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink dark:text-chalkboard-chalk/85 dark:hover:text-chalkboard-chalk flex items-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crayon-red/70 cursor-pointer"
                                   title="Duplicate as new draft"
                                 >
                                   <Copy className="w-3.5 h-3.5" />
                                   <span>Duplicate</span>
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleArchiveQuiz(quiz)}
-                                  className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm text-amber-700 cursor-pointer"
+                                  className="px-2.5 py-1 text-xs font-bold rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-amber-700 dark:text-amber-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-crayon-red/70 cursor-pointer"
                                 >
                                   Archive
                                 </button>

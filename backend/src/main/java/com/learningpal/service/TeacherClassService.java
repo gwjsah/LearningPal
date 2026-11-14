@@ -31,6 +31,7 @@ public class TeacherClassService {
     private final StudentTopicMasteryRepository studentTopicMasteryRepository;
     private final AttemptRepository attemptRepository;
     private final AssessmentRepository assessmentRepository;
+    private final AssessmentQuestionRepository assessmentQuestionRepository;
     private final ClassAssessmentSettingRepository classAssessmentSettingRepository;
     private final AssessmentAccessRepository assessmentAccessRepository;
     private final InterventionRepository interventionRepository;
@@ -66,6 +67,7 @@ public class TeacherClassService {
             StudentTopicMasteryRepository studentTopicMasteryRepository,
             AttemptRepository attemptRepository,
             AssessmentRepository assessmentRepository,
+            AssessmentQuestionRepository assessmentQuestionRepository,
             ClassAssessmentSettingRepository classAssessmentSettingRepository,
             AssessmentAccessRepository assessmentAccessRepository,
             InterventionRepository interventionRepository,
@@ -87,6 +89,7 @@ public class TeacherClassService {
         this.studentTopicMasteryRepository = studentTopicMasteryRepository;
         this.attemptRepository = attemptRepository;
         this.assessmentRepository = assessmentRepository;
+        this.assessmentQuestionRepository = assessmentQuestionRepository;
         this.classAssessmentSettingRepository = classAssessmentSettingRepository;
         this.assessmentAccessRepository = assessmentAccessRepository;
         this.interventionRepository = interventionRepository;
@@ -536,16 +539,27 @@ public class TeacherClassService {
         List<Attempt> classSubmittedAttempts = attemptRepository.findByClassId(cls.getId()).stream()
                 .filter(att -> att.getStatus() == AttemptStatus.SUBMITTED)
                 .toList();
+        Map<Long, Integer> attemptCountByAssessment = new HashMap<>();
+        Map<Long, Set<Long>> submittedStudentsByAssessment = new HashMap<>();
         Map<Long, Integer> ungradedByAssessment = new HashMap<>();
         for (Attempt att : classSubmittedAttempts) {
-            int ungraded = (int) answerRepository.findByAttempt(att).stream()
-                    .filter(ans -> ans.getQuestion().getType() == QuestionType.ESSAY && ans.getFinalScore() == null)
-                    .count();
-            if (ungraded > 0 && att.getAssessment() != null) {
-                ungradedByAssessment.merge(att.getAssessment().getId(), ungraded, Integer::sum);
+            if (att.getAssessment() == null) {
+                continue;
+            }
+            Long asmId = att.getAssessment().getId();
+            attemptCountByAssessment.merge(asmId, 1, Integer::sum);
+            if (att.getStudent() != null) {
+                submittedStudentsByAssessment.computeIfAbsent(asmId, k -> new HashSet<>())
+                        .add(att.getStudent().getId());
+            }
+            int ungraded = countUngradedEssays(att);
+            if (ungraded > 0) {
+                ungradedByAssessment.merge(asmId, ungraded, Integer::sum);
             }
         }
 
+        int enrolledCount = (int) enrollmentRepository.countByClassEntity(cls);
+        Instant now = Instant.now();
         List<TeacherClassAssessmentDto> result = new ArrayList<>();
         for (Assessment a : assessments) {
             ClassAssessmentSetting setting = settingByAssessmentId.get(a.getId());
@@ -553,6 +567,11 @@ public class TeacherClassService {
             Instant availableFrom = hasCustom ? setting.getAvailableFrom() : a.getAvailableFrom();
             Instant availableUntil = hasCustom ? setting.getAvailableUntil() : a.getAvailableUntil();
             boolean allowRetakes = hasCustom ? setting.isAllowRetakes() : true;
+            int totalQuestions = (int) assessmentQuestionRepository.countByAssessmentId(a.getId());
+            int attemptCount = attemptCountByAssessment.getOrDefault(a.getId(), 0);
+            int submittedStudentCount = submittedStudentsByAssessment.getOrDefault(a.getId(), Set.of()).size();
+            int ungradedCount = ungradedByAssessment.getOrDefault(a.getId(), 0);
+            String status = resolveClassAssessmentStatus(a, availableFrom, availableUntil, now);
 
             result.add(new TeacherClassAssessmentDto(
                     a.getId(),
@@ -563,10 +582,235 @@ public class TeacherClassService {
                     availableUntil,
                     allowRetakes,
                     hasCustom,
-                    ungradedByAssessment.getOrDefault(a.getId(), 0)
+                    ungradedCount,
+                    status,
+                    totalQuestions,
+                    attemptCount,
+                    enrolledCount,
+                    submittedStudentCount
             ));
         }
         return result;
+    }
+
+    /**
+     * Retrieves all enrolled students and their submission status/scores for a single assessment in an owned class.
+     */
+    @Transactional(readOnly = true)
+    public TeacherAssessmentSubmissionsDto getAssessmentSubmissions(
+            String teacherEmail,
+            Long classId,
+            Long assessmentId) {
+        User teacher = getActiveTeacher(teacherEmail);
+        ClassEntity cls = tenantAccess.requireOwnedClass(teacher, classId, classEntityRepository);
+
+        Assessment assessment = assessmentRepository.findById(assessmentId)
+                .filter(a -> a.getStatus() == AssessmentStatus.PUBLISHED)
+                .orElseThrow(() -> new ResourceNotFoundException("Assessment not found: " + assessmentId));
+
+        if (!assessment.getSubject().getId().equals(cls.getSubject().getId())) {
+            throw new ResourceNotFoundException("Assessment does not belong to this class subject: " + assessmentId);
+        }
+
+        List<AssessmentQuestion> assessmentQuestions =
+                assessmentQuestionRepository.findByAssessmentIdOrderByPositionAsc(assessment.getId());
+        int questionCount = assessmentQuestions.size();
+        int essayCount = (int) assessmentQuestions.stream()
+                .filter(aq -> aq.getQuestion() != null
+                        && aq.getQuestion().getType() != null
+                        && aq.getQuestion().getType().canonical() == QuestionType.ESSAY)
+                .count();
+        double totalPoints = assessmentQuestions.stream()
+                .mapToDouble(aq -> aq.getQuestion() != null && aq.getQuestion().getPoints() != null
+                        ? aq.getQuestion().getPoints()
+                        : 1.0)
+                .sum();
+
+        ClassAssessmentSetting setting = classAssessmentSettingRepository
+                .findByClassEntityAndAssessment(cls, assessment)
+                .orElse(null);
+        Instant availableFrom = setting != null ? setting.getAvailableFrom() : assessment.getAvailableFrom();
+        Instant availableUntil = setting != null ? setting.getAvailableUntil() : assessment.getAvailableUntil();
+        String assessmentStatus = resolveClassAssessmentStatus(assessment, availableFrom, availableUntil, Instant.now());
+
+        List<User> enrolledStudents = enrollmentRepository.findByClassEntityOrderByEnrolledAtDesc(cls).stream()
+                .map(Enrollment::getStudent)
+                .filter(Objects::nonNull)
+                .filter(u -> u.getStatus() == UserStatus.ACTIVE)
+                .toList();
+
+        Map<Long, List<Attempt>> attemptsByStudent = attemptRepository.findByClassId(cls.getId()).stream()
+                .filter(att -> att.getAssessment() != null
+                        && att.getAssessment().getId().equals(assessment.getId())
+                        && att.getStudent() != null)
+                .collect(Collectors.groupingBy(att -> att.getStudent().getId()));
+
+        List<StudentSubmissionRowDto> rows = new ArrayList<>();
+        int needsGradingCount = 0;
+        int gradedCount = 0;
+        int inProgressCount = 0;
+        int notStartedCount = 0;
+        List<Double> submittedPercentages = new ArrayList<>();
+
+        for (User student : enrolledStudents) {
+            Attempt targetAttempt = selectPrimaryAttempt(attemptsByStudent.getOrDefault(student.getId(), List.of()));
+            String initials = extractInitials(student.getFullName());
+
+            if (targetAttempt == null) {
+                notStartedCount++;
+                rows.add(new StudentSubmissionRowDto(
+                        student.getId(),
+                        student.getFullName(),
+                        student.getEmail(),
+                        initials,
+                        "NOT_STARTED",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        totalPoints,
+                        null,
+                        0
+                ));
+                continue;
+            }
+
+            if (targetAttempt.getStatus() != AttemptStatus.SUBMITTED) {
+                inProgressCount++;
+                rows.add(new StudentSubmissionRowDto(
+                        student.getId(),
+                        student.getFullName(),
+                        student.getEmail(),
+                        initials,
+                        "IN_PROGRESS",
+                        targetAttempt.getId(),
+                        targetAttempt.getAttemptNumber(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        totalPoints,
+                        null,
+                        0
+                ));
+                continue;
+            }
+
+            List<Answer> answers = answerRepository.findByAttempt(targetAttempt);
+            int ungradedEssays = (int) answers.stream()
+                    .filter(ans -> ans.getQuestion() != null
+                            && ans.getQuestion().getType() != null
+                            && ans.getQuestion().getType().canonical() == QuestionType.ESSAY
+                            && ans.getFinalScore() == null)
+                    .count();
+
+            Double autoScore = answers.stream().anyMatch(a -> a.getAutoScore() != null)
+                    ? answers.stream().mapToDouble(a -> a.getAutoScore() != null ? a.getAutoScore() : 0.0).sum()
+                    : null;
+            Double teacherScore = answers.stream().anyMatch(a -> a.getTeacherScore() != null)
+                    ? answers.stream().mapToDouble(a -> a.getTeacherScore() != null ? a.getTeacherScore() : 0.0).sum()
+                    : null;
+
+            double maxScore = targetAttempt.getMaxScore() != null ? targetAttempt.getMaxScore() : totalPoints;
+            double finalScore = targetAttempt.getTotalScore() != null ? targetAttempt.getTotalScore() : 0.0;
+            Double percentage = maxScore > 0
+                    ? Math.round((finalScore / maxScore) * 1000.0) / 10.0
+                    : 0.0;
+            submittedPercentages.add(percentage);
+
+            String rowStatus;
+            if (ungradedEssays > 0) {
+                rowStatus = "NEEDS_GRADING";
+                needsGradingCount++;
+            } else {
+                rowStatus = "GRADED";
+                gradedCount++;
+            }
+
+            rows.add(new StudentSubmissionRowDto(
+                    student.getId(),
+                    student.getFullName(),
+                    student.getEmail(),
+                    initials,
+                    rowStatus,
+                    targetAttempt.getId(),
+                    targetAttempt.getAttemptNumber(),
+                    targetAttempt.getSubmittedAt(),
+                    autoScore,
+                    teacherScore,
+                    finalScore,
+                    maxScore,
+                    percentage,
+                    ungradedEssays
+            ));
+        }
+
+        Map<String, Integer> statusOrder = Map.of(
+                "NEEDS_GRADING", 0,
+                "GRADED", 1,
+                "IN_PROGRESS", 2,
+                "NOT_STARTED", 3
+        );
+        rows.sort(Comparator
+                .comparingInt((StudentSubmissionRowDto r) -> statusOrder.getOrDefault(r.status(), 4))
+                .thenComparing(r -> r.studentName() != null ? r.studentName().toLowerCase() : ""));
+
+        int totalEnrolled = enrolledStudents.size();
+        int submittedCount = needsGradingCount + gradedCount;
+        Double classAverage = submittedPercentages.isEmpty()
+                ? null
+                : Math.round(submittedPercentages.stream().mapToDouble(Double::doubleValue).average().orElse(0.0) * 10.0) / 10.0;
+
+        return new TeacherAssessmentSubmissionsDto(
+                cls.getId(),
+                cls.getName(),
+                assessment.getId(),
+                assessment.getTitle(),
+                assessment.getDescription(),
+                totalPoints,
+                60.0,
+                availableFrom,
+                availableUntil,
+                assessment.getTimeLimitMinutes(),
+                questionCount,
+                essayCount,
+                assessmentStatus,
+                totalEnrolled,
+                submittedCount,
+                needsGradingCount,
+                gradedCount,
+                inProgressCount,
+                notStartedCount,
+                classAverage,
+                rows
+        );
+    }
+
+    private Attempt selectPrimaryAttempt(List<Attempt> attempts) {
+        if (attempts == null || attempts.isEmpty()) {
+            return null;
+        }
+        return attempts.stream()
+                .filter(a -> a.getStatus() == AttemptStatus.SUBMITTED)
+                .max(Comparator
+                        .comparing((Attempt a) -> a.getSubmittedAt() != null ? a.getSubmittedAt() : Instant.EPOCH)
+                        .thenComparing(a -> a.getAttemptNumber() != null ? a.getAttemptNumber() : 0))
+                .orElseGet(() -> attempts.stream()
+                        .max(Comparator.comparing(a -> a.getStartedAt() != null ? a.getStartedAt() : Instant.EPOCH))
+                        .orElse(null));
+    }
+
+    private String extractInitials(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "ST";
+        }
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
+        }
+        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
     }
 
     /**
@@ -600,6 +844,29 @@ public class TeacherClassService {
         }
 
         ClassAssessmentSetting saved = classAssessmentSettingRepository.save(setting);
+        List<Attempt> submittedForAssessment = attemptRepository.findByClassId(cls.getId()).stream()
+                .filter(att -> att.getStatus() == AttemptStatus.SUBMITTED
+                        && att.getAssessment() != null
+                        && att.getAssessment().getId().equals(assessment.getId()))
+                .toList();
+        int ungradedCount = submittedForAssessment.stream()
+                .mapToInt(this::countUngradedEssays)
+                .sum();
+        int totalQuestions = (int) assessmentQuestionRepository.countByAssessmentId(assessment.getId());
+        String status = resolveClassAssessmentStatus(
+                assessment,
+                saved.getAvailableFrom(),
+                saved.getAvailableUntil(),
+                Instant.now());
+
+        int enrolledCount = (int) enrollmentRepository.countByClassEntity(cls);
+        int submittedStudentCount = (int) submittedForAssessment.stream()
+                .map(Attempt::getStudent)
+                .filter(Objects::nonNull)
+                .map(User::getId)
+                .distinct()
+                .count();
+
         return new TeacherClassAssessmentDto(
                 assessment.getId(),
                 assessment.getTitle(),
@@ -608,8 +875,37 @@ public class TeacherClassService {
                 saved.getAvailableFrom(),
                 saved.getAvailableUntil(),
                 saved.isAllowRetakes(),
-                true
+                true,
+                ungradedCount,
+                status,
+                totalQuestions,
+                submittedForAssessment.size(),
+                enrolledCount,
+                submittedStudentCount
         );
+    }
+
+    private int countUngradedEssays(Attempt att) {
+        return (int) answerRepository.findByAttempt(att).stream()
+                .filter(ans -> ans.getQuestion().getType() == QuestionType.ESSAY && ans.getFinalScore() == null)
+                .count();
+    }
+
+    private String resolveClassAssessmentStatus(
+            Assessment assessment,
+            Instant availableFrom,
+            Instant availableUntil,
+            Instant now) {
+        if (assessment.getStatus() != AssessmentStatus.PUBLISHED) {
+            return assessment.getStatus().name();
+        }
+        if (availableUntil != null && now.isAfter(availableUntil)) {
+            return "CLOSED";
+        }
+        if (availableFrom != null && now.isBefore(availableFrom)) {
+            return "SCHEDULED";
+        }
+        return "PUBLISHED";
     }
 
     /**

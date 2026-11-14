@@ -1142,4 +1142,88 @@ public class IsolationMatrixTests {
                         .header("Authorization", "Bearer " + tokenSuperAdmin))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void testSuperAdminUserManagementIsolation() throws Exception {
+        User superAdmin = userRepository.findByEmail("superadmin@learningpal.edu").orElseGet(() ->
+                userRepository.save(new User("Super Admin", "superadmin@learningpal.edu", passwordEncoder.encode("pass"), Role.SUPER_ADMIN, UserStatus.ACTIVE, null))
+        );
+        String tokenSuperAdmin = jwtService.generateToken(superAdmin);
+
+        // Non-SUPER_ADMIN roles are strictly blocked with 403 Forbidden
+        for (String nonSuperToken : List.of(tokenStudentA1, tokenTeacherA1, tokenAdminA)) {
+            mockMvc.perform(get("/api/super/users")
+                            .header("Authorization", "Bearer " + nonSuperToken))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/super/users/" + studentA1.getId() + "/deactivate")
+                            .header("Authorization", "Bearer " + nonSuperToken))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/super/users/" + studentA1.getId() + "/reactivate")
+                            .header("Authorization", "Bearer " + nonSuperToken))
+                    .andExpect(status().isForbidden());
+        }
+
+        // SUPER_ADMIN can list and filter platform users
+        mockMvc.perform(get("/api/super/users")
+                        .param("role", "STUDENT")
+                        .param("institutionId", String.valueOf(instA.getId()))
+                        .param("search", studentA1.getEmail())
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].email").value(studentA1.getEmail()));
+
+        // Refuses deactivating SUPER_ADMIN (400) and returns 404 on nonexistent user
+        mockMvc.perform(post("/api/super/users/" + superAdmin.getId() + "/deactivate")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/super/users/999999/deactivate")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isNotFound());
+
+        // SUPER_ADMIN can deactivate and reactivate a tenant user
+        mockMvc.perform(post("/api/super/users/" + studentA1.getId() + "/deactivate")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/super/users/" + studentA1.getId() + "/reactivate")
+                        .header("Authorization", "Bearer " + tokenSuperAdmin))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testAssessmentSubmissionsRosterIsolation() throws Exception {
+        String tokenTeacherA2 = jwtService.generateToken(teacherA2);
+        String tokenTeacherB1 = jwtService.generateToken(teacherB1);
+        String url = "/api/teacher/classes/" + classA1.getId() + "/assessments/" + assessment.getId() + "/submissions";
+
+        // Owner teacher receives 200 with enrolled students roster
+        mockMvc.perform(get(url)
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assessmentId").value(assessment.getId()))
+                .andExpect(jsonPath("$.totalEnrolled").isNumber())
+                .andExpect(jsonPath("$.submissions").isArray());
+
+        // Foreign teacher in same institution -> 404
+        mockMvc.perform(get(url)
+                        .header("Authorization", "Bearer " + tokenTeacherA2))
+                .andExpect(status().isNotFound());
+
+        // Foreign teacher in different institution -> 404
+        mockMvc.perform(get(url)
+                        .header("Authorization", "Bearer " + tokenTeacherB1))
+                .andExpect(status().isNotFound());
+
+        // Nonexistent / foreign assessment ID -> 404
+        mockMvc.perform(get("/api/teacher/classes/" + classA1.getId() + "/assessments/999999/submissions")
+                        .header("Authorization", "Bearer " + tokenTeacherA1))
+                .andExpect(status().isNotFound());
+
+        // Student / Admin roles -> 403
+        mockMvc.perform(get(url)
+                        .header("Authorization", "Bearer " + tokenStudentA1))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get(url)
+                        .header("Authorization", "Bearer " + tokenAdminA))
+                .andExpect(status().isForbidden());
+    }
 }

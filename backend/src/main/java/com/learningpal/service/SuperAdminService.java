@@ -3,6 +3,7 @@ package com.learningpal.service;
 import com.learningpal.dto.CreateInstitutionRequest;
 import com.learningpal.dto.InstitutionDetailDto;
 import com.learningpal.dto.InstitutionSummaryDto;
+import com.learningpal.dto.MessageResponse;
 import com.learningpal.dto.UserDto;
 import com.learningpal.entity.Institution;
 import com.learningpal.entity.InstitutionStatus;
@@ -12,9 +13,11 @@ import com.learningpal.entity.UserStatus;
 import com.learningpal.exception.BadRequestException;
 import com.learningpal.exception.ConflictException;
 import com.learningpal.exception.DuplicateEmailException;
+import com.learningpal.exception.ResourceNotFoundException;
 import com.learningpal.repository.ClassEntityRepository;
 import com.learningpal.repository.InstitutionRepository;
 import com.learningpal.repository.UserRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,6 +106,52 @@ public class SuperAdminService {
             long classCount = classEntityRepository.countByInstitution(inst);
             return InstitutionSummaryDto.fromEntity(inst, userCount, classCount);
         }).toList();
+    }
+
+    /**
+     * Lists platform users with optional filtering by role, institution, status, and name/email search.
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> getUsers(Role role, Long institutionId, UserStatus status, String search) {
+        String normalizedSearch = search == null ? null : search.trim().toLowerCase(Locale.ROOT);
+        boolean hasSearch = normalizedSearch != null && !normalizedSearch.isEmpty();
+
+        return userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+                .filter(u -> role == null || u.getRole() == role)
+                .filter(u -> institutionId == null || (u.getInstitution() != null && institutionId.equals(u.getInstitution().getId())))
+                .filter(u -> status == null || u.getStatus() == status)
+                .filter(u -> !hasSearch
+                        || (u.getFullName() != null && u.getFullName().toLowerCase(Locale.ROOT).contains(normalizedSearch))
+                        || (u.getEmail() != null && u.getEmail().toLowerCase(Locale.ROOT).contains(normalizedSearch)))
+                .map(UserDto::fromEntity)
+                .toList();
+    }
+
+    /**
+     * Deactivates a user account across any institution (refuses to deactivate SUPER_ADMIN).
+     */
+    @Transactional
+    public MessageResponse deactivateUser(Long targetUserId) {
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + targetUserId));
+        if (target.getRole() == Role.SUPER_ADMIN) {
+            throw new BadRequestException("Cannot deactivate a platform super administrator");
+        }
+        target.setStatus(UserStatus.DEACTIVATED);
+        userRepository.save(target);
+        return new MessageResponse("User " + target.getFullName() + " deactivated successfully");
+    }
+
+    /**
+     * Reactivates a user account across any institution.
+     */
+    @Transactional
+    public MessageResponse reactivateUser(Long targetUserId) {
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + targetUserId));
+        target.setStatus(UserStatus.ACTIVE);
+        userRepository.save(target);
+        return new MessageResponse("User " + target.getFullName() + " reactivated successfully");
     }
 }
 

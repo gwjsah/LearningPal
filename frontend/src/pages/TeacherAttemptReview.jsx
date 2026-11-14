@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -24,8 +24,13 @@ import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimiti
 
 export default function TeacherAttemptReview() {
   const { classId, studentId, attemptId } = useParams();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const returnTo = location.state?.returnTo || `/teacher/classes/${classId}/students/${studentId}`;
+  const returnLabel = location.state?.returnLabel || 'Back to Student Detail';
+  const shortReturnLabel = location.state?.returnTo ? 'Back to Submissions' : 'Back to Student';
 
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -340,6 +345,8 @@ export default function TeacherAttemptReview() {
       portalName="LearningPal Teacher"
       portalSubtitle="Student Attempt Review & Manual Grade Override"
       badgeLabel="Gradebook Review"
+      user={user}
+      onLogout={logout}
     >
       <div className="space-y-6 max-w-5xl mx-auto pb-12">
         {/* Navigation Breadcrumb */}
@@ -352,10 +359,10 @@ export default function TeacherAttemptReview() {
           </Link>
           <span>/</span>
           <Link
-            to={`/teacher/classes/${classId}/students/${studentId}`}
+            to={returnTo}
             className="hover:text-redpen underline transition-colors"
           >
-            Student Progress
+            {location.state?.returnTo ? 'Assessment Submissions' : 'Student Progress'}
           </Link>
           <span>/</span>
           <span className="text-ink dark:text-chalkboard-chalk font-bold">Attempt Review</span>
@@ -391,9 +398,9 @@ export default function TeacherAttemptReview() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => navigate(`/teacher/classes/${classId}/students/${studentId}`)}
+              onClick={() => navigate(returnTo)}
             >
-              Back to Student Detail
+              {returnLabel}
             </Button>
           </NotebookCard>
         )}
@@ -416,10 +423,10 @@ export default function TeacherAttemptReview() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => navigate(`/teacher/classes/${classId}/students/${studentId}`)}
+                    onClick={() => navigate(returnTo)}
                   >
                     <ArrowLeft className="w-4 h-4 mr-1.5" />
-                    Back to Student
+                    {shortReturnLabel}
                   </Button>
                 </div>
               </div>
