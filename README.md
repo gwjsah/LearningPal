@@ -19,12 +19,31 @@ LearningPal is a data-driven educational support platform that diagnoses student
 
 ---
 
-## Quick Start Guide (3 Simple Steps)
+## Quick Start Guide (4 Simple Steps)
 
-### Step 1: Database Setup & Import
+### Step 1: Environment Setup
 
-1. Start your local MySQL service.
-2. Create the `learningpal` database and import the included database backup:
+1. Copy the root environment template to `.env` and fill in your local values (never commit `.env`):
+   ```bash
+   cp .env.example .env
+   ```
+   Key variables to set in `.env`:
+   - `DB_USERNAME` / `DB_PASSWORD`: Your local MySQL credentials
+   - `APP_JWT_SECRET`: A 256-bit base64 secret (`openssl rand -base64 32`)
+   - `GEMINI_API_KEY` *(optional)*: Required only if using Gemini AI question drafting / essay grading suggestions
+
+2. Copy the backend Spring Boot properties template:
+   ```bash
+   cp backend/src/main/resources/application.properties.example backend/src/main/resources/application.properties
+   ```
+   Update `spring.datasource.username` and `spring.datasource.password` (or let them resolve from your environment).
+
+---
+
+### Step 2: Database Setup & Import (Testing Seed)
+
+1. Start your local MySQL 8.x service.
+2. Create the `learningpal` database and (for testing with pre-seeded data) import `database_backup.sql` from the `testing` branch:
 
 ```bash
 # Option A: From terminal / command prompt
@@ -38,27 +57,19 @@ mysql -u root -p learningpal < database_backup.sql
 
 ---
 
-### Step 2: Backend Setup & Run
+### Step 3: Backend Setup & Run
 
 1. Navigate to the `backend` folder:
    ```bash
    cd backend
    ```
 
-2. Create your local `application.properties` configuration:
-   - Copy `src/main/resources/application.properties.example` to `src/main/resources/application.properties`.
-   - Update your MySQL credentials:
-     ```properties
-     spring.datasource.username=root
-     spring.datasource.password=YOUR_MYSQL_PASSWORD
-     ```
-   - *(Optional)* If testing Local AI Question Drafting with LM Studio, enable the feature flag:
-     ```properties
-     app.llm.enabled=true
-     app.llm.base-url=http://localhost:1234
-     app.llm.model=qwen/qwen3-14b
-     ```
-   *(A pre-configured development JWT secret is already included in the example file).*
+2. *(Optional)* If testing Local AI Question Drafting with LM Studio, configure:
+   ```properties
+   app.llm.enabled=true
+   app.llm.base-url=http://localhost:1234
+   app.llm.model=qwen/qwen3-14b
+   ```
 
 3. Run the backend using the **Maven Wrapper** (no local Maven install needed):
    - **On Windows (PowerShell / CMD)**:
@@ -74,7 +85,7 @@ mysql -u root -p learningpal < database_backup.sql
 
 ---
 
-### Step 3: Frontend Setup & Run
+### Step 4: Frontend Setup & Run
 
 1. In a **new terminal window**, navigate to the `frontend` folder:
    ```bash
@@ -134,10 +145,10 @@ The imported database includes pre-seeded accounts across all roles so you can t
 ### 1. Teacher Content Tools & Resource Management (Phases A & B)
 - **"My Subjects" Hub** (`/teacher/subjects`):
   - View all teacher-owned subjects with statistics (classes, topics, questions, quizzes).
-  - Click **"Copy Sample C Curriculum"** to duplicate the built-in curriculum into a custom, editable subject.
+  - Create new subjects, edit metadata, archive unused subjects, and manage subject workspaces.
 - **Subject Workspace** (`/teacher/subjects/:id`):
   - **Topics**: Add new topics, rename existing ones, or reorder topics with up/down arrows.
-  - **Question Bank**: Create multiple-choice questions (2–6 choices with explanations). Notice the version badges (e.g. `v1`). If a question has submitted answers, editing it will automatically increment the version (`v2`) and retire the previous one to keep historical student attempts intact! Provenance tags indicate whether questions are original (`MANUAL`) or drafted by AI (`AI_DRAFT`).
+  - **Question Bank**: Create **Multiple Choice**, **Enumeration** (with accepted answer variants), and **Essay** (with multi-criterion grading rubrics) questions. Notice the version badges (e.g. `v1`). If a question has submitted answers, editing it will automatically increment the version (`v2`) and retire the previous one to keep historical student attempts intact! Provenance tags indicate whether questions are original (`MANUAL`) or drafted by AI (`AI_DRAFT`).
   - **Quizzes**: Build quizzes from question bank items. Toggle Draft vs. Published status.
   - **Link Resources & File Uploads (Phase B)**:
     - Add external web links or click **"Upload Document"** to attach course files (PDF or DOCX, up to 10 MB).
