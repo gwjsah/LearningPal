@@ -61,8 +61,9 @@ export default function EnumerationQuestionEditor({ acceptedAnswers, onChange })
               required
               value={variant}
               onChange={(e) => handleVariantChange(index, e.target.value)}
+              aria-label={`Accepted answer variant ${index + 1}`}
               placeholder={`Accepted variant ${index + 1} (e.g., stdio.h)`}
-              className="flex-1 px-3 py-1.5 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-redpen"
+              className="flex-1 px-3 py-1.5 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
             />
             <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted w-10 text-right">
               {variant.length}/100
@@ -71,7 +72,7 @@ export default function EnumerationQuestionEditor({ acceptedAnswers, onChange })
               <button
                 type="button"
                 onClick={() => handleRemoveVariant(index)}
-                className="p-1.5 text-ink-muted hover:text-redpen rounded-lg cursor-pointer"
+                className="p-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 rounded-lg cursor-pointer"
                 title="Remove variant"
                 aria-label={`Remove variant ${index + 1}`}
               >

@@ -26,6 +26,8 @@ import {
   PaginationControls,
   EmptyState,
   Button,
+  NotebookButton,
+  NotebookBackButton,
 } from '../components/NotebookPrimitives';
 
 const STATUS_BADGE_MAP = {
@@ -183,10 +185,7 @@ export default function TeacherAssessmentSubmissions() {
             </h2>
             <p className="text-sm text-ink-muted dark:text-chalkboard-muted">{error}</p>
           </div>
-          <Button onClick={() => navigate(backToAssessmentsUrl)}>
-            <ArrowLeft className="w-4 h-4 mr-1.5" />
-            Return to Class Assessments
-          </Button>
+          <NotebookBackButton to={backToAssessmentsUrl} label="Return to Class Assessments" />
         </NotebookCard>
       )}
 
@@ -279,7 +278,7 @@ export default function TeacherAssessmentSubmissions() {
                       setStatusFilter('ALL');
                       setCurrentPage(1);
                     }}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-ink bg-paper-card text-ink hover:bg-paper-warm cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface cursor-pointer"
                   >
                     Reset Filters
                   </button>
@@ -366,23 +365,23 @@ export default function TeacherAssessmentSubmissions() {
                         {/* Action */}
                         <NotebookTableCell align="right">
                           {isNeedsGrading ? (
-                            <button
-                              type="button"
+                            <NotebookButton
+                              variant="primary"
+                              size="sm"
                               onClick={() => openAttemptReview(row)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-redpen text-white border-2 border-ink shadow-notebook-xs hover:bg-redpen-dark transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                              iconRight={ArrowRight}
                             >
-                              <span>Grade Attempt</span>
-                              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                            </button>
+                              Grade Attempt
+                            </NotebookButton>
                           ) : isGraded ? (
-                            <button
-                              type="button"
+                            <NotebookButton
+                              variant="secondary"
+                              size="sm"
                               onClick={() => openAttemptReview(row)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk border border-ink/30 dark:border-chalkboard-borderSubtle hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                              iconRight={ArrowRight}
                             >
-                              <span>Review / Override</span>
-                              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                            </button>
+                              Review / Override
+                            </NotebookButton>
                           ) : (
                             <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-mono text-ink-muted dark:text-chalkboard-muted bg-ink/5 dark:bg-chalkboard-surface border border-ink/10 dark:border-chalkboard-borderSubtle">
                               Not Submitted
@@ -420,13 +419,7 @@ export default function TeacherAssessmentSubmissions() {
     : '';
 
   const renderBackLink = () => (
-    <Link
-      to={backToAssessmentsUrl}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
-    >
-      <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-      <span>Back to Class Assessments</span>
-    </Link>
+    <NotebookBackButton to={backToAssessmentsUrl} label="Back to Class Assessments" />
   );
 
   return (

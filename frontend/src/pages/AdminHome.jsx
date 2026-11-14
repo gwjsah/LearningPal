@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services/adminService';
 import {
   Button,
+  NotebookButton,
   PortalShell,
   NotebookTabs,
   NotebookTabPanel,
@@ -32,6 +33,7 @@ import {
   NotebookTableCell,
   EmptyState,
 } from '../components/NotebookPrimitives';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 const ROLE_OPTIONS = [
   { value: 'ALL', label: 'All' },
@@ -80,6 +82,7 @@ export default function AdminHome() {
   const [userPage, setUserPage] = useState(1);
   const [userPageSize, setUserPageSize] = useState(10);
   const [processingUserId, setProcessingUserId] = useState(null);
+  const [userToDeactivate, setUserToDeactivate] = useState(null);
 
   // Institution Classes & Reassignment State
   const [classes, setClasses] = useState([]);
@@ -277,11 +280,6 @@ export default function AdminHome() {
   };
 
   const handleDeactivateUser = async (targetUser) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to deactivate ${targetUser.fullName}? They will be logged out and cannot log in.`
-    );
-    if (!confirmed) return;
-
     setProcessingUserId(targetUser.id);
     setActionNotice(null);
     try {
@@ -290,11 +288,12 @@ export default function AdminHome() {
         type: 'success',
         text: `Deactivated ${targetUser.fullName}.`,
       });
+      setUserToDeactivate(null);
       fetchUsers();
     } catch (err) {
       setActionNotice({
         type: 'error',
-        text: `Could not deactivate ${targetUser.fullName}: ${err.message}`,
+        text: `Could not deactivate ${targetUser.fullName}. Please try again.`,
       });
     } finally {
       setProcessingUserId(null);
@@ -350,42 +349,40 @@ export default function AdminHome() {
   };
 
   const headerActions = (
-    <div className="flex flex-col sm:items-end gap-2 shrink-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          to="/admin/evaluation"
-          variant="primary"
-          size="sm"
-          className="font-mono text-xs whitespace-nowrap"
-        >
-          <BarChart3 className="w-3.5 h-3.5 mr-1 text-white" />
-          <span>Evaluation Dashboard</span>
-        </Button>
-        <Button
-          to="/admin/validation"
-          variant="mint"
-          size="sm"
-          className="font-mono text-xs whitespace-nowrap"
-        >
-          <FlaskConical className="w-3.5 h-3.5 mr-1 text-ink-blue" />
-          <span>Validation Report</span>
-        </Button>
-      </div>
-      <Button
+    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+      <NotebookButton
+        to="/admin/evaluation"
+        variant="primary"
+        size="md"
+        icon={BarChart3}
+        className="whitespace-nowrap"
+      >
+        Evaluation Dashboard
+      </NotebookButton>
+      <NotebookButton
+        to="/admin/validation"
+        variant="mint"
+        size="md"
+        icon={FlaskConical}
+        className="whitespace-nowrap"
+      >
+        Validation Report
+      </NotebookButton>
+      <NotebookButton
         variant="secondary"
-        size="sm"
+        size="md"
         onClick={refreshAll}
         disabled={loadingPending || loadingUsers || loadingClasses}
-        className="font-mono text-xs self-start sm:self-end whitespace-nowrap"
+        className="whitespace-nowrap"
       >
         <RefreshCw
-          className={`w-3.5 h-3.5 mr-1 ${
+          className={`w-4 h-4 shrink-0 ${
             loadingPending || loadingUsers || loadingClasses ? 'animate-spin' : ''
           }`}
           aria-hidden="true"
         />
         <span>Refresh Data</span>
-      </Button>
+      </NotebookButton>
     </div>
   );
 
@@ -428,8 +425,8 @@ export default function AdminHome() {
           aria-live="polite"
           className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border-2 font-medium text-xs sm:text-sm shadow-xs ${
             actionNotice.type === 'success'
-              ? 'border-ink bg-highlighter-mintSoft text-ink'
-              : 'border-redpen bg-redpen-soft text-redpen-dark'
+              ? 'border-ink dark:border-emerald-500/40 bg-highlighter-mintSoft dark:bg-emerald-950/50 text-ink dark:text-emerald-200'
+              : 'border-redpen bg-redpen-soft dark:bg-red-950/50 text-redpen-dark dark:text-red-300'
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -456,7 +453,7 @@ export default function AdminHome() {
           <div className="flex items-center gap-2">
             <span
               className={`w-2.5 h-2.5 rounded-full inline-block ${
-                pendingTeachers.length > 0 ? 'bg-redpen' : 'bg-emerald-600 dark:bg-emerald-400'
+                pendingTeachers.length > 0 ? 'bg-redpen' : 'bg-highlighter-mint dark:bg-emerald-400 border border-ink/30 dark:border-transparent'
               }`}
               aria-hidden="true"
             />
@@ -473,7 +470,7 @@ export default function AdminHome() {
         </div>
 
         {pendingError && (
-          <div className="p-3 rounded-xl bg-redpen-soft border border-redpen text-redpen-dark text-xs flex items-center justify-between">
+          <div className="p-3 rounded-xl bg-redpen-soft dark:bg-red-950/60 border border-redpen dark:border-red-500/50 text-redpen-dark dark:text-red-300 text-xs flex items-center justify-between">
             <span>{pendingError}</span>
             <Button variant="secondary" size="sm" onClick={fetchPendingTeachers}>
               Retry
@@ -643,7 +640,7 @@ export default function AdminHome() {
           </div>
 
           {usersError && (
-            <div className="p-3 rounded-xl bg-redpen-soft border border-redpen text-redpen-dark text-xs flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-redpen-soft dark:bg-red-950/60 border border-redpen dark:border-red-500/50 text-redpen-dark dark:text-red-300 text-xs flex items-center justify-between">
               <span>{usersError}</span>
               <Button variant="secondary" size="sm" onClick={fetchUsers}>
                 Retry
@@ -653,7 +650,7 @@ export default function AdminHome() {
 
           {loadingUsers ? (
             <div className="py-12 rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-center space-y-2">
-              <div className="w-6 h-6 border-3 border-ink-blue dark:border-highlighter-yellow border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-ink-blue dark:border-highlighter-yellow border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="font-mono text-xs text-ink-muted dark:text-chalkboard-muted">
                 Loading campus user directory…
               </p>
@@ -741,7 +738,7 @@ export default function AdminHome() {
                                 ? 'bg-highlighter-mintSoft text-ink dark:bg-highlighter-mint/20 dark:text-highlighter-mint'
                                 : u.status === 'PENDING'
                                 ? 'bg-highlighter-yellow/40 text-ink dark:text-highlighter-yellow'
-                                : 'bg-redpen-soft text-redpen-dark'
+                                : 'bg-redpen-soft text-redpen-dark dark:bg-red-950/50 dark:text-red-300'
                             }`}
                           >
                             {u.status}
@@ -769,9 +766,9 @@ export default function AdminHome() {
                               variant="ghost"
                               size="sm"
                               disabled={isProcessing}
-                              onClick={() => handleDeactivateUser(u)}
+                              onClick={() => setUserToDeactivate(u)}
                               aria-label={`Deactivate ${u.fullName}`}
-                              className="text-redpen hover:bg-redpen-soft font-mono text-xs"
+                              className="text-redpen dark:text-red-400 hover:bg-redpen-soft dark:hover:bg-red-950/50 font-mono text-xs"
                             >
                               <UserX className="w-3 h-3 mr-1" aria-hidden="true" />
                               <span>Deactivate</span>
@@ -855,7 +852,7 @@ export default function AdminHome() {
           </div>
 
           {classesError && (
-            <div className="p-3 rounded-xl bg-redpen-soft border border-redpen text-redpen-dark text-xs flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-redpen-soft dark:bg-red-950/60 border border-redpen dark:border-red-500/50 text-redpen-dark dark:text-red-300 text-xs flex items-center justify-between">
               <span>{classesError}</span>
               <Button variant="secondary" size="sm" onClick={fetchClasses}>
                 Retry
@@ -865,7 +862,7 @@ export default function AdminHome() {
 
           {loadingClasses ? (
             <div className="py-12 rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-center space-y-2">
-              <div className="w-6 h-6 border-3 border-ink-blue dark:border-highlighter-yellow border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-6 h-6 border-2 border-ink-blue dark:border-highlighter-yellow border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="font-mono text-xs text-ink-muted dark:text-chalkboard-muted">
                 Loading institution classes…
               </p>
@@ -1007,6 +1004,22 @@ export default function AdminHome() {
           )}
         </NotebookTabPanel>
       </section>
+
+      <ConfirmModal
+        open={Boolean(userToDeactivate)}
+        variant="danger"
+        title="Deactivate User Account"
+        message={
+          userToDeactivate
+            ? `Are you sure you want to deactivate ${userToDeactivate.fullName}? They will be logged out and will not be able to sign in until reactivated.`
+            : ''
+        }
+        confirmLabel="Deactivate User"
+        loadingLabel="Deactivating…"
+        loading={Boolean(userToDeactivate && processingUserId === userToDeactivate.id)}
+        onConfirm={() => userToDeactivate && handleDeactivateUser(userToDeactivate)}
+        onCancel={() => setUserToDeactivate(null)}
+      />
     </PortalShell>
   );
 }

@@ -136,11 +136,16 @@ export default function ValidationReportView({
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Source Toggle */}
-          <div className="inline-flex rounded-xl p-1 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-border">
+          <div
+            role="group"
+            aria-label="Validation label source"
+            className="inline-flex rounded-xl p-1 bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-border"
+          >
             <button
               type="button"
+              aria-pressed={source === 'TEACHER'}
               onClick={() => onSourceChange?.('TEACHER')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 source === 'TEACHER'
                   ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/15 dark:border-chalkboard-border'
                   : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk'
@@ -150,8 +155,9 @@ export default function ValidationReportView({
             </button>
             <button
               type="button"
+              aria-pressed={source === 'SYNTHETIC'}
               onClick={() => onSourceChange?.('SYNTHETIC')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 source === 'SYNTHETIC'
                   ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/15 dark:border-chalkboard-border'
                   : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk'
@@ -235,7 +241,7 @@ export default function ValidationReportView({
                   targetCheck.bannerType === 'MET'
                     ? 'bg-highlighter-mint text-ink border-ink/20'
                     : targetCheck.bannerType === 'NOT_MET'
-                    ? 'bg-redpen-soft text-redpen-dark border-redpen/30'
+                    ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-redpen/30 dark:border-red-500/50'
                     : targetCheck.bannerType === 'SMALL_CLASS_COMPLETE'
                     ? 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/60 dark:text-blue-200'
                     : targetCheck.bannerType === 'NO_ELIGIBLE_STUDENTS'
@@ -267,8 +273,9 @@ export default function ValidationReportView({
             </p>
 
             {targetCheck.warningMessage && (
-              <p className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/40">
-                ⚠️ {targetCheck.warningMessage}
+              <p className="flex items-start gap-2 text-xs text-ink dark:text-highlighter-yellow bg-highlighter-yellowSoft dark:bg-amber-950/30 p-2.5 rounded-lg border border-highlighter-yellow/60 dark:border-amber-800/40">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-ink dark:text-highlighter-yellow" aria-hidden="true" />
+                <span>{targetCheck.warningMessage}</span>
               </p>
             )}
           </div>
@@ -372,10 +379,12 @@ export default function ValidationReportView({
               <button
                 type="button"
                 onClick={() => setShowKappaInfo(!showKappaInfo)}
-                className="text-ink-muted hover:text-ink dark:hover:text-chalkboard-chalk"
+                aria-label="What is Cohen's Kappa?"
+                aria-expanded={showKappaInfo}
+                className="text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                 title="What is Cohen's Kappa?"
               >
-                <HelpCircle className="w-3.5 h-3.5" />
+                <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
             <span className="text-2xl font-extrabold text-ink-blue dark:text-highlighter-mint font-mono mt-1 block">
@@ -385,7 +394,7 @@ export default function ValidationReportView({
               {getKappaInterpretation(metrics.cohensKappa)}
             </span>
             {showKappaInfo && (
-              <div className="absolute z-20 bottom-full left-0 mb-2 w-64 p-3 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-xl shadow-notebook-lg text-[11px] text-ink dark:text-chalkboard-chalk space-y-1">
+              <div className="absolute z-20 bottom-full right-0 sm:left-0 sm:right-auto mb-2 w-64 max-w-[calc(100vw-2rem)] p-3 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-xl shadow-notebook-lg text-[11px] text-ink dark:text-chalkboard-chalk space-y-1">
                 <p className="font-bold">What is Cohen&apos;s Kappa?</p>
                 <p className="text-ink-muted dark:text-chalkboard-muted">
                   Cohen&apos;s kappa measures agreement between two raters (teacher and system) after accounting for the agreement that could happen purely by chance. A score above 0.60 indicates strong agreement beyond random luck.
@@ -480,10 +489,7 @@ export default function ValidationReportView({
       {/* SECTION 4: CONFUSION MATRIX & PER-TOPIC ACCURACY */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Confusion Matrix Table */}
-        <NotebookCard
-          borderStyle="sketch"
-          className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
-        >
+        <NotebookCard className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-redpen dark:text-highlighter-yellow" />
@@ -502,28 +508,28 @@ export default function ValidationReportView({
             <table className="w-full text-xs font-mono border-collapse border border-ink/20 dark:border-chalkboard-border">
               <thead>
                 <tr className="bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left"></th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left"></th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">
                     Teacher WEAK
                   </th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">
                     Teacher NOT WEAK
                   </th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center font-bold bg-paper/60 dark:bg-chalkboard/40">
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center font-bold bg-paper/60 dark:bg-chalkboard/40">
                     System Total
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left font-bold bg-paper-warm dark:bg-chalkboard-surface">
+                  <th scope="row" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left font-bold bg-paper-warm dark:bg-chalkboard-surface">
                     System WEAK (GAP)
                   </th>
                   <td className="p-2 border border-ink/20 dark:border-chalkboard-border text-center bg-highlighter-mint/20 text-ink dark:text-chalkboard-chalk font-bold">
                     <div>{confusionMatrix.truePositives || 0}</div>
                     <span className="text-[9px] text-ink-muted dark:text-chalkboard-muted">True Positive</span>
                   </td>
-                  <td className="p-2 border border-ink/20 dark:border-chalkboard-border text-center bg-redpen-soft/20 text-ink dark:text-chalkboard-chalk">
+                  <td className="p-2 border border-ink/20 dark:border-chalkboard-border text-center bg-redpen-soft/20 dark:bg-red-950/30 text-ink dark:text-chalkboard-chalk">
                     <div>{confusionMatrix.falsePositives || 0}</div>
                     <span className="text-[9px] text-ink-muted dark:text-chalkboard-muted">False Positive</span>
                   </td>
@@ -532,10 +538,10 @@ export default function ValidationReportView({
                   </td>
                 </tr>
                 <tr>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left font-bold bg-paper-warm dark:bg-chalkboard-surface">
+                  <th scope="row" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left font-bold bg-paper-warm dark:bg-chalkboard-surface">
                     System NOT WEAK (DEV/STR)
                   </th>
-                  <td className="p-2 border border-ink/20 dark:border-chalkboard-border text-center bg-redpen-soft/20 text-ink dark:text-chalkboard-chalk">
+                  <td className="p-2 border border-ink/20 dark:border-chalkboard-border text-center bg-redpen-soft/20 dark:bg-red-950/30 text-ink dark:text-chalkboard-chalk">
                     <div>{confusionMatrix.falseNegatives || 0}</div>
                     <span className="text-[9px] text-ink-muted dark:text-chalkboard-muted">False Negative</span>
                   </td>
@@ -548,7 +554,7 @@ export default function ValidationReportView({
                   </td>
                 </tr>
                 <tr className="bg-paper/60 dark:bg-chalkboard/40 font-bold">
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">
+                  <th scope="row" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">
                     Teacher Total
                   </th>
                   <td className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">
@@ -567,10 +573,7 @@ export default function ValidationReportView({
         </NotebookCard>
 
         {/* Per-Topic Agreement */}
-        <NotebookCard
-          borderStyle="sketch"
-          className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
-        >
+        <NotebookCard className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2">
               <Target className="w-4 h-4 text-redpen dark:text-highlighter-yellow" />
@@ -604,13 +607,13 @@ export default function ValidationReportView({
                       </span>
                     </span>
                   </div>
-                  <div className="w-full bg-ink/10 dark:bg-chalkboard-borderSubtle h-2 rounded-full overflow-hidden">
+                  <div className="w-full h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard border border-ink/15 dark:border-chalkboard-borderSubtle overflow-hidden p-0.5">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${
+                      className={`h-full rounded-full transition-all duration-300 motion-reduce:transition-none ${
                         (topic.accuracyPercent ?? 0) >= 85
-                          ? 'bg-emerald-600 dark:bg-emerald-400'
+                          ? 'bg-emerald-500'
                           : (topic.accuracyPercent ?? 0) >= 70
-                          ? 'bg-amber-500'
+                          ? 'bg-amber-400'
                           : 'bg-redpen'
                       }`}
                       style={{ width: `${Math.min(100, topic.accuracyPercent ?? 0)}%` }}
@@ -649,10 +652,7 @@ export default function ValidationReportView({
       </div>
 
       {/* SECTION 5: THRESHOLD SENSITIVITY ANALYSIS */}
-      <NotebookCard
-        borderStyle="sketch"
-        className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
-      >
+      <NotebookCard className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="space-y-0.5">
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -669,12 +669,12 @@ export default function ValidationReportView({
           <table className="w-full text-xs font-mono border-collapse border border-ink/20 dark:border-chalkboard-border">
             <thead>
               <tr className="bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
-                <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">Gap Threshold</th>
-                <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Weak</th>
-                <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Not Weak</th>
-                <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Agreement %</th>
-                <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Recall %</th>
-                <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Calibration Fit</th>
+                <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">Gap Threshold</th>
+                <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Weak</th>
+                <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Not Weak</th>
+                <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Agreement %</th>
+                <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Recall %</th>
+                <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Calibration Fit</th>
               </tr>
             </thead>
             <tbody>
@@ -705,8 +705,8 @@ export default function ValidationReportView({
                   </td>
                   <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center">
                     {row.bestFit ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <CheckCircle2 className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold uppercase bg-highlighter-mintSoft text-ink border border-highlighter-mint/60 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
                         Best Agreement
                       </span>
                     ) : (
@@ -721,14 +721,11 @@ export default function ValidationReportView({
       </NotebookCard>
 
       {/* SECTION 6: DISAGREEMENTS AUDIT TABLE */}
-      <NotebookCard
-        borderStyle="sketch"
-        className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
-      >
+      <NotebookCard className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <AlertCircle className="w-4 h-4 text-ink dark:text-highlighter-yellow" aria-hidden="true" />
               <span>Disagreements Audit Log</span>
             </h3>
             <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
@@ -742,7 +739,7 @@ export default function ValidationReportView({
 
         {disagreements.length === 0 ? (
           <div className="p-6 text-center rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 text-xs text-ink-muted dark:text-chalkboard-muted">
-            <CheckCircle2 className="w-5 h-5 mx-auto text-emerald-600 dark:text-emerald-400 mb-1" />
+            <CheckCircle2 className="w-5 h-5 mx-auto text-ink-blue dark:text-highlighter-mint mb-1" aria-hidden="true" />
             <span>Zero disagreements found! All usable teacher validations match the system classification.</span>
           </div>
         ) : (
@@ -750,11 +747,11 @@ export default function ValidationReportView({
             <table className="w-full text-xs font-mono border-collapse border border-ink/20 dark:border-chalkboard-border">
               <thead>
                 <tr className="bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk">
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">Student ID</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">Curricular Topic</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Teacher Label</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Status</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Mastery</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">Student ID</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-left">Curricular Topic</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Teacher Label</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Status</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">System Mastery</th>
                 </tr>
               </thead>
               <tbody>
@@ -773,8 +770,8 @@ export default function ValidationReportView({
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                           d.teacherLabel === 'WEAK'
-                            ? 'bg-redpen-soft text-redpen-dark'
-                            : 'bg-emerald-100 text-emerald-900'
+                            ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300'
+                            : 'bg-highlighter-mintSoft dark:bg-emerald-950/60 text-ink dark:text-emerald-200'
                         }`}
                       >
                         {d.teacherLabel}
@@ -798,10 +795,7 @@ export default function ValidationReportView({
 
       {/* SECTION 7: ADMIN PER-CLASS BREAKDOWN TABLE (DECISION 9) */}
       {classBreakdowns && classBreakdowns.length > 0 && (
-        <NotebookCard
-          borderStyle="sketch"
-          className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
-        >
+        <NotebookCard className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="space-y-0.5">
               <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-ink dark:text-chalkboard-chalk flex items-center gap-2">
@@ -823,12 +817,12 @@ export default function ValidationReportView({
             <table className="w-full text-xs font-mono border-collapse border border-ink/20 dark:border-chalkboard-border">
               <thead>
                 <tr className="bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk text-left">
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border">Class Name</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border">Teacher</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Labeled / Eligible</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Status</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Agreement %</th>
-                  <th className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Target Status</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border">Class Name</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border">Teacher</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Labeled / Eligible</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Status</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Agreement %</th>
+                  <th scope="col" className="p-2 border border-ink/20 dark:border-chalkboard-border text-center">Target Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -848,8 +842,8 @@ export default function ValidationReportView({
                     </td>
                     <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        cb.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300' :
-                        cb.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300' :
+                        cb.status === 'COMPLETED' ? 'bg-highlighter-mintSoft text-ink border border-highlighter-mint/60 dark:bg-emerald-950/60 dark:text-emerald-300' :
+                        cb.status === 'IN_PROGRESS' ? 'bg-paper-warm text-ink-blue border border-ink-blue/30 dark:bg-blue-950/60 dark:text-blue-300' :
                         'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15'
                       }`}>
                         {cb.status}
@@ -860,9 +854,9 @@ export default function ValidationReportView({
                     </td>
                     <td className="p-2.5 border border-ink/20 dark:border-chalkboard-border text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        cb.targetStatus === 'MET' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300' :
-                        cb.targetStatus === 'NOT_MET' ? 'bg-redpen-soft text-redpen-dark border border-redpen/30' :
-                        cb.targetStatus === 'SMALL_CLASS_COMPLETE' ? 'bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300' :
+                        cb.targetStatus === 'MET' ? 'bg-highlighter-mintSoft text-ink border border-highlighter-mint/60 dark:bg-emerald-950/60 dark:text-emerald-300' :
+                        cb.targetStatus === 'NOT_MET' ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/30 dark:border-red-500/50' :
+                        cb.targetStatus === 'SMALL_CLASS_COMPLETE' ? 'bg-paper-warm text-ink-blue border border-ink-blue/30 dark:bg-blue-950/60 dark:text-blue-300' :
                         cb.targetStatus === 'NO_ELIGIBLE_STUDENTS' ? 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/15' :
                         'bg-amber-100/80 text-amber-900 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300'
                       }`}>

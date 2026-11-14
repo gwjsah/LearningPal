@@ -133,7 +133,7 @@ export default function Hero({ onSelectDemoRole }) {
             </div>
 
             {/* Quick Trust Pills */}
-            <dl className="grid grid-cols-3 gap-3 pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle max-w-lg">
+            <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-ink/10 dark:border-chalkboard-borderSubtle max-w-lg">
               <div>
                 <dt className="text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
                   Mastery Scope
@@ -331,7 +331,7 @@ export default function Hero({ onSelectDemoRole }) {
                   </div>
 
                   {/* Topic-Level Breakdown Bars (Interactive on click) */}
-                  <div className="mt-4 space-y-2.5" role="list" aria-label="Sample topic mastery scores">
+                  <div className="mt-4 space-y-2.5" aria-label="Sample topic mastery scores">
                     <div className="flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                       <span>Click any topic to inspect rule-based status:</span>
                       <span>Band / Mastery</span>
@@ -401,9 +401,9 @@ export default function Hero({ onSelectDemoRole }) {
 
                   {/* Sticky-Note Study Next Footer */}
                   <div className="mt-4 p-3.5 rounded-xl bg-highlighter-yellowSoft dark:bg-yellow-950/50 border-2 border-ink/20 dark:border-yellow-500/30 shadow-sticky rotate-[0.5deg]">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
                       <div>
-                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-redpen dark:text-red-300">
+                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-redpen-dark dark:text-red-300">
                           ★ Study Next Recommendation ({activeRecommendation.topic})
                         </span>
                         <p className="text-sm font-bold text-ink dark:text-chalkboard-chalk mt-0.5">

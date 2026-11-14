@@ -1,6 +1,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { NotebookLoader } from './NotebookPrimitives';
+import { getRoleHome } from '../utils/roleHome';
 
 /**
  * Route protection guard:
@@ -14,13 +16,8 @@ export default function ProtectedRoute({ allowedRole, children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk transition-colors">
-        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card shadow-lifted">
-          <div className="w-8 h-8 border-4 border-ink-blue dark:border-highlighter-yellow border-t-transparent rounded-full animate-spin" />
-          <p className="font-hand text-xl font-bold text-ink dark:text-chalkboard-chalk">
-            Checking student notebook index…
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk transition-colors p-4">
+        <NotebookLoader message="Checking your notebook index…" />
       </div>
     );
   }
@@ -34,14 +31,7 @@ export default function ProtectedRoute({ allowedRole, children }) {
   if (allowedRole) {
     const allowedList = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
     if (!allowedList.includes(user.role)) {
-      const roleHomeMap = {
-        STUDENT: '/student',
-        TEACHER: '/teacher',
-        ADMIN: '/admin',
-        SUPER_ADMIN: '/super',
-      };
-      const destination = roleHomeMap[user.role] || '/';
-      return <Navigate to={destination} replace />;
+      return <Navigate to={getRoleHome(user.role)} replace />;
     }
   }
 

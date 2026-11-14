@@ -46,12 +46,12 @@ function TopicChartTooltip({ active, payload }) {
         <span
           className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
             data.status === 'STRENGTH'
-              ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700'
               : data.status === 'DEVELOPING'
-              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
               : data.status === 'GAP'
-              ? 'bg-redpen-soft text-redpen-dark border border-redpen/40'
-              : 'bg-paper-warm text-ink-muted border border-ink/20'
+              ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/40 dark:border-red-500/50'
+              : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-chalkboard-borderSubtle'
           }`}
         >
           {data.statusLabel}

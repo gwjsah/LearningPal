@@ -84,14 +84,19 @@ export default function EssayRubricEditor({ criteria, onChange }) {
                 maxLength={100}
                 value={row.name}
                 onChange={(e) => handleFieldChange(index, 'name', e.target.value)}
+                aria-label={`Criterion ${index + 1} name`}
                 placeholder="Criterion name (e.g., Technical Accuracy)"
-                className="flex-1 min-w-[180px] px-3 py-1.5 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-redpen"
+                className="flex-1 min-w-[180px] px-3 py-1.5 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
               />
               <div className="flex items-center gap-1.5">
-                <label className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                <label
+                  htmlFor={`rubric-max-pts-${index}`}
+                  className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted"
+                >
                   Max pts:
                 </label>
                 <input
+                  id={`rubric-max-pts-${index}`}
                   type="number"
                   required
                   min={1}
@@ -101,7 +106,7 @@ export default function EssayRubricEditor({ criteria, onChange }) {
                   onChange={(e) =>
                     handleFieldChange(index, 'maxPoints', Math.max(1, parseInt(e.target.value, 10) || 1))
                   }
-                  className="w-16 px-2 py-1.5 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono text-center focus:outline-none focus:border-redpen"
+                  className="w-16 px-2 py-1.5 rounded-xl border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                 />
               </div>
 
@@ -110,7 +115,7 @@ export default function EssayRubricEditor({ criteria, onChange }) {
                   type="button"
                   disabled={index === 0}
                   onClick={() => handleMove(index, -1)}
-                  className="p-1 text-ink-muted hover:text-ink disabled:opacity-30 cursor-pointer"
+                  className="p-1 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk disabled:opacity-30 cursor-pointer"
                   title="Move up"
                   aria-label={`Move criterion ${index + 1} up`}
                 >
@@ -120,7 +125,7 @@ export default function EssayRubricEditor({ criteria, onChange }) {
                   type="button"
                   disabled={index === rows.length - 1}
                   onClick={() => handleMove(index, 1)}
-                  className="p-1 text-ink-muted hover:text-ink disabled:opacity-30 cursor-pointer"
+                  className="p-1 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk disabled:opacity-30 cursor-pointer"
                   title="Move down"
                   aria-label={`Move criterion ${index + 1} down`}
                 >
@@ -130,7 +135,7 @@ export default function EssayRubricEditor({ criteria, onChange }) {
                   <button
                     type="button"
                     onClick={() => handleRemoveRow(index)}
-                    className="p-1 text-ink-muted hover:text-redpen cursor-pointer"
+                    className="p-1 text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 cursor-pointer"
                     title="Remove criterion"
                     aria-label={`Remove criterion ${index + 1}`}
                   >
@@ -145,8 +150,9 @@ export default function EssayRubricEditor({ criteria, onChange }) {
               maxLength={500}
               value={row.description || ''}
               onChange={(e) => handleFieldChange(index, 'description', e.target.value)}
+              aria-label={`Criterion ${index + 1} description`}
               placeholder="Optional description of what earns full points (max 500 chars)"
-              className="w-full px-3 py-1.5 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus:border-redpen"
+              className="w-full px-3 py-1.5 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
             />
           </div>
         ))}

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
-import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { Button, NotebookBackButton, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
 
 export default function TeacherStudentDetail() {
   const { classId, studentId } = useParams();
@@ -209,23 +209,21 @@ export default function TeacherStudentDetail() {
       portalName="LearningPal Teacher"
       portalSubtitle="Student Diagnostic Profile & Learning Progress"
       badgeLabel="Student Progress"
+      title={data?.profile ? data.profile.name : 'Student Diagnostic Profile'}
+      subtitle={
+        data?.profile
+          ? `${data.profile.email}${data.profile.className ? ` • ${data.profile.className}` : ''}`
+          : 'Review topic mastery, assessment attempts, and logged interventions.'
+      }
+      headerRight={
+        <div className="flex items-center gap-2.5 shrink-0">
+          <NotebookBackButton to={`/teacher/classes/${classId}`} label="Back to Class Roster" />
+        </div>
+      }
       user={user}
       onLogout={logout}
     >
-      <div className="space-y-8 max-w-5xl mx-auto pb-12">
-        {/* Navigation Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link
-            to={`/teacher/classes/${classId}`}
-            className="hover:text-redpen underline transition-colors"
-          >
-            Class Overview
-          </Link>
-          <span>/</span>
-          <span className="text-ink dark:text-chalkboard-chalk font-bold">
-            {data?.profile ? data.profile.name : 'Student Detail'}
-          </span>
-        </div>
+      <div className="w-full space-y-8 pb-12">
 
         {/* Action feedback banners */}
         {actionSuccess && (
@@ -251,13 +249,10 @@ export default function TeacherStudentDetail() {
           <NotebookCard className="p-8 text-center text-redpen space-y-4">
             <AlertCircle className="w-8 h-8 mx-auto" />
             <p className="text-sm font-mono">{error}</p>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate(`/teacher/classes/${classId}`)}
-            >
-              Back to Class
-            </Button>
+            <NotebookBackButton
+              to={`/teacher/classes/${classId}`}
+              label="Back to Class Roster"
+            />
           </NotebookCard>
         )}
 
@@ -265,21 +260,21 @@ export default function TeacherStudentDetail() {
         {data && !loading && (
           <>
             {/* Student Header Card */}
-            <NotebookCard className="p-6 border-3 border-ink/20 dark:border-chalkboard-borderSubtle shadow-notebook space-y-4">
+            <NotebookCard className="border-2 border-ink/20 dark:border-chalkboard-borderSubtle shadow-notebook space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-ink dark:text-chalkboard-chalk">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-ink dark:text-chalkboard-chalk">
                       {data.profile.name}
-                    </h1>
+                    </h2>
                     {data.profile.needsAttention ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-redpen-soft text-redpen-dark border-2 border-redpen">
-                        <AlertTriangle className="w-3.5 h-3.5 text-redpen" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-2 border-redpen dark:border-red-500/60">
+                        <AlertTriangle className="w-3.5 h-3.5 text-redpen dark:text-red-400" aria-hidden="true" />
                         Needs Attention
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-900 border-2 border-emerald-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-highlighter-mintSoft text-ink border-2 border-highlighter-mint/60 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-ink-blue dark:text-emerald-300" aria-hidden="true" />
                         On Track
                       </span>
                     )}
@@ -332,29 +327,29 @@ export default function TeacherStudentDetail() {
                   const isExpanded = !!expandedTopics[tm.topicId];
 
                   let statusBadge = (
-                    <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-ink/10 text-ink-muted border border-ink/20">
+                    <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-chalkboard-borderSubtle">
                       NO DATA
                     </span>
                   );
-                  let barColor = 'bg-ink/20';
+                  let barColor = 'bg-ink/30 dark:bg-chalkboard-muted/30';
 
                   if (tm.status === 'STRENGTH') {
                     statusBadge = (
-                      <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                      <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
                         STRENGTH
                       </span>
                     );
-                    barColor = 'bg-emerald-600';
+                    barColor = 'bg-emerald-500';
                   } else if (tm.status === 'DEVELOPING') {
                     statusBadge = (
-                      <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
                         DEVELOPING
                       </span>
                     );
-                    barColor = 'bg-amber-500';
+                    barColor = 'bg-amber-400';
                   } else if (tm.status === 'GAP') {
                     statusBadge = (
-                      <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-redpen-soft text-redpen-dark border border-redpen/40">
+                      <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/40 dark:border-red-500/50">
                         GAP
                       </span>
                     );
@@ -386,11 +381,11 @@ export default function TeacherStudentDetail() {
                                 <span className="flex items-center gap-1 font-bold">
                                   Trend:
                                   {tm.trend === 'UP' ? (
-                                    <span className="text-emerald-700 flex items-center">
+                                    <span className="text-emerald-700 dark:text-emerald-400 flex items-center">
                                       <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> Up
                                     </span>
                                   ) : (
-                                    <span className="text-redpen flex items-center">
+                                    <span className="text-redpen dark:text-red-400 flex items-center">
                                       <TrendingDown className="w-3.5 h-3.5 mr-0.5" /> Down
                                     </span>
                                   )}
@@ -402,9 +397,9 @@ export default function TeacherStudentDetail() {
 
                         {/* Mastery Bar */}
                         <div className="w-full sm:w-56 flex items-center gap-3">
-                          <div className="flex-1 h-3 rounded-full bg-ink/10 dark:bg-chalkboard-highlight overflow-hidden">
+                          <div className="flex-1 h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard border border-ink/15 dark:border-chalkboard-borderSubtle overflow-hidden p-0.5">
                             <div
-                              className={`h-full ${barColor} transition-all duration-500`}
+                              className={`h-full rounded-full ${barColor} transition-all duration-300 motion-reduce:transition-none`}
                               style={{ width: `${Math.min(100, tm.masteryPercent ?? 0)}%` }}
                             />
                           </div>
@@ -436,14 +431,14 @@ export default function TeacherStudentDetail() {
                                   className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/40 dark:bg-chalkboard-surface/40 text-xs space-y-1.5"
                                 >
                                   <p className="font-medium text-ink dark:text-chalkboard-chalk">
-                                    <strong className="text-ink-muted">Q{mIdx + 1}:</strong> {m.questionText}
+                                    <strong className="text-ink-muted dark:text-chalkboard-muted">Q{mIdx + 1}:</strong> {m.questionText}
                                   </p>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px]">
-                                    <div className="p-2 rounded bg-redpen-soft/60 border border-redpen/20 text-redpen-dark">
+                                    <div className="p-2 rounded bg-redpen-soft/60 dark:bg-red-950/50 border border-redpen/20 dark:border-red-500/40 text-redpen-dark dark:text-red-300">
                                       <span className="block font-bold">Student Answer:</span>
                                       <span>{m.studentAnswer}</span>
                                     </div>
-                                    <div className="p-2 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 text-emerald-900 dark:text-emerald-200">
+                                    <div className="p-2 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200">
                                       <span className="block font-bold">Correct Answer:</span>
                                       <span>{m.correctAnswer}</span>
                                     </div>
@@ -482,21 +477,21 @@ export default function TeacherStudentDetail() {
               {/* Simple Diagnostic Trend Visual */}
               {data.diagnosticTrend.length > 1 && (
                 <NotebookCard className="p-5 border-2 border-ink/15 shadow-notebook-sm space-y-3">
-                  <span className="text-xs font-mono font-bold uppercase text-ink-muted block">
+                  <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
                     Diagnostic Score Progression Over Time:
                   </span>
                   <div className="flex items-center gap-3 overflow-x-auto py-2">
                     {data.diagnosticTrend.map((pt, pIdx) => (
                       <div key={pt.attemptId} className="flex items-center gap-3">
                         <div className="flex flex-col items-center p-2.5 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/40 dark:bg-chalkboard-surface/40 min-w-[90px]">
-                          <span className="text-[10px] font-mono text-ink-muted">Attempt #{pIdx + 1}</span>
+                          <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">Attempt #{pIdx + 1}</span>
                           <span className="text-base font-extrabold font-mono text-emerald-700 dark:text-emerald-400">
                             {pt.percent}%
                           </span>
-                          <span className="text-[9px] font-mono text-ink-muted">{formatDate(pt.submittedAt)}</span>
+                          <span className="text-[9px] font-mono text-ink-muted dark:text-chalkboard-muted">{formatDate(pt.submittedAt)}</span>
                         </div>
                         {pIdx < data.diagnosticTrend.length - 1 && (
-                          <span className="text-ink-muted font-mono font-bold">→</span>
+                          <span className="text-ink-muted dark:text-chalkboard-muted font-mono font-bold">→</span>
                         )}
                       </div>
                     ))}
@@ -529,14 +524,14 @@ export default function TeacherStudentDetail() {
 
               {/* Attempts Table */}
               {data.attempts.length === 0 ? (
-                <NotebookCard className="p-8 text-center text-xs font-mono text-ink-muted">
+                <NotebookCard className="p-8 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                   No attempts recorded in this class section yet.
                 </NotebookCard>
               ) : (
                 <div className="overflow-x-auto rounded-2xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle shadow-notebook">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface font-mono uppercase text-ink-muted">
+                      <tr className="border-b-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
                         <th className="py-3 px-3">Assessment</th>
                         <th className="py-3 px-3">Date Submitted</th>
                         <th className="py-3 px-3">Score</th>
@@ -553,7 +548,7 @@ export default function TeacherStudentDetail() {
                           <td className="py-3 px-3 font-bold text-ink dark:text-chalkboard-chalk">
                             {att.assessmentTitle}
                           </td>
-                          <td className="py-3 px-3 text-ink-muted">
+                          <td className="py-3 px-3 text-ink-muted dark:text-chalkboard-muted">
                             {formatDate(att.submittedAt)}
                           </td>
                           <td className="py-3 px-3 text-ink dark:text-chalkboard-chalk">
@@ -591,7 +586,7 @@ export default function TeacherStudentDetail() {
                   <h2 className="text-xl font-bold text-ink dark:text-chalkboard-chalk flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
                     <span>Pedagogical Interventions</span>
-                    <span className="text-xs font-mono font-normal text-ink-muted">
+                    <span className="text-xs font-mono font-normal text-ink-muted dark:text-chalkboard-muted">
                       ({data.interventions.length} logged)
                     </span>
                   </h2>
@@ -611,7 +606,7 @@ export default function TeacherStudentDetail() {
               </div>
 
               {data.interventions.length === 0 ? (
-                <NotebookCard className="p-8 text-center text-xs font-mono text-ink-muted">
+                <NotebookCard className="p-8 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                   No interventions logged yet for this student. Click "Log Intervention" to plan targeted support.
                 </NotebookCard>
               ) : (
@@ -623,25 +618,25 @@ export default function TeacherStudentDetail() {
                         : null;
 
                     let outcomeBadge = (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-ink/10 text-ink-muted border border-ink/20">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-chalkboard-borderSubtle">
                         {item.outcome}
                       </span>
                     );
                     if (item.outcome === 'IMPROVED') {
                       outcomeBadge = (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
                           Improved {diffFromStart != null ? `(+${diffFromStart}%)` : ''}
                         </span>
                       );
                     } else if (item.outcome === 'DECLINED') {
                       outcomeBadge = (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-redpen-soft text-redpen-dark border border-redpen/30">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/30 dark:border-red-500/50">
                           Declined {diffFromStart != null ? `(${diffFromStart}%)` : ''}
                         </span>
                       );
                     } else if (item.outcome === 'SAME') {
                       outcomeBadge = (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
                           Stable {diffFromStart != null ? `(${diffFromStart >= 0 ? '+' : ''}${diffFromStart}%)` : ''}
                         </span>
                       );
@@ -649,9 +644,9 @@ export default function TeacherStudentDetail() {
                       outcomeBadge = (
                         <span
                           title="Waiting for the student's next quiz"
-                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-ink/10 text-ink-muted border border-ink/20 inline-flex items-center gap-1"
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-chalkboard-borderSubtle inline-flex items-center gap-1"
                         >
-                          <Clock className="w-3 h-3 text-ink-muted" />
+                          <Clock className="w-3 h-3 text-ink-muted dark:text-chalkboard-muted" />
                           Waiting for next quiz
                         </span>
                       );
@@ -662,9 +657,9 @@ export default function TeacherStudentDetail() {
                         key={item.id}
                         className="p-5 border-2 border-ink/15 dark:border-chalkboard-borderSubtle space-y-3 shadow-notebook-sm"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 pb-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-ink/10 text-ink dark:text-chalkboard-chalk font-mono text-[10px] font-bold uppercase">
+                            <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk font-mono text-[10px] font-bold uppercase">
                               {item.type.replace('_', ' ')}
                             </span>
                             <span className="font-bold text-sm text-ink dark:text-chalkboard-chalk">
@@ -677,10 +672,10 @@ export default function TeacherStudentDetail() {
                             <span
                               className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
                                 item.status === 'DONE'
-                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
                                   : item.status === 'CANCELLED'
-                                  ? 'bg-ink/10 text-ink-muted border-ink/20'
-                                  : 'bg-amber-100 text-amber-900 border-amber-300'
+                                  ? 'bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
+                                  : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700'
                               }`}
                             >
                               {item.status}
@@ -693,7 +688,7 @@ export default function TeacherStudentDetail() {
                           {item.note}
                         </p>
 
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-ink/10 text-xs font-mono text-ink-muted">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                           <div className="flex items-center gap-3">
                             <span>
                               Mastery: {item.masteryAtStart != null ? `${item.masteryAtStart}%` : '—'} →{' '}
@@ -702,7 +697,7 @@ export default function TeacherStudentDetail() {
                               </strong>
                             </span>
                             {item.status === 'DONE' && item.masteryAtCompletion != null && (
-                              <span className="text-[11px] text-ink-muted">
+                              <span className="text-[11px] text-ink-muted dark:text-chalkboard-muted">
                                 (at completion: {item.masteryAtCompletion}%
                                 {item.changeSinceCompletion != null && (
                                   <span
@@ -784,26 +779,27 @@ export default function TeacherStudentDetail() {
             aria-labelledby="log-intervention-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-2 text-ink dark:text-chalkboard-chalk">
-                <Sparkles className="w-5 h-5 text-redpen dark:text-highlighter-yellow" />
+                <Sparkles className="w-5 h-5 text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
                 <h3 id="log-intervention-title" className="text-lg font-bold">
                   Log Pedagogical Intervention
                 </h3>
               </div>
 
               {actionError && (
-                <div className="p-3 bg-redpen-soft border border-redpen/30 rounded-xl text-redpen-dark text-xs font-mono">
+                <div role="alert" className="p-3 bg-redpen-soft dark:bg-red-950/60 border border-redpen/30 dark:border-red-500/50 rounded-xl text-redpen-dark dark:text-red-300 text-xs font-mono">
                   {actionError}
                 </div>
               )}
 
               <form onSubmit={handleCreateIntervention} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono uppercase text-ink-muted mb-1">
+                  <label htmlFor="student-interv-topic" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                     Target Topic
                   </label>
                   <select
+                    id="student-interv-topic"
                     value={intervForm.topicId}
                     onChange={(e) =>
                       setIntervForm((prev) => ({ ...prev, topicId: e.target.value }))
@@ -821,10 +817,11 @@ export default function TeacherStudentDetail() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-mono uppercase text-ink-muted mb-1">
+                    <label htmlFor="student-interv-type" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                       Intervention Type
                     </label>
                     <select
+                      id="student-interv-type"
                       value={intervForm.type}
                       onChange={(e) =>
                         setIntervForm((prev) => ({ ...prev, type: e.target.value }))
@@ -839,10 +836,11 @@ export default function TeacherStudentDetail() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono uppercase text-ink-muted mb-1">
+                    <label htmlFor="student-interv-followup" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                       Follow-up Date (Optional)
                     </label>
                     <input
+                      id="student-interv-followup"
                       type="date"
                       min={todayStr}
                       value={intervForm.followUpDate}
@@ -856,14 +854,15 @@ export default function TeacherStudentDetail() {
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-mono uppercase text-ink-muted">
+                    <label htmlFor="student-interv-note" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
                       Intervention Note
                     </label>
-                    <span className="text-[10px] font-mono text-ink-muted">
+                    <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
                       {intervForm.note.length} / 1000
                     </span>
                   </div>
                   <textarea
+                    id="student-interv-note"
                     rows={3}
                     maxLength={1000}
                     value={intervForm.note}
@@ -908,23 +907,24 @@ export default function TeacherStudentDetail() {
             aria-labelledby="edit-intervention-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <h3 id="edit-intervention-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                 Edit Intervention: {editingIntervention.topicName}
               </h3>
 
               {actionError && (
-                <div className="p-3 bg-redpen-soft border border-redpen/30 rounded-xl text-redpen-dark text-xs font-mono">
+                <div role="alert" className="p-3 bg-redpen-soft dark:bg-red-950/60 border border-redpen/30 dark:border-red-500/50 rounded-xl text-redpen-dark dark:text-red-300 text-xs font-mono">
                   {actionError}
                 </div>
               )}
 
               <form onSubmit={handleSaveEditIntervention} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono uppercase text-ink-muted mb-1">
+                  <label htmlFor="edit-interv-followup" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                     Follow-up Date
                   </label>
                   <input
+                    id="edit-interv-followup"
                     type="date"
                     min={todayStr}
                     value={editForm.followUpDate}
@@ -937,14 +937,15 @@ export default function TeacherStudentDetail() {
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-mono uppercase text-ink-muted">
+                    <label htmlFor="edit-interv-note" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted">
                       Note
                     </label>
-                    <span className="text-[10px] font-mono text-ink-muted">
+                    <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
                       {editForm.note.length} / 1000
                     </span>
                   </div>
                   <textarea
+                    id="edit-interv-note"
                     rows={4}
                     maxLength={1000}
                     value={editForm.note}
@@ -988,7 +989,7 @@ export default function TeacherStudentDetail() {
             aria-labelledby="confirm-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-3 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <h3 id="confirm-modal-title" className="text-base font-bold text-ink dark:text-chalkboard-chalk">
                 {confirmModal.title}
               </h3>

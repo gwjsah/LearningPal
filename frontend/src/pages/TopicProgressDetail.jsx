@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   BookOpen,
   ArrowLeft,
@@ -25,7 +25,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { apiDownload } from '../services/api';
-import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { Button, NotebookButton, NotebookBackButton, NotebookCard, NotebookLoader, NotebookTabs, NotebookTabPanel, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 
 const RATING_LABELS = {
@@ -141,7 +141,7 @@ function ResourceRatingWidget({ resource, onRatingSaved }) {
                   aria-checked={rating === score}
                   className={`p-1.5 rounded-lg border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer ${
                     rating === score
-                      ? 'border-redpen bg-redpen-soft/40 shadow-xs'
+                      ? 'border-redpen bg-redpen-soft/40 dark:bg-red-950/50 shadow-xs'
                       : isSelected
                       ? 'border-amber-400 bg-amber-100/50 dark:bg-amber-950/40 text-amber-500'
                       : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink-muted dark:text-chalkboard-muted hover:border-ink'
@@ -200,7 +200,7 @@ function ResourceRatingWidget({ resource, onRatingSaved }) {
               type="button"
               onClick={() => setIsOpen(false)}
               disabled={saving}
-              className="px-2.5 py-1 text-xs font-bold rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-paper-warm cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface cursor-pointer"
             >
               Cancel
             </button>
@@ -229,6 +229,7 @@ export default function TopicProgressDetail() {
   const { id, classId, subjectId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const validClassId =
     classId && classId !== 'undefined' && !isNaN(classId)
@@ -266,6 +267,16 @@ export default function TopicProgressDetail() {
   };
 
   // Topic Feedback Helpfulness Rating State
+  const VALID_TOPIC_TABS = ['feedback', 'resources', 'history'];
+  const rawTopicTab = searchParams.get('tab');
+  const activeTab = VALID_TOPIC_TABS.includes(rawTopicTab) ? rawTopicTab : 'feedback';
+  const setActiveTab = (nextTab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', nextTab);
+      return next;
+    }, { replace: true });
+  };
   const [feedbackRatingValue, setFeedbackRatingValue] = useState(0);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [feedbackSaving, setFeedbackSaving] = useState(false);
@@ -513,47 +524,34 @@ export default function TopicProgressDetail() {
     >
       <div className="w-full space-y-8">
         {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between text-xs font-mono">
-          <Link
-            to={progressBackUrl}
-            className="inline-flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Curriculum Progress</span>
-          </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <NotebookBackButton to={progressBackUrl} label="Back to Curriculum Progress" />
           <div className="flex items-center gap-2">
-            <Link
-              to={dashboardBackUrl}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk hover:bg-paper-warm dark:hover:bg-chalkboard-surface font-bold text-xs"
-            >
-              <span>{dashboardLabel}</span>
-            </Link>
+            <NotebookButton to={dashboardBackUrl} variant="secondary" size="md">
+              {dashboardLabel}
+            </NotebookButton>
           </div>
         </div>
 
         {/* Loading state */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink dark:text-chalkboard-chalk">
-              Compiling personalized feedback and recommended resources...
-            </p>
-          </div>
+          <NotebookLoader message="Compiling personalized feedback and recommended resources..." />
         )}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div
+            role="alert"
+            className="p-4 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          >
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
               <p className="text-sm font-semibold">{error}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="secondary" onClick={() => navigate('/student')}>
-                Back to My Classes
-              </Button>
+              <NotebookBackButton to="/student" label="Back to My Classes" />
               <Button size="sm" variant="primary" onClick={loadTopicDetail}>
-                <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                <RefreshCw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                 Retry
               </Button>
             </div>
@@ -565,9 +563,12 @@ export default function TopicProgressDetail() {
           <>
             {/* Transient completion error banner */}
             {completionError && (
-              <div className="p-4 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-3">
+              <div
+                role="alert"
+                className="p-4 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex items-center justify-between gap-3"
+              >
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                   <p className="text-xs sm:text-sm font-medium">{completionError}</p>
                 </div>
                 <button
@@ -580,16 +581,26 @@ export default function TopicProgressDetail() {
               </div>
             )}
 
+            <NotebookTabs
+              tabs={[
+                { id: 'feedback', label: 'Feedback & Misses', count: topicDetail.feedback?.whatToReview?.length || 0 },
+                { id: 'resources', label: 'Study Resources', count: topicDetail.resources?.length || 0 },
+                { id: 'history', label: 'Answer Log', count: topicDetail.answerHistory?.length || 0 },
+              ]}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              ariaLabel="Topic progress sections"
+            />
+
+            <NotebookTabPanel id="feedback" activeTab={activeTab} className="space-y-8">
             {/* 1. Personalized Feedback Card */}
             {topicDetail.feedback && (
               <NotebookCard
-                pattern="grid"
-                borderStyle="sketch"
-                className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border"
+                className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border"
               >
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-mono font-bold uppercase bg-highlighter-yellow text-ink border border-ink/30 shadow-notebook-sm">
                         <Sparkles className="w-3.5 h-3.5 text-redpen" />
                         Diagnostic Feedback
@@ -655,7 +666,7 @@ export default function TopicProgressDetail() {
                               key={opt.score}
                               className={`flex sm:flex-col items-center sm:justify-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition-all focus-within:ring-2 focus-within:ring-redpen ${
                                 isSelected
-                                  ? 'border-redpen bg-redpen-soft/40 text-redpen-dark dark:text-red-300 font-bold shadow-notebook-sm'
+                                  ? 'border-redpen bg-redpen-soft/40 dark:bg-red-950/50 text-redpen-dark dark:text-red-300 font-bold shadow-notebook-sm'
                                   : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/70 text-ink dark:text-chalkboard-chalk hover:border-ink/50'
                               }`}
                             >
@@ -699,7 +710,7 @@ export default function TopicProgressDetail() {
 
                     {/* Error Message */}
                     {feedbackSaveError && (
-                      <div className="p-2.5 rounded-lg border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2" role="alert">
+                      <div className="p-2.5 rounded-lg border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2" role="alert">
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>{feedbackSaveError}</span>
                       </div>
@@ -788,7 +799,7 @@ export default function TopicProgressDetail() {
                       {/* Answers Comparison */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                         {/* Student Answer */}
-                        <div className="p-3 rounded-lg bg-redpen-soft/60 border border-redpen/30 space-y-1">
+                        <div className="p-3 rounded-lg bg-redpen-soft/60 dark:bg-red-950/50 border border-redpen/30 dark:border-red-500/40 space-y-1">
                           <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-redpen-dark dark:text-red-300">
                             <XCircle className="w-3.5 h-3.5" />
                             <span>Your Answer</span>
@@ -828,6 +839,9 @@ export default function TopicProgressDetail() {
               )}
             </div>
 
+            </NotebookTabPanel>
+
+            <NotebookTabPanel id="resources" activeTab={activeTab}>
             {/* 3. Recommended Resources Section */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -853,7 +867,7 @@ export default function TopicProgressDetail() {
               {/* Progress Bar for Resources */}
               {topicDetail.resourcesRecommended > 0 && (
                 <div
-                  className="w-full h-2 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle overflow-hidden"
+                  className="w-full h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard border border-ink/15 dark:border-chalkboard-borderSubtle overflow-hidden p-0.5"
                   role="progressbar"
                   aria-valuenow={topicDetail.resourcesCompleted}
                   aria-valuemin="0"
@@ -872,9 +886,12 @@ export default function TopicProgressDetail() {
               )}
 
               {downloadError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-3 text-xs">
+                <div
+                  role="alert"
+                  className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex items-center justify-between gap-3 text-xs"
+                >
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>{downloadError}</span>
                   </div>
                   <button
@@ -1041,7 +1058,9 @@ export default function TopicProgressDetail() {
                 </div>
               )}
             </div>
+            </NotebookTabPanel>
 
+            <NotebookTabPanel id="history" activeTab={activeTab}>
             {/* 4. Full Answer History Section */}
             <div className="space-y-4 pt-4 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
               <div className="flex items-center justify-between">
@@ -1085,7 +1104,7 @@ export default function TopicProgressDetail() {
                             <span>Correct ({item.scoreEarned} pt)</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-redpen-soft text-redpen-dark dark:text-red-300 border border-redpen/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/30 dark:border-red-500/50">
                             <XCircle className="w-3 h-3" />
                             <span>Incorrect (0 pt)</span>
                           </span>
@@ -1105,6 +1124,7 @@ export default function TopicProgressDetail() {
                 </div>
               )}
             </div>
+            </NotebookTabPanel>
           </>
         )}
       </div>

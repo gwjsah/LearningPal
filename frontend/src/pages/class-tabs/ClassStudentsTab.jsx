@@ -127,9 +127,9 @@ export default function ClassStudentsTab({
               setActiveFilter('all');
               setCurrentPage(1);
             }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
               activeFilter === 'all'
-                ? 'bg-ink text-white dark:bg-highlighter-mint dark:text-ink border-ink dark:border-chalkboard-border shadow-xs'
+                ? 'bg-ink text-paper dark:bg-highlighter-mint dark:text-ink border-ink dark:border-chalkboard-border shadow-xs'
                 : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle hover:text-ink'
             }`}
           >
@@ -144,7 +144,7 @@ export default function ClassStudentsTab({
             className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
               activeFilter === 'attention'
                 ? 'bg-redpen text-white border-redpen shadow-xs'
-                : 'bg-redpen-soft/40 text-redpen-dark dark:text-red-300 border-redpen/30 hover:bg-redpen-soft'
+                : 'bg-redpen-soft/40 dark:bg-red-950/40 text-redpen-dark dark:text-red-300 border-redpen/30 dark:border-red-500/50 hover:bg-redpen-soft dark:hover:bg-red-950/60'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
@@ -263,8 +263,8 @@ export default function ClassStudentsTab({
                     {/* Status Pill */}
                     <NotebookTableCell>
                       {needsAttention ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-redpen-soft text-redpen-dark border border-redpen/40">
-                          <AlertTriangle className="w-3 h-3 text-redpen" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/40 dark:border-red-500/50">
+                          <AlertTriangle className="w-3 h-3 text-redpen dark:text-red-400" aria-hidden="true" />
                           <span>Needs Attention</span>
                         </span>
                       ) : (
@@ -288,7 +288,7 @@ export default function ClassStudentsTab({
                                 ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
                                 : student.latestDiagnostic.percent >= 60
                                 ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
-                                : 'bg-redpen-soft text-redpen-dark'
+                                : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300'
                             }`}
                           >
                             {student.latestDiagnostic.percent}%
@@ -315,7 +315,7 @@ export default function ClassStudentsTab({
                           </span>
                         )}
                         {student.gapCount > 0 && (
-                          <span className="px-1.5 py-0.5 rounded bg-redpen-soft text-redpen-dark border border-redpen/40 font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/40 dark:border-red-500/50 font-bold">
                             {student.gapCount} GAP
                           </span>
                         )}
@@ -335,8 +335,8 @@ export default function ClassStudentsTab({
                     {/* Interventions */}
                     <NotebookTableCell align="center">
                       {student.openInterventions > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-900 border border-cyan-300 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800">
-                          <HeartHandshake className="w-3 h-3 text-cyan-700 dark:text-cyan-300" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-paper-warm text-ink-blue border border-ink-blue/30 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">
+                          <HeartHandshake className="w-3 h-3 text-ink-blue dark:text-blue-300" aria-hidden="true" />
                           <span>{student.openInterventions} Open</span>
                         </span>
                       ) : (

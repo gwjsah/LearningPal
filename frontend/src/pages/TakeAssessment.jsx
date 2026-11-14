@@ -13,17 +13,28 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
-import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { Button, NotebookBackButton, NotebookCard, NotebookLoader, NotebookModal, PortalShell } from '../components/NotebookPrimitives';
 
 export default function TakeAssessment() {
-  const { id, subjectId } = useParams();
+  const { id, classId, subjectId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const validClassId =
+    classId && classId !== 'undefined' && !isNaN(classId)
+      ? classId
+      : null;
 
   const validSubjectId =
     subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
       ? subjectId
       : null;
+
+  const backToWorkspaceUrl = validClassId
+    ? `/student/classes/${validClassId}`
+    : validSubjectId
+    ? `/student/subjects/${validSubjectId}`
+    : '/student';
 
   const [attemptData, setAttemptData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +136,9 @@ export default function TakeAssessment() {
       } catch {
         // Ignore storage errors
       }
-      const target = validSubjectId
+      const target = validClassId
+        ? `/student/classes/${validClassId}/attempts/${response.attemptId}/result`
+        : validSubjectId
         ? `/student/subjects/${validSubjectId}/attempts/${response.attemptId}/result`
         : `/student/attempts/${response.attemptId}/result`;
       navigate(target, { replace: true });
@@ -182,11 +195,8 @@ export default function TakeAssessment() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-paper dark:bg-chalkboard flex flex-col items-center justify-center space-y-4 p-4">
-        <RefreshCw className="w-8 h-8 animate-spin text-redpen" />
-        <p className="font-hand text-2xl text-ink dark:text-chalkboard-chalk">
-          Setting up your test booklet...
-        </p>
+      <div className="min-h-screen bg-paper dark:bg-chalkboard flex flex-col items-center justify-center p-4">
+        <NotebookLoader message="Setting up your test booklet..." />
       </div>
     );
   }
@@ -210,17 +220,16 @@ export default function TakeAssessment() {
     <div className="min-h-screen bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk flex flex-col justify-between font-sans">
       {/* Header bar */}
       <header className="sticky top-0 z-30 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-sm transition-colors">
-        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to={validSubjectId ? `/student/subjects/${validSubjectId}` : '/student'}
-              className="p-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors"
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 min-h-16 py-2 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <NotebookBackButton
+              to={backToWorkspaceUrl}
+              label="Exit"
+              aria-label="Exit test and return to dashboard"
               title="Exit test and return to dashboard"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <div>
-              <h1 className="font-bold text-sm sm:text-base leading-tight truncate max-w-[200px] sm:max-w-md">
+            />
+            <div className="min-w-0">
+              <h1 className="font-bold text-sm sm:text-base leading-tight truncate">
                 {attemptData.assessmentTitle}
               </h1>
               <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
@@ -284,8 +293,9 @@ export default function TakeAssessment() {
                   key={q.id}
                   type="button"
                   onClick={() => setCurrentIndex(idx)}
+                  aria-current={isCurrent ? 'step' : undefined}
                   className={`w-9 h-9 rounded-lg text-xs font-mono transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer ${pillStyle}`}
-                  aria-label={`Jump to question ${idx + 1}`}
+                  aria-label={`Jump to question ${idx + 1}${isAnswered ? ', answered' : ', unanswered'}`}
                 >
                   {idx + 1}
                 </button>
@@ -398,8 +408,8 @@ export default function TakeAssessment() {
       </main>
 
       {/* Footer Navigation Bar */}
-      <footer className="sticky bottom-0 z-30 bg-paper-card dark:bg-chalkboard-card border-t-2 border-ink dark:border-chalkboard-borderSubtle px-4 sm:px-8 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <footer className="sticky bottom-0 z-30 bg-paper-card dark:bg-chalkboard-card border-t-2 border-ink dark:border-chalkboard-borderSubtle px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Button
             variant="secondary"
             size="md"
@@ -437,85 +447,80 @@ export default function TakeAssessment() {
       </footer>
 
       {/* Submit Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs">
-          <NotebookCard
-            pattern="grid"
-            className="max-w-md w-full p-6 sm:p-8 space-y-5 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-notebook-lg"
-          >
-            <div className="text-center space-y-2">
-              <h3 className="text-2xl font-bold text-ink dark:text-chalkboard-chalk">
-                Ready to submit?
-              </h3>
-              <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
-                Your answers will be finalized and auto-graded immediately.
+      <NotebookModal
+        open={showConfirmModal}
+        onClose={() => !submitting && setShowConfirmModal(false)}
+        title="Ready to submit?"
+        subtitle="Your answers will be finalized and auto-graded immediately."
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-5">
+          {/* Answer tally stats */}
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-highlighter-mint/40 border border-ink/20">
+              <span className="block text-2xl font-mono font-bold text-ink dark:text-chalkboard-chalk">{answeredCount}</span>
+              <span className="text-xs text-ink-muted dark:text-chalkboard-muted">Answered</span>
+            </div>
+            <div className={`p-3 rounded-xl border ${
+              unansweredCount > 0
+                ? 'bg-redpen-soft dark:bg-red-950/60 border-redpen dark:border-red-500/60 text-redpen-dark dark:text-red-300'
+                : 'bg-paper-warm dark:bg-chalkboard-surface border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk'
+            }`}>
+              <span className="block text-2xl font-mono font-bold">{unansweredCount}</span>
+              <span className="text-xs">Unanswered</span>
+            </div>
+          </div>
+
+          {/* Unanswered warning banner */}
+          {unansweredCount > 0 && (
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl border-2 border-highlighter-yellow bg-highlighter-yellowSoft dark:bg-amber-950/40 text-ink dark:text-amber-200 flex items-start gap-2.5 text-xs sm:text-sm"
+            >
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 text-ink dark:text-amber-400 mt-0.5" aria-hidden="true" />
+              <p>
+                You have <strong className="font-bold">{unansweredCount} unanswered questions</strong>.
+                Unanswered questions receive zero points.
               </p>
             </div>
+          )}
 
-            {/* Answer tally stats */}
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="p-3 rounded-xl bg-highlighter-mint/40 border border-ink/20">
-                <span className="block text-2xl font-mono font-bold text-ink">{answeredCount}</span>
-                <span className="text-xs text-ink-muted">Answered</span>
-              </div>
-              <div className={`p-3 rounded-xl border ${
-                unansweredCount > 0
-                  ? 'bg-redpen-soft border-redpen text-redpen-dark'
-                  : 'bg-paper-warm border-ink/20'
-              }`}>
-                <span className="block text-2xl font-mono font-bold">{unansweredCount}</span>
-                <span className="text-xs">Unanswered</span>
-              </div>
+          {submitError && (
+            <div role="alert" className="p-3 rounded-lg bg-redpen-soft dark:bg-red-950/60 border border-redpen dark:border-red-500/60 text-redpen-dark dark:text-red-300 text-xs">
+              {submitError}
             </div>
+          )}
 
-            {/* Unanswered warning banner */}
-            {unansweredCount > 0 && (
-              <div className="p-3.5 rounded-xl border-2 border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex items-start gap-2.5 text-xs sm:text-sm">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
-                <p>
-                  You have <strong className="font-bold">{unansweredCount} unanswered questions</strong>.
-                  Unanswered questions receive zero points.
-                </p>
-              </div>
-            )}
-
-            {submitError && (
-              <div className="p-3 rounded-lg bg-redpen-soft border border-redpen text-redpen-dark text-xs">
-                {submitError}
-              </div>
-            )}
-
-            {/* Modal Actions */}
-            <div className="flex items-center gap-3 pt-2">
-              <Button
-                variant="secondary"
-                size="md"
-                className="flex-1"
-                disabled={submitting}
-                onClick={() => setShowConfirmModal(false)}
-              >
-                Return to Quiz
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                className="flex-1"
-                disabled={submitting}
-                onClick={handleSubmit}
-              >
-                {submitting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin mr-1.5" />
-                    Grading...
-                  </>
-                ) : (
-                  'Confirm & Submit'
-                )}
-              </Button>
-            </div>
-          </NotebookCard>
+          {/* Modal Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              variant="secondary"
+              size="md"
+              className="flex-1"
+              disabled={submitting}
+              onClick={() => setShowConfirmModal(false)}
+            >
+              Return to Quiz
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              className="flex-1"
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin mr-1.5" aria-hidden="true" />
+                  Grading...
+                </>
+              ) : (
+                'Confirm & Submit'
+              )}
+            </Button>
+          </div>
         </div>
-      )}
+      </NotebookModal>
     </div>
   );
 }

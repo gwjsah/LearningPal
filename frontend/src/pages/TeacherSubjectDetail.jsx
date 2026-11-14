@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BookOpen,
@@ -38,7 +38,11 @@ import { teacherService } from '../services/teacherService';
 import { aiService, AI_QUESTION_RULES } from '../services/aiService';
 import {
   Button,
+  NotebookBackButton,
   NotebookCard,
+  NotebookLoader,
+  NotebookTabs,
+  PaginationControls,
   PortalShell,
 } from '../components/NotebookPrimitives';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -57,9 +61,24 @@ export default function TeacherSubjectDetail() {
   const { subjectId } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const VALID_TABS = ['topics', 'questions', 'quizzes', 'resources'];
+  const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'topics';
 
   const [subject, setSubject] = useState(null);
-  const [activeTab, setActiveTab] = useState('topics'); // 'topics' | 'questions' | 'quizzes' | 'resources'
+  const [activeTab, setActiveTab] = useState(initialTab); // 'topics' | 'questions' | 'quizzes' | 'resources'
+  const [questionPage, setQuestionPage] = useState(1);
+  const [questionPageSize, setQuestionPageSize] = useState(20);
+
+  const handleTabChange = (nextTab) => {
+    setActiveTab(nextTab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', nextTab);
+      return next;
+    }, { replace: true });
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successToast, setSuccessToast] = useState('');
@@ -1326,6 +1345,17 @@ export default function TeacherSubjectDetail() {
     return true;
   });
 
+  const totalQuestionPages = Math.max(1, Math.ceil(filteredQuestions.length / questionPageSize));
+  const safeQuestionPage = Math.min(questionPage, totalQuestionPages);
+  const paginatedQuestions = filteredQuestions.slice(
+    (safeQuestionPage - 1) * questionPageSize,
+    safeQuestionPage * questionPageSize
+  );
+
+  useEffect(() => {
+    setQuestionPage(1);
+  }, [questionFilterTopic, questionFilterDifficulty, questionFilterStatus, questionFilterType, questionSearch]);
+
   return (
     <PortalShell
       portalSubtitle="Teacher Course Authoring"
@@ -1339,21 +1369,9 @@ export default function TeacherSubjectDetail() {
       subtitle={`Code: ${subject?.code || ''} · Manage curriculum topics, versioned questions, quizzes, and resources.`}
     >
       <div className="w-full space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link
-            to="/teacher"
-            className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Teacher Home</span>
-          </Link>
-          <span>/</span>
-          <Link to="/teacher/subjects" className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk">
-            My Subjects
-          </Link>
-          <span>/</span>
-          <span className="text-ink dark:text-chalkboard-chalk font-bold">{subject?.name}</span>
+        {/* Back Navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <NotebookBackButton to="/teacher/subjects" label="Back to My Subjects" />
         </div>
 
         {/* Toast */}
@@ -1377,7 +1395,7 @@ export default function TeacherSubjectDetail() {
 
         {/* Global Error */}
         {error && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center justify-between">
+          <div className="p-4 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span className="font-bold">{error}</span>
@@ -1390,37 +1408,32 @@ export default function TeacherSubjectDetail() {
 
         {/* Loading Spinner */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Loading course authoring workspace…
-            </p>
-          </div>
+          <NotebookLoader message="Loading course authoring workspace…" />
         )}
 
         {!loading && subject && (
           <>
             {/* Subject Overview Card */}
-            <NotebookCard pattern="ruled" borderStyle="sketch" className="p-6 bg-paper-card dark:bg-chalkboard-card space-y-4">
+            <NotebookCard className="bg-paper-card dark:bg-chalkboard-card space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink border border-ink/20">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-mono font-bold uppercase px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink dark:text-chalkboard-chalk border border-ink/20 dark:border-chalkboard-borderSubtle">
                       {subject.code}
                     </span>
                     <span
                       className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
                         subject.status === 'ACTIVE'
-                          ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                          : 'bg-amber-100 text-amber-900 border-amber-300'
+                          ? 'bg-highlighter-mintSoft dark:bg-emerald-950/60 text-ink dark:text-emerald-200 border-highlighter-mint/60 dark:border-emerald-700'
+                          : 'bg-highlighter-yellowSoft dark:bg-amber-950/60 text-ink dark:text-amber-200 border-highlighter-yellow/60 dark:border-amber-700'
                       }`}
                     >
                       {subject.status}
                     </span>
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-ink dark:text-chalkboard-chalk">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-ink dark:text-chalkboard-chalk">
                     {subject.name}
-                  </h1>
+                  </h2>
                   {subject.description && (
                     <p className="text-sm text-ink-muted dark:text-chalkboard-muted max-w-3xl leading-relaxed">
                       {subject.description}
@@ -1441,54 +1454,18 @@ export default function TeacherSubjectDetail() {
               </div>
 
               {/* 4 Tabs */}
-              <div className="pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex flex-wrap gap-2">
-                <button
-                  onClick={() => setActiveTab('topics')}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                    activeTab === 'topics'
-                      ? 'bg-ink text-paper dark:bg-chalkboard-chalk dark:text-chalkboard shadow-notebook-sm'
-                      : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink hover:bg-paper-warm/80'
-                  }`}
-                >
-                  <Layers className="w-4 h-4" />
-                  <span>Topics ({topics.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('questions')}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                    activeTab === 'questions'
-                      ? 'bg-ink text-paper dark:bg-chalkboard-chalk dark:text-chalkboard shadow-notebook-sm'
-                      : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink hover:bg-paper-warm/80'
-                  }`}
-                >
-                  <FileQuestion className="w-4 h-4" />
-                  <span>Question Bank ({questions.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('quizzes')}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                    activeTab === 'quizzes'
-                      ? 'bg-ink text-paper dark:bg-chalkboard-chalk dark:text-chalkboard shadow-notebook-sm'
-                      : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink hover:bg-paper-warm/80'
-                  }`}
-                >
-                  <GraduationCap className="w-4 h-4" />
-                  <span>Quizzes ({quizzes.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('resources')}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                    activeTab === 'resources'
-                      ? 'bg-ink text-paper dark:bg-chalkboard-chalk dark:text-chalkboard shadow-notebook-sm'
-                      : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink hover:bg-paper-warm/80'
-                  }`}
-                >
-                  <Link2 className="w-4 h-4" />
-                  <span>Link Resources ({resources.length})</span>
-                </button>
+              <div className="pt-2">
+                <NotebookTabs
+                  tabs={[
+                    { id: 'topics', label: 'Topics', count: topics.length, icon: Layers },
+                    { id: 'questions', label: 'Question Bank', count: questions.length, icon: FileQuestion },
+                    { id: 'quizzes', label: 'Quizzes', count: quizzes.length, icon: GraduationCap },
+                    { id: 'resources', label: 'Resources', count: files.length + resources.length, icon: Link2 },
+                  ]}
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  ariaLabel="Subject workspace sections"
+                />
               </div>
             </NotebookCard>
 
@@ -1537,20 +1514,24 @@ export default function TeacherSubjectDetail() {
                           {/* Order buttons */}
                           <div className="flex flex-col gap-1">
                             <button
+                              type="button"
                               onClick={() => handleMoveTopic(idx, 'up')}
                               disabled={idx === 0}
+                              aria-label={`Move topic ${t.name} up`}
                               className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface disabled:opacity-25 cursor-pointer text-ink-muted dark:text-chalkboard-muted"
                               title="Move up"
                             >
-                              <ArrowUp className="w-3.5 h-3.5" />
+                              <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleMoveTopic(idx, 'down')}
                               disabled={idx === topics.length - 1}
+                              aria-label={`Move topic ${t.name} down`}
                               className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface disabled:opacity-25 cursor-pointer text-ink-muted dark:text-chalkboard-muted"
                               title="Move down"
                             >
-                              <ArrowDown className="w-3.5 h-3.5" />
+                              <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
                             </button>
                           </div>
 
@@ -1559,12 +1540,12 @@ export default function TeacherSubjectDetail() {
                           </span>
 
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <h3 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
                                 {t.name}
                               </h3>
                               {t.status === 'ARCHIVED' && (
-                                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-ink/10 text-ink-muted">
+                                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted">
                                   Archived
                                 </span>
                               )}
@@ -1583,28 +1564,34 @@ export default function TeacherSubjectDetail() {
                           </span>
                           <div className="flex items-center gap-1">
                             <button
+                              type="button"
                               onClick={() => handleOpenEditTopic(t)}
+                              aria-label={`Edit topic ${t.name}`}
                               className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
                               title="Edit topic"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-4 h-4" aria-hidden="true" />
                             </button>
                             {t.status === 'ACTIVE' && (
                               <button
+                                type="button"
                                 onClick={() => handleArchiveTopic(t)}
+                                aria-label={`Archive topic ${t.name}`}
                                 className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-600 cursor-pointer"
                                 title="Archive topic"
                               >
-                                <Archive className="w-4 h-4" />
+                                <Archive className="w-4 h-4" aria-hidden="true" />
                               </button>
                             )}
                             {t.questionCount === 0 && t.resourceCount === 0 && (
                               <button
+                                type="button"
                                 onClick={() => handleDeleteTopic(t)}
+                                aria-label={`Delete unused topic ${t.name}`}
                                 className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen cursor-pointer"
                                 title="Delete unused topic"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" aria-hidden="true" />
                               </button>
                             )}
                           </div>
@@ -1711,14 +1698,14 @@ export default function TeacherSubjectDetail() {
                   </NotebookCard>
                 ) : (
                   <div className="space-y-4">
-                    {filteredQuestions.map((q) => (
+                    {paginatedQuestions.map((q) => (
                       <NotebookCard
                         key={q.id}
                         pattern="grid"
                         className="p-5 bg-paper-card dark:bg-chalkboard-card space-y-3"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-2.5">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border border-ink/25">
                               {QUESTION_TYPE_LABELS[q.type] || 'Multiple Choice'}
                             </span>
@@ -1740,10 +1727,10 @@ export default function TeacherSubjectDetail() {
                             <span
                               className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded ${
                                 q.difficulty === 'EASY'
-                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  ? 'bg-highlighter-mintSoft dark:bg-emerald-950/60 text-ink dark:text-emerald-200 border border-highlighter-mint/60 dark:border-emerald-700'
                                   : q.difficulty === 'HARD'
-                                  ? 'bg-red-100 text-red-900 border border-red-300'
-                                  : 'bg-amber-100 text-amber-900 border border-amber-300'
+                                  ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/40 dark:border-red-500/50'
+                                  : 'bg-highlighter-yellowSoft dark:bg-amber-950/60 text-ink dark:text-amber-200 border border-highlighter-yellow/60 dark:border-amber-700'
                               }`}
                             >
                               {q.difficulty}
@@ -1752,7 +1739,7 @@ export default function TeacherSubjectDetail() {
                               {q.points} pt{q.points === 1 ? '' : 's'}
                             </span>
                             {q.status === 'RETIRED' && (
-                              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-ink/10 text-ink-muted border border-ink/10">
+                              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/10 dark:border-chalkboard-borderSubtle">
                                 Retired
                               </span>
                             )}
@@ -1760,35 +1747,43 @@ export default function TeacherSubjectDetail() {
 
                           <div className="flex items-center gap-1.5">
                             <button
+                              type="button"
                               onClick={() => handleOpenEditQuestion(q)}
+                              aria-label="Edit question"
                               className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
                               title="Edit question"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDuplicateQuestion(q)}
+                              aria-label="Duplicate question"
                               className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
                               title="Duplicate as new question"
                             >
-                              <Copy className="w-3.5 h-3.5" />
+                              <Copy className="w-3.5 h-3.5" aria-hidden="true" />
                             </button>
                             {q.status === 'ACTIVE' && (
                               <button
+                                type="button"
                                 onClick={() => handleRetireQuestion(q)}
+                                aria-label="Retire question from new quizzes"
                                 className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-600 cursor-pointer"
                                 title="Retire from new quizzes"
                               >
-                                <Archive className="w-3.5 h-3.5" />
+                                <Archive className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
                             )}
                             {!q.hasAnswers && !q.inQuiz && (
                               <button
+                                type="button"
                                 onClick={() => handleDeleteQuestion(q)}
+                                aria-label="Delete unused question"
                                 className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen cursor-pointer"
                                 title="Delete unused question"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
                             )}
                           </div>
@@ -1811,7 +1806,7 @@ export default function TeacherSubjectDetail() {
                                     : 'bg-paper-warm dark:bg-chalkboard-surface border-ink/10 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk'
                                 }`}
                               >
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                   <span className="w-5 h-5 rounded-md bg-ink/10 dark:bg-chalkboard-border flex items-center justify-center font-mono text-[10px]">
                                     {c.label}
                                   </span>
@@ -1840,6 +1835,18 @@ export default function TeacherSubjectDetail() {
                         )}
                       </NotebookCard>
                     ))}
+
+                    <PaginationControls
+                      currentPage={safeQuestionPage}
+                      totalPages={totalQuestionPages}
+                      totalItems={filteredQuestions.length}
+                      pageSize={questionPageSize}
+                      onPageChange={setQuestionPage}
+                      onPageSizeChange={(next) => {
+                        setQuestionPageSize(next);
+                        setQuestionPage(1);
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -1888,19 +1895,19 @@ export default function TeacherSubjectDetail() {
                       >
                         <div className="space-y-2.5">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span
                                 className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
                                   quiz.status === 'PUBLISHED'
-                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
                                     : quiz.status === 'DRAFT'
-                                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                                    : 'bg-ink/10 text-ink-muted border-ink/20'
+                                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700'
+                                    : 'bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
                                 }`}
                               >
                                 {quiz.status}
                               </span>
-                              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-paper-warm text-ink-muted border border-ink/10">
+                              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/10 dark:border-chalkboard-borderSubtle">
                                 {quiz.kind || 'QUIZ'}
                               </span>
                             </div>
@@ -2002,7 +2009,7 @@ export default function TeacherSubjectDetail() {
               <div className="space-y-6">
                 {/* Sub-tab Navigation: Files vs Links */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-ink/15 dark:border-chalkboard-border">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setResourceSubTab('files')}
@@ -2356,25 +2363,31 @@ export default function TeacherSubjectDetail() {
 
                             <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-end gap-1.5">
                               <button
+                                type="button"
                                 onClick={() => handleOpenEditResource(r)}
+                                aria-label={`Edit link ${r.title || ''}`}
                                 className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
                                 title="Edit link"
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
+                                <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleArchiveResource(r)}
+                                aria-label={`Archive link ${r.title || ''}`}
                                 className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-600 cursor-pointer"
                                 title="Archive link"
                               >
-                                <Archive className="w-3.5 h-3.5" />
+                                <Archive className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleDeleteResource(r)}
+                                aria-label={`Delete link ${r.title || ''}`}
                                 className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen cursor-pointer"
                                 title="Delete link"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
                             </div>
                           </NotebookCard>
@@ -2392,22 +2405,29 @@ export default function TeacherSubjectDetail() {
         {/* MODAL: TOPIC CREATE / EDIT */}
         {/* ================================================================= */}
         {topicModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs">
-            <div className="w-full max-w-lg rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="topic-modal-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs"
+          >
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4">
               <div className="flex items-start justify-between">
-                <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                <h3 id="topic-modal-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                   {topicModal.mode === 'create' ? 'Create New Topic' : 'Edit Topic'}
                 </h3>
                 <button
+                  type="button"
+                  aria-label="Close modal"
                   onClick={() => setTopicModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
               {topicModalError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{topicModalError}</span>
                 </div>
@@ -2472,11 +2492,16 @@ export default function TeacherSubjectDetail() {
         {/* MODAL: QUESTION CREATE / EDIT (WITH VERSIONING WARNING) */}
         {/* ================================================================= */}
         {questionModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs overflow-y-auto">
-            <div className="w-full max-w-2xl rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4 my-8">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="question-modal-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs overflow-y-auto"
+          >
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4 my-8">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                  <h3 id="question-modal-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                     {questionModal.mode === 'create'
                       ? 'Create New Question'
                       : `Edit Question (v${questionModal.question.version})`}
@@ -2490,10 +2515,12 @@ export default function TeacherSubjectDetail() {
                   </p>
                 </div>
                 <button
+                  type="button"
+                  aria-label="Close modal"
                   onClick={() => setQuestionModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
@@ -2513,7 +2540,7 @@ export default function TeacherSubjectDetail() {
               )}
 
               {qModalError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{qModalError}</span>
                 </div>
@@ -2657,7 +2684,7 @@ export default function TeacherSubjectDetail() {
                             className={`w-7 h-7 rounded-lg font-mono text-xs font-bold flex items-center justify-center cursor-pointer transition-all ${
                               choice.isCorrect
                                 ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'bg-ink/10 text-ink-muted hover:bg-ink/20'
+                                : 'bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:bg-ink/20 dark:hover:bg-chalkboard-border'
                             }`}
                             title={choice.isCorrect ? 'Correct choice' : 'Click to mark as correct'}
                           >
@@ -2683,7 +2710,7 @@ export default function TeacherSubjectDetail() {
                             <button
                               type="button"
                               onClick={() => handleRemoveChoice(idx)}
-                              className="p-1 text-ink-muted hover:text-redpen cursor-pointer"
+                              className="p-1 text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 cursor-pointer"
                               title="Remove choice"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2766,14 +2793,19 @@ export default function TeacherSubjectDetail() {
         {/* MODAL: QUIZ PREVIEW */}
         {/* ================================================================= */}
         {previewQuiz && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs overflow-y-auto">
-            <div className="w-full max-w-2xl rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-5 my-8">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="preview-quiz-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs overflow-y-auto"
+          >
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-5 my-8">
               <div className="flex items-start justify-between border-b border-ink/10 pb-3">
                 <div>
                   <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink">
                     Student View Preview
                   </span>
-                  <h3 className="text-xl font-bold text-ink dark:text-chalkboard-chalk mt-1">
+                  <h3 id="preview-quiz-title" className="text-xl font-bold text-ink dark:text-chalkboard-chalk mt-1">
                     {previewQuiz.title}
                   </h3>
                   {previewQuiz.description && (
@@ -2783,10 +2815,12 @@ export default function TeacherSubjectDetail() {
                   )}
                 </div>
                 <button
+                  type="button"
+                  aria-label="Close modal"
                   onClick={() => setPreviewQuiz(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
@@ -2798,10 +2832,10 @@ export default function TeacherSubjectDetail() {
                       className="p-4 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface space-y-3"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-redpen">
+                        <span className="font-mono text-xs font-bold text-redpen dark:text-red-400">
                           Question {idx + 1}
                         </span>
-                        <span className="text-[10px] font-mono text-ink-muted">
+                        <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
                           {item.points || 1.0} point(s)
                         </span>
                       </div>
@@ -2848,11 +2882,16 @@ export default function TeacherSubjectDetail() {
         {/* MODAL: LINK RESOURCE CREATE / EDIT */}
         {/* ================================================================= */}
         {resourceModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs">
-            <div className="w-full max-w-lg rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resource-modal-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs"
+          >
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                  <h3 id="resource-modal-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                     {resourceModal.mode === 'create' ? 'Add Link Resource' : 'Edit Link Resource'}
                   </h3>
                   <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
@@ -2860,15 +2899,17 @@ export default function TeacherSubjectDetail() {
                   </p>
                 </div>
                 <button
+                  type="button"
+                  aria-label="Close modal"
                   onClick={() => setResourceModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
               {resModalError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{resModalError}</span>
                 </div>
@@ -2903,7 +2944,7 @@ export default function TeacherSubjectDetail() {
                     placeholder="https://example.com/guide"
                     className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm focus:outline-none focus:border-redpen font-mono text-xs"
                   />
-                  <span className="text-[10px] font-mono text-ink-muted mt-1 block">
+                  <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted mt-1 block">
                     Safe link opening in new tab. No server-side fetch.
                   </span>
                 </div>
@@ -2992,7 +3033,7 @@ export default function TeacherSubjectDetail() {
                     }
                   }}
                   disabled={uploadLoading}
-                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                   aria-label="Close upload dialog"
                 >
                   <X className="w-5 h-5" />
@@ -3000,8 +3041,8 @@ export default function TeacherSubjectDetail() {
               </div>
 
               {uploadError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft dark:bg-rose-950/40 text-redpen-dark dark:text-rose-200 text-xs flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-redpen" />
+                <div role="alert" className="p-3 rounded-xl border border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-redpen" aria-hidden="true" />
                   <span>{uploadError}</span>
                 </div>
               )}
@@ -3187,7 +3228,7 @@ export default function TeacherSubjectDetail() {
                 <button
                   type="button"
                   onClick={() => setPreviewModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                   aria-label="Close preview dialog"
                 >
                   <X className="w-5 h-5" />
@@ -3208,7 +3249,7 @@ export default function TeacherSubjectDetail() {
                   <span>Loading extracted text…</span>
                 </div>
               ) : previewModal.error ? (
-                <div className="p-4 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-4 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{previewModal.error}</span>
                 </div>
@@ -3251,11 +3292,16 @@ export default function TeacherSubjectDetail() {
         {/* MODAL: EDIT FILE DETAILS (PHASE B) */}
         {/* ================================================================= */}
         {editFileModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs">
-            <div className="w-full max-w-lg rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-file-modal-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 dark:bg-black/60 backdrop-blur-xs"
+          >
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                  <h3 id="edit-file-modal-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
                     Edit Document Details
                   </h3>
                   <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
@@ -3264,16 +3310,17 @@ export default function TeacherSubjectDetail() {
                 </div>
                 <button
                   type="button"
+                  aria-label="Close modal"
                   onClick={() => setEditFileModal(null)}
                   disabled={editFileModal.loading}
-                  className="p-1 rounded-lg hover:bg-paper-warm text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
               {editFileModal.error && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 text-redpen" />
                   <span>{editFileModal.error}</span>
                 </div>
@@ -3406,7 +3453,7 @@ export default function TeacherSubjectDetail() {
               </div>
 
               {aiSetupError && (
-                <div className="p-3 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 text-redpen" />
                   <span className="font-medium">{aiSetupError}</span>
                 </div>
@@ -3608,7 +3655,7 @@ export default function TeacherSubjectDetail() {
                   size="sm"
                   onClick={handleCancelAiJob}
                   disabled={aiCancelLoading}
-                  className="text-redpen border-redpen/40 hover:bg-redpen-soft dark:hover:bg-rose-950/20"
+                  className="text-redpen-dark border-redpen/40 hover:bg-redpen-soft dark:border-red-500/50 dark:text-red-300 dark:hover:bg-red-950/40"
                 >
                   {aiCancelLoading ? 'Cancelling...' : 'Cancel Generation'}
                 </Button>
@@ -3626,12 +3673,12 @@ export default function TeacherSubjectDetail() {
               {/* Header */}
               <div className="flex items-start justify-between border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="px-2.5 py-0.5 rounded bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-border text-ink dark:text-chalkboard-chalk text-xs font-mono font-bold flex items-center gap-1.5">
                       <Bot className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-sky shrink-0" />
                       AI Question Review
                     </span>
-                    <span className="text-xs font-mono text-ink-muted">
+                    <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
                       Job #{reviewModal.job.id}
                     </span>
                   </div>
@@ -3642,7 +3689,7 @@ export default function TeacherSubjectDetail() {
                 <button
                   type="button"
                   onClick={() => setReviewModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                   aria-label="Close review"
                 >
                   <X className="w-5 h-5" />
@@ -3758,7 +3805,7 @@ export default function TeacherSubjectDetail() {
                     <span>Loading drafts...</span>
                   </div>
                 ) : reviewModal.drafts.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-ink-muted">
+                  <div className="py-12 text-center text-xs text-ink-muted dark:text-chalkboard-muted">
                     No drafts found for this job.
                   </div>
                 ) : (
@@ -3785,7 +3832,7 @@ export default function TeacherSubjectDetail() {
                         >
                           {/* Top Row: Select Checkbox, Number, Status, Difficulty, Evidence Badge */}
                           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 pb-2.5">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               {d.status === 'PENDING' && (
                                 <input
                                   type="checkbox"
@@ -3809,27 +3856,27 @@ export default function TeacherSubjectDetail() {
                                   ? 'Essay'
                                   : 'Multiple Choice'}
                               </span>
-                              <span className="text-[10px] font-mono text-ink-muted">
+                              <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
                                 Section {d.sectionIndex + 1}
                               </span>
                               <span
                                 className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded ${
                                   d.difficulty === 'EASY'
-                                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700'
                                     : d.difficulty === 'HARD'
-                                    ? 'bg-red-100 text-red-900 border border-red-300'
-                                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                                    ? 'bg-red-100 dark:bg-red-950/60 text-red-900 dark:text-red-200 border border-red-300 dark:border-red-700'
+                                    : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
                                 }`}
                               >
                                 {d.difficulty}
                               </span>
                               {d.status === 'APPROVED' && (
-                                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-emerald-200 text-emerald-950 border border-emerald-400">
+                                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900/70 text-emerald-950 dark:text-emerald-100 border border-emerald-400 dark:border-emerald-600">
                                   Approved
                                 </span>
                               )}
                               {d.status === 'REJECTED' && (
-                                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-ink/10 text-ink-muted border border-ink/20">
+                                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border border-ink/20 dark:border-chalkboard-borderSubtle">
                                   Rejected
                                 </span>
                               )}
@@ -3862,7 +3909,7 @@ export default function TeacherSubjectDetail() {
                           {d.questionType === 'ENUMERATION' ? (
                             <div className="space-y-2">
                               <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/20 space-y-1.5">
-                                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-ink-muted">
+                                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-ink-muted dark:text-chalkboard-muted">
                                   <span>Accepted Answer Variants ({d.acceptedAnswers?.length || 0})</span>
                                   <span>{d.points || 1} pt(s)</span>
                                 </div>
@@ -3885,7 +3932,7 @@ export default function TeacherSubjectDetail() {
                           ) : d.questionType === 'ESSAY' ? (
                             <div className="space-y-2">
                               <div className="p-2.5 rounded-xl bg-paper-card dark:bg-chalkboard-card border border-ink/20 space-y-1.5">
-                                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-ink-muted">
+                                <div className="flex items-center justify-between text-[11px] font-mono font-bold text-ink-muted dark:text-chalkboard-muted">
                                   <span>Grading Rubric ({d.rubricCriteria?.length || 0} criteria)</span>
                                   <span>Total: {d.points || 0} pts</span>
                                 </div>
@@ -3932,7 +3979,7 @@ export default function TeacherSubjectDetail() {
                                         className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
                                           isCorrect
                                             ? 'bg-emerald-600 text-white'
-                                            : 'bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 text-ink-muted'
+                                            : 'bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle text-ink-muted dark:text-chalkboard-muted'
                                         }`}
                                       >
                                         {label}
@@ -3970,12 +4017,12 @@ export default function TeacherSubjectDetail() {
                               <span>Edit Draft</span>
                             </button>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               {d.status !== 'REJECTED' && (
                                 <button
                                   type="button"
                                   onClick={() => handleRejectDraft(d)}
-                                  className="px-2.5 py-1 rounded-lg border border-redpen/40 text-redpen hover:bg-redpen-soft text-xs font-mono cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg border border-redpen/40 dark:border-red-500/50 text-redpen dark:text-red-400 hover:bg-redpen-soft dark:hover:bg-red-950/60 text-xs font-mono cursor-pointer"
                                 >
                                   Reject
                                 </button>
@@ -4042,7 +4089,7 @@ export default function TeacherSubjectDetail() {
               </div>
 
               {editDraftModal.error && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 text-redpen" />
                   <span>{editDraftModal.error}</span>
                 </div>

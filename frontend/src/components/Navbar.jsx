@@ -22,7 +22,7 @@ export default function Navbar({ darkMode, onToggleDarkMode }) {
   return (
     <header
       id="top"
-      className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors"
+      className="sticky top-0 z-30 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors"
     >
       {/* Top spiral-punch strip */}
       <div

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
-import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { Button, NotebookButton, NotebookBackButton, NotebookCard, NotebookLoader, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 import { WashiTape } from '../components/Doodles';
 
@@ -100,18 +100,30 @@ export default function SubjectDashboard() {
         return;
       }
 
+      let partialFailures = 0;
       const [assessmentsData, progressData, materialsData] = await Promise.all([
         studentService.getSubjectAssessments(resolvedSubjectId),
-        classId
-          ? studentService.getClassProgress(classId).catch(() => null)
-          : studentService.getSubjectProgress(resolvedSubjectId).catch(() => null),
-        classId
-          ? studentService.getClassStudyMaterials(classId).catch(() => [])
-          : Promise.resolve([]),
+        (classId
+          ? studentService.getClassProgress(classId)
+          : studentService.getSubjectProgress(resolvedSubjectId)
+        ).catch(() => {
+          partialFailures += 1;
+          return null;
+        }),
+        (classId
+          ? studentService.getClassStudyMaterials(classId)
+          : Promise.resolve([])
+        ).catch(() => {
+          partialFailures += 1;
+          return [];
+        }),
       ]);
       setAssessments(assessmentsData || []);
       setProgress(progressData);
       setMaterials(materialsData || []);
+      if (partialFailures > 0) {
+        setDownloadError('Some workspace sections (progress or study materials) could not be loaded. Refresh to try again.');
+      }
     } catch (err) {
       if (err.status === 401 || err.message?.includes('authentication is required')) {
         logout();
@@ -188,6 +200,20 @@ export default function SubjectDashboard() {
       ? `/student/subjects/${effectiveSubjectId}/progress/topics/${topicId}`
       : `/student/progress/topics/${topicId}`;
 
+  const getTakeAssessmentUrl = (assessmentId) =>
+    classId
+      ? `/student/classes/${classId}/assessments/${assessmentId}/take`
+      : effectiveSubjectId
+      ? `/student/subjects/${effectiveSubjectId}/assessments/${assessmentId}/take`
+      : `/student/assessments/${assessmentId}/take`;
+
+  const getAttemptResultUrl = (attemptId) =>
+    classId
+      ? `/student/classes/${classId}/attempts/${attemptId}/result`
+      : effectiveSubjectId
+      ? `/student/subjects/${effectiveSubjectId}/attempts/${attemptId}/result`
+      : `/student/attempts/${attemptId}/result`;
+
   return (
     <PortalShell
       portalSubtitle="Student Learning Notebook"
@@ -207,45 +233,20 @@ export default function SubjectDashboard() {
           : 'Complete diagnostic quizzes, analyze your strengths and learning gaps, and master topics.'
       }
       headerRight={
-        <div className="flex items-center gap-2">
-          <Link
-            to="/student"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>My Classes</span>
-          </Link>
-          <Link
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <NotebookBackButton to="/student" label="My Classes" />
+          <NotebookButton
             to={progressUrl}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-highlighter-yellow/30 shadow-xs transition-colors"
+            variant="yellow"
+            size="md"
+            icon={Compass}
           >
-            <Compass className="w-3.5 h-3.5 text-ink-blue dark:text-highlighter-mint" />
-            <span>Gap Analysis</span>
-          </Link>
+            Gap Analysis
+          </NotebookButton>
         </div>
       }
     >
       <div className="w-full space-y-8">
-        {/* Breadcrumb Navigation Bar */}
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center gap-2 text-ink-muted dark:text-chalkboard-muted">
-            <Link
-              to="/student"
-              className="hover:text-ink dark:hover:text-chalkboard-chalk underline underline-offset-2 flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>My Classes</span>
-            </Link>
-            <span>/</span>
-            <span className="font-bold text-ink dark:text-chalkboard-chalk">
-              {workspace ? `${workspace.subject.name} - ${workspace.name}` : subjectName}
-            </span>
-          </div>
-          <span className="text-ink-muted dark:text-chalkboard-muted hidden sm:inline">
-            {workspace ? `Class #${workspace.id} • ${workspace.status}` : `Subject #${effectiveSubjectId || subjectId}`}
-          </span>
-        </nav>
-
         {/* Archived Banner if applicable */}
         {isArchived && (
           <div className="p-4 rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex items-start gap-3">
@@ -261,17 +262,12 @@ export default function SubjectDashboard() {
 
         {/* Loading state */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Opening subject notebook and loading your workspace…
-            </p>
-          </div>
+          <NotebookLoader message="Opening subject notebook and loading your workspace…" />
         )}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-5 rounded-2xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-6 h-6 flex-shrink-0" />
               <div>
@@ -284,9 +280,7 @@ export default function SubjectDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="secondary" onClick={() => navigate('/student')}>
-                Back to Desk
-              </Button>
+              <NotebookBackButton to="/student" label="Back to Desk" />
               <Button size="sm" variant="primary" onClick={loadData}>
                 <RefreshCw className="w-3.5 h-3.5 mr-1" />
                 Retry
@@ -388,9 +382,7 @@ export default function SubjectDashboard() {
                           size="lg"
                           className="font-bold shadow-notebook hover:translate-y-[-1px] transition-transform"
                           onClick={() =>
-                            navigate(
-                              `/student/subjects/${effectiveSubjectId}/assessments/${diagnostic.id}/take`
-                            )
+                            navigate(getTakeAssessmentUrl(diagnostic.id))
                           }
                         >
                           <span>
@@ -426,17 +418,17 @@ export default function SubjectDashboard() {
                       >
                         {inProgressQuiz ? (
                           <>
-                            <Clock className="w-3.5 h-3.5 text-amber-700" />
+                            <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                             <span>In-Progress Attempt</span>
                           </>
                         ) : priorityGaps.length > 0 ? (
                           <>
-                            <Target className="w-3.5 h-3.5 text-redpen" />
+                            <Target className="w-3.5 h-3.5 text-redpen dark:text-red-400" />
                             <span>Recommended Focus • Close Learning Gap</span>
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                             <span>Great Progress • All Gaps Closed</span>
                           </>
                         )}
@@ -465,9 +457,7 @@ export default function SubjectDashboard() {
                             size="lg"
                             className="font-bold"
                             onClick={() =>
-                              navigate(
-                                `/student/subjects/${effectiveSubjectId}/assessments/${inProgressQuiz.id}/take`
-                              )
+                              navigate(getTakeAssessmentUrl(inProgressQuiz.id))
                             }
                           >
                             <span>Resume Quiz</span>
@@ -551,11 +541,17 @@ export default function SubjectDashboard() {
                   </div>
 
                   {/* Filter Pills: Active vs Completed */}
-                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle self-start sm:self-auto">
+                  <div
+                    role="tablist"
+                    aria-label="Quiz status filter"
+                    className="flex items-center gap-1.5 p-1 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle self-start sm:self-auto"
+                  >
                     <button
                       type="button"
+                      role="tab"
+                      aria-selected={quizFilter === 'active'}
                       onClick={() => setQuizFilter('active')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                         quizFilter === 'active'
                           ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/20'
                           : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink'
@@ -565,8 +561,10 @@ export default function SubjectDashboard() {
                     </button>
                     <button
                       type="button"
+                      role="tab"
+                      aria-selected={quizFilter === 'completed'}
                       onClick={() => setQuizFilter('completed')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                         quizFilter === 'completed'
                           ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/20'
                           : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink'
@@ -649,9 +647,7 @@ export default function SubjectDashboard() {
                                       size="sm"
                                       className="w-full font-bold"
                                       onClick={() =>
-                                        navigate(
-                                          `/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`
-                                        )
+                                        navigate(getTakeAssessmentUrl(quiz.id))
                                       }
                                     >
                                       <span>{isInProgress ? 'Resume Quiz' : 'Take Quiz'}</span>
@@ -672,8 +668,8 @@ export default function SubjectDashboard() {
                 {quizFilter === 'completed' && (
                   <div className="space-y-4">
                     {completedQuizzes.length === 0 ? (
-                      <NotebookCard className="p-8 text-center space-y-2 bg-paper-card dark:bg-chalkboard-card border border-ink/20">
-                        <FileQuestion className="w-8 h-8 text-ink-muted mx-auto" />
+                      <NotebookCard className="p-8 text-center space-y-2 bg-paper-card dark:bg-chalkboard-card border border-ink/20 dark:border-chalkboard-borderSubtle">
+                        <FileQuestion className="w-8 h-8 text-ink-muted dark:text-chalkboard-muted mx-auto" />
                         <h4 className="font-bold text-base text-ink dark:text-chalkboard-chalk">
                           No Completed Quizzes Yet
                         </h4>
@@ -715,7 +711,7 @@ export default function SubjectDashboard() {
                                           ? 'bg-highlighter-mint text-ink'
                                           : scorePercent >= 60
                                           ? 'bg-highlighter-yellow text-ink'
-                                          : 'bg-redpen-soft text-redpen-dark'
+                                          : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300'
                                       }`}
                                     >
                                       {scorePercent}% ({quiz.latestAttemptScore} / {quiz.latestAttemptMaxScore})
@@ -736,9 +732,7 @@ export default function SubjectDashboard() {
                                   size="sm"
                                   className="flex-1 font-bold"
                                   onClick={() =>
-                                    navigate(
-                                      `/student/subjects/${effectiveSubjectId}/attempts/${quiz.latestAttemptId}/result`
-                                    )
+                                    navigate(getAttemptResultUrl(quiz.latestAttemptId))
                                   }
                                 >
                                   <Award className="w-3.5 h-3.5 mr-1" />
@@ -750,9 +744,7 @@ export default function SubjectDashboard() {
                                     variant="mint"
                                     size="sm"
                                     onClick={() =>
-                                      navigate(
-                                        `/student/subjects/${effectiveSubjectId}/assessments/${quiz.id}/take`
-                                      )
+                                      navigate(getTakeAssessmentUrl(quiz.id))
                                     }
                                   >
                                     <RotateCcw className="w-3.5 h-3.5 mr-1" />
@@ -786,7 +778,7 @@ export default function SubjectDashboard() {
                     </div>
 
                     {downloadError && (
-                      <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between gap-3 text-xs">
+                      <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 shrink-0" />
                           <span>{downloadError}</span>
@@ -819,8 +811,8 @@ export default function SubjectDashboard() {
                                   <span
                                     className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border inline-flex items-center gap-1 ${
                                       isDocx
-                                        ? 'bg-blue-100 text-blue-900 border-blue-400 dark:bg-blue-950 dark:text-blue-300'
-                                        : 'bg-red-100 text-red-900 border-red-400 dark:bg-red-950 dark:text-red-300'
+                                        ? 'bg-paper-warm text-ink-blue border-ink-blue/30 dark:bg-blue-950 dark:text-blue-300'
+                                        : 'bg-redpen-soft text-redpen-dark border-redpen/40 dark:bg-red-950 dark:text-red-300'
                                     }`}
                                   >
                                     <FileText className="w-3 h-3" />
@@ -899,7 +891,7 @@ export default function SubjectDashboard() {
             {/* =========================================================================
                 RIGHT SIDEBAR (4 cols desktop, sticky): "My Learning Radar"
             ========================================================================= */}
-            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20">
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
               <NotebookCard
                 pattern="ruled"
                 borderStyle="sketch"

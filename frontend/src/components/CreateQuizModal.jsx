@@ -295,14 +295,14 @@ export default function CreateQuizModal({
             onClick={onClose}
             disabled={loading}
             aria-label="Close modal"
-            className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer focus:outline-none focus:ring-2 focus:ring-redpen"
+            className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer focus:outline-none focus:ring-2 focus:ring-redpen"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2 flex-shrink-0">
+          <div className="p-3 rounded-xl border border-redpen dark:border-red-500/50 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2 flex-shrink-0">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -401,11 +401,11 @@ export default function CreateQuizModal({
                 <span className="font-bold text-ink dark:text-chalkboard-chalk">
                   {metrics.count} {metrics.count === 1 ? 'Question' : 'Questions'} Selected
                 </span>
-                <span className="text-ink-muted">•</span>
-                <span className="font-bold text-redpen">{metrics.totalPoints} pts</span>
+                <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
+                <span className="font-bold text-redpen dark:text-red-400">{metrics.totalPoints} pts</span>
                 {metrics.count > 0 && (
                   <>
-                    <span className="text-ink-muted">•</span>
+                    <span className="text-ink-muted dark:text-chalkboard-muted">•</span>
                     <span className="text-ink-muted dark:text-chalkboard-muted">
                       {[
                         metrics.mcq > 0 ? `${metrics.mcq} MCQ` : null,
@@ -440,7 +440,7 @@ export default function CreateQuizModal({
                 <div className="space-y-2 flex-shrink-0 bg-paper-warm/70 dark:bg-chalkboard-surface/70 p-2.5 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle">
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
                     <div className="sm:col-span-6 relative">
-                      <Search className="w-3.5 h-3.5 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Search className="w-3.5 h-3.5 text-ink-muted dark:text-chalkboard-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         type="text"
                         value={searchQuery}
@@ -454,7 +454,7 @@ export default function CreateQuizModal({
                           type="button"
                           onClick={() => setSearchQuery('')}
                           aria-label="Clear search"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink cursor-pointer"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -514,8 +514,8 @@ export default function CreateQuizModal({
                           onClick={() => setTypeFilter(val)}
                           className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold border cursor-pointer transition-colors ${
                             typeFilter === val
-                              ? 'bg-ink text-paper-card border-ink dark:bg-chalkboard-chalk dark:text-chalkboard-surface'
-                              : 'bg-paper-card dark:bg-chalkboard-card text-ink-muted border-ink/20 hover:border-ink/40'
+                              ? 'bg-ink text-paper-card border-ink dark:bg-chalkboard-chalk dark:text-chalkboard-surface dark:border-chalkboard-chalk'
+                              : 'bg-paper-card dark:bg-chalkboard-card text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle hover:border-ink/40 dark:hover:border-chalkboard-border'
                           }`}
                         >
                           {label}
@@ -537,7 +537,7 @@ export default function CreateQuizModal({
                           className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold border cursor-pointer transition-colors ${
                             difficultyFilter === val
                               ? 'bg-redpen text-white border-redpen'
-                              : 'bg-paper-card dark:bg-chalkboard-card text-ink-muted border-ink/20 hover:border-ink/40'
+                              : 'bg-paper-card dark:bg-chalkboard-card text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle hover:border-ink/40 dark:hover:border-chalkboard-border'
                           }`}
                         >
                           {label}
@@ -562,23 +562,23 @@ export default function CreateQuizModal({
                       >
                         Select All Filtered
                       </button>
-                      <span className="text-ink-muted">·</span>
+                      <span className="text-ink-muted dark:text-chalkboard-muted">·</span>
                       <button
                         type="button"
                         onClick={deselectFiltered}
                         disabled={filteredQuestions.length === 0}
-                        className="text-ink-muted hover:text-ink hover:underline disabled:opacity-40 cursor-pointer"
+                        className="text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk hover:underline disabled:opacity-40 cursor-pointer"
                       >
                         Deselect Filtered
                       </button>
                       {selectedQuestionIds.length > 0 && (
                         <>
-                          <span className="text-ink-muted">·</span>
+                          <span className="text-ink-muted dark:text-chalkboard-muted">·</span>
                           {!confirmClear ? (
                             <button
                               type="button"
                               onClick={() => setConfirmClear(true)}
-                              className="text-ink-muted hover:text-redpen hover:underline cursor-pointer"
+                              className="text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 hover:underline cursor-pointer"
                             >
                               Clear All
                             </button>
@@ -590,14 +590,14 @@ export default function CreateQuizModal({
                                   onSelectedQuestionIdsChange([]);
                                   setConfirmClear(false);
                                 }}
-                                className="text-redpen font-bold hover:underline cursor-pointer"
+                                className="text-redpen dark:text-red-400 font-bold hover:underline cursor-pointer"
                               >
                                 Confirm Clear ({selectedQuestionIds.length})?
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmClear(false)}
-                                className="text-ink-muted hover:underline cursor-pointer"
+                                className="text-ink-muted dark:text-chalkboard-muted hover:underline cursor-pointer"
                               >
                                 Keep
                               </button>
@@ -645,12 +645,12 @@ export default function CreateQuizModal({
                               className="flex items-center gap-1.5 text-xs font-bold text-ink dark:text-chalkboard-chalk cursor-pointer focus:outline-none focus:underline"
                             >
                               {isCollapsed ? (
-                                <ChevronRight className="w-4 h-4 text-ink-muted" />
+                                <ChevronRight className="w-4 h-4 text-ink-muted dark:text-chalkboard-muted" />
                               ) : (
-                                <ChevronDown className="w-4 h-4 text-ink-muted" />
+                                <ChevronDown className="w-4 h-4 text-ink-muted dark:text-chalkboard-muted" />
                               )}
                               <span>{group.label}</span>
-                              <span className="text-[10px] font-mono font-normal text-ink-muted">
+                              <span className="text-[10px] font-mono font-normal text-ink-muted dark:text-chalkboard-muted">
                                 ({selectedInGroup}/{group.items.length})
                               </span>
                             </button>
@@ -702,7 +702,7 @@ export default function CreateQuizModal({
                         key={q.id}
                         className="p-3 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card flex items-start gap-2.5 text-xs"
                       >
-                        <span className="font-mono font-bold text-ink-muted w-5 text-center pt-0.5">
+                        <span className="font-mono font-bold text-ink-muted dark:text-chalkboard-muted w-5 text-center pt-0.5">
                           {idx + 1}.
                         </span>
                         <div className="flex-1 min-w-0 space-y-1">
@@ -715,7 +715,7 @@ export default function CreateQuizModal({
                             >
                               {typeMeta.short}
                             </span>
-                            <span className="text-[10px] font-mono text-ink-muted">
+                            <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
                               v{q.version} • {q.difficulty} • {pts} {pts === 1 ? 'pt' : 'pts'}
                             </span>
                           </div>
@@ -729,7 +729,7 @@ export default function CreateQuizModal({
                             onClick={() => moveSelected(idx, -1)}
                             disabled={idx === 0}
                             aria-label={`Move question ${idx + 1} up`}
-                            className="p-1 rounded hover:bg-paper-warm disabled:opacity-30 text-ink-muted hover:text-ink cursor-pointer"
+                            className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface disabled:opacity-30 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                           >
                             <ArrowUp className="w-3.5 h-3.5" />
                           </button>
@@ -738,7 +738,7 @@ export default function CreateQuizModal({
                             onClick={() => moveSelected(idx, 1)}
                             disabled={idx === selectedQuestions.length - 1}
                             aria-label={`Move question ${idx + 1} down`}
-                            className="p-1 rounded hover:bg-paper-warm disabled:opacity-30 text-ink-muted hover:text-ink cursor-pointer"
+                            className="p-1 rounded hover:bg-paper-warm dark:hover:bg-chalkboard-surface disabled:opacity-30 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                           >
                             <ArrowDown className="w-3.5 h-3.5" />
                           </button>
@@ -746,7 +746,7 @@ export default function CreateQuizModal({
                             type="button"
                             onClick={() => toggleQuestion(q.id)}
                             aria-label={`Remove question ${idx + 1}`}
-                            className="p-1 rounded hover:bg-redpen-soft text-ink-muted hover:text-redpen cursor-pointer"
+                            className="p-1 rounded hover:bg-redpen-soft dark:hover:bg-red-950/60 text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>

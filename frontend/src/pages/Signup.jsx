@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   UserPlus,
@@ -14,12 +14,13 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeToggleButton } from '../context/ThemeContext';
 import { LearningPalLogo } from '../components/Doodles';
 import { Button, Field, NotebookCard } from '../components/NotebookPrimitives';
+import { getRoleHome } from '../utils/roleHome';
 
 // Password requirement regular expression (8 to 72 chars, >= 1 letter, >= 1 number)
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,72}$/;
 
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [role, setRole] = useState('STUDENT');
@@ -34,6 +35,13 @@ export default function Signup() {
   const [clientErrors, setClientErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [teacherPendingSuccess, setTeacherPendingSuccess] = useState(false);
+
+  // Redirect already-authenticated users to their role home
+  useEffect(() => {
+    if (isAuthenticated && user?.role && !teacherPendingSuccess) {
+      navigate(getRoleHome(user.role), { replace: true });
+    }
+  }, [isAuthenticated, user, teacherPendingSuccess, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -264,9 +272,9 @@ export default function Signup() {
               id="signup-server-error"
               role="alert"
               aria-live="polite"
-              className="flex items-start gap-2.5 p-3 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-xs sm:text-sm font-medium shadow-sm animate-fadeIn"
+              className="flex items-start gap-2.5 p-3 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs sm:text-sm font-medium shadow-sm animate-fadeIn"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-redpen" aria-hidden="true" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-redpen dark:text-red-400" aria-hidden="true" />
               <div className="leading-snug">{serverError}</div>
             </div>
           )}

@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { surveyService } from '../services/surveyService';
-import { PortalShell, NotebookCard, Button } from '../components/NotebookPrimitives';
+import { PortalShell, NotebookCard, Button, NotebookBackButton } from '../components/NotebookPrimitives';
+import { getRoleHome } from '../utils/roleHome';
 
 const SCALE_LABELS = [
   { score: 1, label: 'Strongly disagree' },
@@ -90,7 +91,7 @@ export default function UsabilitySurvey() {
     }
   };
 
-  const backDestination = user?.role === 'TEACHER' ? '/teacher' : '/student';
+  const backDestination = getRoleHome(user?.role);
 
   return (
     <PortalShell
@@ -103,15 +104,9 @@ export default function UsabilitySurvey() {
       title="LearningPal Usability Survey"
       subtitle="Help us evaluate and improve your learning and teaching experience. Takes about 2 minutes."
       headerRight={
-        <Button
-          to={backDestination}
-          variant="secondary"
-          size="sm"
-          className="text-xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-          <span>Back to Dashboard</span>
-        </Button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <NotebookBackButton to={backDestination} label="Back to Dashboard" />
+        </div>
       }
     >
       <div className="max-w-4xl mx-auto space-y-6">
@@ -123,7 +118,10 @@ export default function UsabilitySurvey() {
             </div>
           </NotebookCard>
         ) : error ? (
-          <div className="p-6 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 text-sm">
+          <div
+            role="alert"
+            className="p-6 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-sm"
+          >
             {error}
           </div>
         ) : surveyData?.alreadyResponded || submitted ? (
@@ -287,8 +285,11 @@ export default function UsabilitySurvey() {
 
             {/* SUBMIT BUTTON & ERROR */}
             {submitError && (
-              <div className="p-4 rounded-xl border border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div
+                role="alert"
+                className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-xs flex items-center gap-2"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>{submitError}</span>
               </div>
             )}
