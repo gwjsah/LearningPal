@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, FlaskConical, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
-import { PortalShell, Button } from '../components/NotebookPrimitives';
+import { PortalShell, Button, NotebookBackButton } from '../components/NotebookPrimitives';
 import ValidationReportView from '../components/ValidationReportView';
 
 export default function TeacherValidationReport() {
@@ -16,6 +16,7 @@ export default function TeacherValidationReport() {
   const [source, setSource] = useState('TEACHER');
   const [includeStale, setIncludeStale] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   const fetchReport = async () => {
     setLoading(true);
@@ -35,11 +36,12 @@ export default function TeacherValidationReport() {
   }, [classId, source, includeStale]);
 
   const handleExportCsv = async () => {
+    setExportError('');
     setExporting(true);
     try {
       await teacherService.downloadValidationExport(classId, source, includeStale);
     } catch (err) {
-      alert(`Export failed: ${err.message}`);
+      setExportError(err.message || 'Failed to export validation CSV.');
     } finally {
       setExporting(false);
     }
@@ -56,28 +58,26 @@ export default function TeacherValidationReport() {
       title="Class Agreement Report"
       subtitle="Measuring statistical agreement between blind teacher judgments and automated topic classifications."
       headerRight={
-        <div className="flex items-center gap-2">
-          <Button
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <NotebookBackButton
             to={`/teacher/classes/${classId}/validation`}
-            variant="secondary"
-            size="sm"
-            className="text-xs"
-          >
-            <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-            <span>Validation Hub</span>
-          </Button>
-          <Button
+            label="Validation Hub"
+          />
+          <NotebookBackButton
             to={`/teacher/classes/${classId}`}
-            variant="secondary"
-            size="sm"
-            className="text-xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            <span>Class Detail</span>
-          </Button>
+            label="Class Detail"
+          />
         </div>
       }
     >
+      {exportError && (
+        <div
+          role="alert"
+          className="mb-4 p-3 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-xs font-mono font-bold"
+        >
+          Export failed: {exportError}
+        </div>
+      )}
       <ValidationReportView
         report={report}
         loading={loading}

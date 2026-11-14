@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ShieldCheck,
   Building2,
@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { superAdminService } from '../services/superAdminService';
 import { Button, Field, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { ConfirmModal } from '../components/ConfirmModal';
 import {
   NotebookTabs,
   NotebookTabPanel,
@@ -88,7 +89,15 @@ export default function SuperAdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('institutions');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'users' ? 'users' : 'institutions';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [userToDeactivate, setUserToDeactivate] = useState(null);
+
+  const handleTabChange = (nextTab) => {
+    setActiveTab(nextTab);
+    setSearchParams({ tab: nextTab }, { replace: true });
+  };
 
   // Institutions state
   const [institutions, setInstitutions] = useState([]);
@@ -320,6 +329,7 @@ export default function SuperAdminDashboard() {
         res?.message ||
           `${targetUser.fullName} ${isDeactivated ? 'reactivated' : 'deactivated'} successfully.`
       );
+      setUserToDeactivate(null);
     } catch (err) {
       if (handleAuthError(err)) return;
       setError(err.message || 'Failed to update user status.');
@@ -449,7 +459,7 @@ export default function SuperAdminDashboard() {
       <NotebookTabs
         tabs={tabs}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         ariaLabel="Super Admin Console sections"
       />
 
@@ -626,6 +636,7 @@ export default function SuperAdminDashboard() {
                       key={opt.id}
                       type="button"
                       onClick={() => setRoleFilter(opt.id)}
+                      aria-pressed={active}
                       className={`px-3 py-1 rounded-full text-xs font-mono font-bold border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                         active
                           ? 'bg-ink text-paper border-ink dark:bg-highlighter-yellow dark:text-ink dark:border-highlighter-yellow'
@@ -649,6 +660,7 @@ export default function SuperAdminDashboard() {
                       key={opt.id}
                       type="button"
                       onClick={() => setStatusFilter(opt.id)}
+                      aria-pressed={active}
                       className={`px-3 py-1 rounded-full text-xs font-mono font-bold border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                         active
                           ? 'bg-redpen text-white border-redpen'
@@ -791,15 +803,13 @@ export default function SuperAdminDashboard() {
                               Protected
                             </span>
                           ) : (
-                            <button
-                              type="button"
+                            <Button
+                              variant={isDeactivated ? 'secondary' : 'danger'}
+                              size="sm"
                               disabled={busy}
-                              onClick={() => handleToggleUserStatus(u)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
-                                isDeactivated
-                                  ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                                  : 'border-redpen/30 text-redpen dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40'
-                              }`}
+                              onClick={() =>
+                                isDeactivated ? handleToggleUserStatus(u) : setUserToDeactivate(u)
+                              }
                             >
                               {isDeactivated ? (
                                 <>
@@ -812,7 +822,7 @@ export default function SuperAdminDashboard() {
                                   <span>{busy ? 'Saving…' : 'Deactivate'}</span>
                                 </>
                               )}
-                            </button>
+                            </Button>
                           )}
                         </NotebookTableCell>
                       </NotebookTableRow>
@@ -881,35 +891,25 @@ export default function SuperAdminDashboard() {
                   1. Institution Details
                 </p>
 
-                <Field label="Institution Name" htmlFor="inst-name" required>
-                  <input
-                    id="inst-name"
-                    name="name"
-                    type="text"
-                    required
-                    value={form.name}
-                    onChange={handleFieldChange}
-                    placeholder="e.g. Cebu Institute of Technology"
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-surface text-sm text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-ink dark:focus:border-highlighter-mint"
-                  />
-                </Field>
+                <Field
+                  id="inst-name"
+                  name="name"
+                  label="Institution Name"
+                  required
+                  value={form.name}
+                  onChange={handleFieldChange}
+                  placeholder="e.g. Cebu Institute of Technology"
+                />
 
                 <Field
+                  id="inst-code"
+                  name="code"
                   label="Institution Code (optional)"
-                  htmlFor="inst-code"
                   hint="3–16 uppercase letters, numbers, or hyphens. Leave blank to auto-generate."
-                >
-                  <input
-                    id="inst-code"
-                    name="code"
-                    type="text"
-                    maxLength={16}
-                    value={form.code}
-                    onChange={handleFieldChange}
-                    placeholder="e.g. CITU-2026"
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-surface text-sm font-mono uppercase text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-ink dark:focus:border-highlighter-mint"
-                  />
-                </Field>
+                  value={form.code}
+                  onChange={handleFieldChange}
+                  placeholder="e.g. CITU-2026"
+                />
               </div>
 
               <div className="pt-3 border-t border-ink/15 dark:border-chalkboard-borderSubtle space-y-3">
@@ -918,59 +918,38 @@ export default function SuperAdminDashboard() {
                   <span>2. Initial Institution Administrator</span>
                 </p>
 
-                <Field label="Admin Full Name" htmlFor="admin-full-name" required>
-                  <input
-                    id="admin-full-name"
-                    name="adminFullName"
-                    type="text"
-                    required
-                    value={form.adminFullName}
-                    onChange={handleFieldChange}
-                    placeholder="e.g. Dr. Elena Reyes"
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-surface text-sm text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-ink dark:focus:border-highlighter-mint"
-                  />
-                </Field>
-
-                <Field label="Admin Email" htmlFor="admin-email" required>
-                  <input
-                    id="admin-email"
-                    name="adminEmail"
-                    type="email"
-                    required
-                    value={form.adminEmail}
-                    onChange={handleFieldChange}
-                    placeholder="e.g. admin@school.edu"
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-surface text-sm text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-ink dark:focus:border-highlighter-mint"
-                  />
-                </Field>
+                <Field
+                  id="admin-full-name"
+                  name="adminFullName"
+                  label="Admin Full Name"
+                  required
+                  value={form.adminFullName}
+                  onChange={handleFieldChange}
+                  placeholder="e.g. Dr. Elena Reyes"
+                />
 
                 <Field
+                  id="admin-email"
+                  name="adminEmail"
+                  type="email"
+                  label="Admin Email"
+                  required
+                  value={form.adminEmail}
+                  onChange={handleFieldChange}
+                  placeholder="e.g. admin@school.edu"
+                />
+
+                <Field
+                  id="admin-password"
+                  name="adminPassword"
+                  type="password"
                   label="Temporary Password"
-                  htmlFor="admin-password"
                   hint="8+ characters with at least one letter and one number."
                   required
-                >
-                  <div className="relative flex items-center">
-                    <input
-                      id="admin-password"
-                      name="adminPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={form.adminPassword}
-                      onChange={handleFieldChange}
-                      placeholder="Create a strong password"
-                      className="w-full px-3.5 py-2.5 pr-10 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-surface text-sm text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-ink dark:focus:border-highlighter-mint"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-2.5 p-1 text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-chalkboard-chalk cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </Field>
+                  value={form.adminPassword}
+                  onChange={handleFieldChange}
+                  placeholder="Create a strong password"
+                />
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">
@@ -991,6 +970,22 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(userToDeactivate)}
+        variant="danger"
+        title="Deactivate User Account"
+        message={
+          userToDeactivate
+            ? `Are you sure you want to deactivate ${userToDeactivate.fullName}? They will be logged out and unable to sign in until reactivated.`
+            : ''
+        }
+        confirmLabel="Deactivate User"
+        loadingLabel="Deactivating…"
+        loading={Boolean(userToDeactivate && togglingUserId === userToDeactivate.id)}
+        onConfirm={() => userToDeactivate && handleToggleUserStatus(userToDeactivate)}
+        onCancel={() => setUserToDeactivate(null)}
+      />
     </PortalShell>
   );
 }

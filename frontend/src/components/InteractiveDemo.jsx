@@ -679,8 +679,8 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold ${
                             q.isCorrect
-                              ? 'bg-highlighter-mintSoft text-emerald-900 border border-emerald-400'
-                              : 'bg-redpen-soft text-redpen-dark border border-redpen/30'
+                              ? 'bg-highlighter-mintSoft dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-400 dark:border-emerald-700'
+                              : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/30 dark:border-red-500/50'
                           }`}
                         >
                           {q.isCorrect ? (
@@ -1036,7 +1036,14 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                     </NotebookTableRow>
                   </NotebookTableHead>
                   <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle">
-                    {filteredStudents.map((st) => (
+                    {filteredStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                          No sample students match your search or filter.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredStudents.map((st) => (
                       <NotebookTableRow key={st.id}>
                         <NotebookTableCell>
                           <div className="font-sans font-bold text-ink dark:text-chalkboard-chalk">
@@ -1065,7 +1072,7 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                         </NotebookTableCell>
                         <NotebookTableCell align="right">
                           {st.needsAttention ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-redpen-soft text-redpen-dark border border-redpen/30">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/30 dark:border-red-500/50">
                               <AlertCircle className="w-3 h-3" aria-hidden="true" />
                               Needs Attention
                             </span>
@@ -1076,7 +1083,8 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                           )}
                         </NotebookTableCell>
                       </NotebookTableRow>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </NotebookTable>
               </NotebookTabPanel>
@@ -1087,16 +1095,16 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                   <span className="text-ink-muted dark:text-chalkboard-muted">
                     <strong className="text-ink dark:text-chalkboard-chalk">Teacher-Only Intervention Log:</strong> Interventions record small-group or 1-on-1 instructional support and are never visible to students.
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {['ALL', 'PLANNED', 'IN_PROGRESS', 'COMPLETED'].map((st) => (
                       <button
                         key={st}
                         type="button"
                         onClick={() => setInterventionFilter(st)}
                         aria-pressed={interventionFilter === st}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-mono cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-mono cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                           interventionFilter === st
-                            ? 'bg-ink text-white dark:bg-highlighter-mint dark:text-ink font-bold'
+                            ? 'bg-ink text-paper-card dark:bg-highlighter-mint dark:text-ink font-bold'
                             : 'bg-paper-card dark:bg-chalkboard-card text-ink-muted dark:text-chalkboard-muted'
                         }`}
                       >
@@ -1186,7 +1194,14 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                     </NotebookTableRow>
                   </NotebookTableHead>
                   <tbody className="divide-y divide-ink/10 dark:divide-chalkboard-borderSubtle">
-                    {filteredInterventions.map((item) => (
+                    {filteredInterventions.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                          No interventions match this status filter.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredInterventions.map((item) => (
                       <NotebookTableRow key={item.id}>
                         <NotebookTableCell className="font-sans font-bold text-ink dark:text-chalkboard-chalk">
                           {item.studentName}
@@ -1207,15 +1222,16 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
                               handleUpdateInterventionStatus(item.id, e.target.value)
                             }
                             aria-label={`Intervention status for ${item.studentName}`}
-                            className="px-2 py-1 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk"
+                            className="px-2 py-1 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           >
-                            <option value="PLANNED">PLANNED</option>
-                            <option value="IN_PROGRESS">IN_PROGRESS</option>
-                            <option value="COMPLETED">COMPLETED</option>
+                            <option value="PLANNED">Planned</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
                           </select>
                         </NotebookTableCell>
                       </NotebookTableRow>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </NotebookTable>
               </NotebookTabPanel>

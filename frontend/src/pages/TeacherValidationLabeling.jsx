@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
-import { PortalShell, NotebookCard, Button } from '../components/NotebookPrimitives';
+import { PortalShell, NotebookCard, Button, NotebookBackButton } from '../components/NotebookPrimitives';
 
 export default function TeacherValidationLabeling() {
   const { classId, studentId } = useParams();
@@ -169,16 +169,11 @@ export default function TeacherValidationLabeling() {
           : 'Inspect student question evidence without algorithmic bias.'
       }
       headerRight={
-        <div className="flex items-center gap-2">
-          <Button
+        <div className="flex items-center gap-2.5 shrink-0">
+          <NotebookBackButton
             to={`/teacher/classes/${classId}/validation`}
-            variant="secondary"
-            size="sm"
-            className="text-xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            <span>Validation Hub</span>
-          </Button>
+            label="Validation Hub"
+          />
         </div>
       }
     >
@@ -217,7 +212,10 @@ export default function TeacherValidationLabeling() {
             </div>
           </NotebookCard>
         ) : error ? (
-          <div className="p-6 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 text-sm">
+          <div
+            role="alert"
+            className="p-6 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-sm"
+          >
             {error}
           </div>
         ) : !studentDetail?.topics || studentDetail.topics.length === 0 ? (
@@ -301,8 +299,8 @@ export default function TeacherValidationLabeling() {
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase shrink-0 border ${
                                   ev.isCorrect
-                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                    : 'bg-redpen-soft text-redpen-dark border-redpen/30'
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700'
+                                    : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-redpen/30 dark:border-red-500/50'
                                 }`}
                               >
                                 {ev.isCorrect ? (

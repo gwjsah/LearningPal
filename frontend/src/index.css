@@ -259,3 +259,8 @@
   font-weight: 700;
   mask-image: radial-gradient(circle at 20% 30%, black 85%, transparent 100%);
 }
+
+/* Prevent parent space-y-* utilities from offsetting full-viewport modal backdrops */
+.fixed.inset-0 {
+  margin: 0 !important;
+}

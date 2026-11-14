@@ -139,7 +139,7 @@ export function SearchInput({
         onChange={onChange}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        className="w-full pl-10 pr-9 py-2 rounded-xl text-xs sm:text-sm font-sans bg-paper-card dark:bg-chalkboard-card border-2 border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk placeholder:text-ink-muted/60 dark:placeholder:text-chalkboard-muted/60 focus:outline-none focus:border-ink dark:focus:border-highlighter-mint shadow-xs transition-colors"
+        className="w-full pl-10 pr-9 py-2 rounded-xl text-xs sm:text-sm font-sans bg-paper-card dark:bg-chalkboard-card border-2 border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk placeholder:text-ink-muted/80 dark:placeholder:text-chalkboard-muted/80 focus:outline-none focus:border-ink dark:focus:border-highlighter-mint focus-visible:ring-2 focus-visible:ring-redpen shadow-xs transition-colors"
       />
       {value && (
         <button
@@ -152,7 +152,7 @@ export function SearchInput({
             }
           }}
           aria-label="Clear search text"
-          className="absolute right-2.5 p-1 text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-chalkboard-chalk rounded-md hover:bg-paper-warm dark:hover:bg-chalkboard-surface cursor-pointer"
+          className="absolute right-2.5 p-1 text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-chalkboard-chalk rounded-md hover:bg-paper-warm dark:hover:bg-chalkboard-surface cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
         >
           <X className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
@@ -198,7 +198,7 @@ export function PaginationControls({
               id="pagination-page-size"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="px-2 py-1 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono focus:outline-none focus:border-redpen"
+              className="px-2 py-1 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-xs font-mono focus:outline-none focus:border-redpen focus-visible:ring-2 focus-visible:ring-redpen"
               aria-label="Rows per page"
             >
               {pageSizeOptions.map((opt) => (
@@ -221,7 +221,7 @@ export function PaginationControls({
             disabled={currentPage <= 1}
             onClick={() => onPageChange(currentPage - 1)}
             aria-label="Go to previous page"
-            className="p-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors cursor-pointer"
+            className="p-2 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -230,7 +230,7 @@ export function PaginationControls({
             disabled={currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
             aria-label="Go to next page"
-            className="p-1.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors cursor-pointer"
+            className="p-2 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper-warm dark:hover:bg-chalkboard-surface transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
           >
             <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -342,7 +342,7 @@ export function EmptyState({ icon: Icon, title, message, action, className = '' 
           <Icon className="w-6 h-6" aria-hidden="true" />
         </div>
       )}
-      <h4 className="text-base font-bold text-ink dark:text-chalkboard-chalk font-sans">{title}</h4>
+      <h3 className="text-base font-bold text-ink dark:text-chalkboard-chalk font-sans">{title}</h3>
       {message && (
         <p className="text-xs text-ink-muted dark:text-chalkboard-muted max-w-md mx-auto leading-relaxed">
           {message}

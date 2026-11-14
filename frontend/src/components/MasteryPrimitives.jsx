@@ -13,21 +13,21 @@ export const MASTERY_CONFIG = {
   STRENGTH: {
     label: 'Strength',
     icon: CheckCircle2,
-    badgeClass: 'bg-highlighter-mint/40 text-emerald-900 dark:text-emerald-300 border-emerald-600/40 dark:border-emerald-500/40',
+    badgeClass: 'bg-highlighter-mintSoft dark:bg-emerald-950/50 text-ink dark:text-highlighter-mint border-ink/25 dark:border-emerald-500/40',
     barClass: 'bg-emerald-500',
     desc: 'High proficiency (≥ 80%)',
   },
   DEVELOPING: {
     label: 'Developing',
     icon: TrendingUp,
-    badgeClass: 'bg-highlighter-yellow/40 text-amber-900 dark:text-amber-300 border-amber-600/40 dark:border-amber-500/40',
-    barClass: 'bg-amber-500',
+    badgeClass: 'bg-highlighter-yellowSoft dark:bg-amber-950/50 text-ink dark:text-highlighter-yellow border-ink/25 dark:border-amber-500/40',
+    barClass: 'bg-amber-400',
     desc: 'Moderate understanding (60% – 79%)',
   },
   GAP: {
     label: 'Learning Gap',
     icon: AlertTriangle,
-    badgeClass: 'bg-redpen-soft text-redpen-dark dark:text-red-300 border-redpen/40',
+    badgeClass: 'bg-redpen-soft dark:bg-red-950/50 text-redpen-dark dark:text-red-300 border-redpen/40',
     barClass: 'bg-redpen',
     desc: 'Needs reinforcement (< 60%)',
   },
@@ -50,7 +50,9 @@ export function StatusBadge({ status, size = 'sm' }) {
   const sizeClasses =
     size === 'md'
       ? 'px-3 py-1 text-xs gap-1.5'
-      : 'px-2.5 py-0.5 text-xs gap-1';
+      : size === 'xs'
+        ? 'px-2 py-0.5 text-[11px] gap-1'
+        : 'px-2.5 py-0.5 text-xs gap-1';
 
   return (
     <span
@@ -70,10 +72,10 @@ export function TrendIndicator({ trend }) {
   if (trend === 'UP') {
     return (
       <span
-        className="inline-flex items-center gap-1 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400"
+        className="inline-flex items-center gap-1 text-xs font-mono font-bold text-ink-blue dark:text-highlighter-mint"
         title="Mastery improved since last evaluation"
       >
-        <ArrowUpRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+        <ArrowUpRight className="w-4 h-4 text-ink-blue dark:text-highlighter-mint" aria-hidden="true" />
         <span>Improving</span>
       </span>
     );
@@ -84,7 +86,7 @@ export function TrendIndicator({ trend }) {
         className="inline-flex items-center gap-1 text-xs font-mono font-bold text-redpen-dark dark:text-red-400"
         title="Mastery declined since last evaluation"
       >
-        <ArrowDownRight className="w-4 h-4 text-redpen" aria-hidden="true" />
+        <ArrowDownRight className="w-4 h-4 text-redpen-dark dark:text-red-400" aria-hidden="true" />
         <span>Declining</span>
       </span>
     );
@@ -119,7 +121,7 @@ export function MasteryBar({ percent, status, showLabel = true }) {
         </div>
       )}
       <div
-        className="w-full h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle overflow-hidden"
+        className="w-full h-2.5 rounded-full bg-paper-warm dark:bg-chalkboard border border-ink/15 dark:border-chalkboard-borderSubtle overflow-hidden p-0.5"
         role="progressbar"
         aria-valuenow={isInsufficient ? 0 : clampedPercent}
         aria-valuemin="0"

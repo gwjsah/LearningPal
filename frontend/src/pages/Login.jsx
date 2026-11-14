@@ -5,13 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeToggleButton } from '../context/ThemeContext';
 import { LearningPalLogo } from '../components/Doodles';
 import { Button, Field, NotebookCard } from '../components/NotebookPrimitives';
-
-const ROLE_HOME_MAP = {
-  STUDENT: '/student',
-  TEACHER: '/teacher',
-  ADMIN: '/admin',
-  SUPER_ADMIN: '/super',
-};
+import { getRoleHome } from '../utils/roleHome';
 
 export default function Login() {
   const { login, user, isAuthenticated } = useAuth();
@@ -24,8 +18,7 @@ export default function Login() {
   // If already authenticated, redirect immediately to the user's role workspace
   useEffect(() => {
     if (isAuthenticated && user?.role) {
-      const dest = ROLE_HOME_MAP[user.role] || '/';
-      navigate(dest, { replace: true });
+      navigate(getRoleHome(user.role), { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -53,8 +46,7 @@ export default function Login() {
       });
 
       // Always redirect cleanly to role home: STUDENT -> /student, TEACHER -> /teacher, ADMIN -> /admin, SUPER_ADMIN -> /super
-      const destination = ROLE_HOME_MAP[response.user?.role] || '/';
-      navigate(destination, { replace: true });
+      navigate(getRoleHome(response.user?.role), { replace: true });
     } catch (err) {
       setServerError(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -112,9 +104,9 @@ export default function Login() {
               id="login-server-error"
               role="alert"
               aria-live="polite"
-              className="flex items-start gap-3 p-3.5 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-sm font-medium shadow-sm animate-fadeIn"
+              className="flex items-start gap-3 p-3.5 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-sm font-medium shadow-sm animate-fadeIn"
             >
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-redpen" aria-hidden="true" />
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-redpen dark:text-red-400" aria-hidden="true" />
               <div className="leading-snug">{serverError}</div>
             </div>
           )}

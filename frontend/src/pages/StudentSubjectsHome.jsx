@@ -182,7 +182,7 @@ export default function StudentSubjectsHome() {
             className={`flex items-center gap-3 p-4 rounded-xl border-2 font-medium text-sm shadow-sm ${
               actionNotice.type === 'success'
                 ? 'border-ink bg-highlighter-mintSoft text-ink dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-500/40'
-                : 'border-redpen bg-redpen-soft text-redpen-dark'
+                : 'border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300'
             }`}
           >
             {actionNotice.type === 'success' ? (
@@ -198,7 +198,7 @@ export default function StudentSubjectsHome() {
         {error && (
           <div
             role="alert"
-            className="flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark text-sm"
+            className="flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-sm"
           >
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 shrink-0" aria-hidden="true" />

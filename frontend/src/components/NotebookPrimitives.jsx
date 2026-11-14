@@ -1,68 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun, MessageSquare } from 'lucide-react';
+import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun, MessageSquare, ArrowLeft, X } from 'lucide-react';
 import { LearningPalLogo, SquigglyUnderline } from './Doodles';
 import { ThemeToggleButton, useTheme } from '../context/ThemeContext';
+import { getRoleHome } from '../utils/roleHome';
 
 const BUTTON_VARIANTS = {
   primary:
-    'border-2 border-ink dark:border-chalkboard-borderStrong bg-redpen hover:bg-redpen-dark text-white shadow-notebook hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-borderStrong bg-redpen hover:bg-redpen-dark text-white shadow-notebook hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none',
   secondary:
-    'border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none',
   mint:
-    'border-2 border-ink dark:border-chalkboard-border bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-highlighter-mint hover:bg-highlighter-mintSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none',
   yellow:
-    'border-2 border-ink dark:border-chalkboard-border bg-highlighter-yellow hover:bg-highlighter-yellowSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-chalkboard-border bg-highlighter-yellow hover:bg-highlighter-yellowSoft text-ink shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none',
   danger:
-    'border-2 border-ink dark:border-chalkboard-border bg-redpen-soft hover:bg-redpen hover:text-white text-redpen-dark shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0',
+    'border-2 border-ink dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 hover:bg-redpen dark:hover:bg-redpen hover:text-white text-redpen-dark dark:text-red-300 shadow-notebook-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none',
   ghost:
-    'border border-ink/25 dark:border-chalkboard-borderSubtle bg-paper-warm dark:bg-chalkboard-surface hover:bg-highlighter-yellow/35 dark:hover:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk',
+    'border-2 border-transparent hover:border-ink/20 dark:hover:border-chalkboard-borderSubtle bg-transparent hover:bg-paper-warm/80 dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-chalkboard-chalk active:translate-y-0.5',
 };
 
 const BUTTON_SIZES = {
-  sm: 'min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold gap-1.5',
-  md: 'min-h-[42px] px-4 py-2.5 rounded-xl text-sm font-bold gap-2',
+  sm: 'min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-semibold gap-1.5',
+  md: 'min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-bold gap-2',
   lg: 'min-h-[48px] px-6 py-3.5 rounded-xl text-base font-bold gap-2.5',
 };
 
 /**
- * Shared notebook Button / Link primitive with consistent focus states & tap targets.
+ * Shared notebook Button / Link primitive with consistent focus states, tactile shadows & tap targets.
  */
-export function Button({
-  to,
-  href,
-  type = 'button',
-  variant = 'primary',
-  size = 'md',
-  className = '',
-  disabled = false,
-  children,
-  ...rest
-}) {
-  const classes = `inline-flex items-center justify-center transition-all cursor-pointer disabled:opacity-60 disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen ${
+export const NotebookButton = forwardRef(function NotebookButton(
+  {
+    to,
+    state,
+    replace,
+    href,
+    type = 'button',
+    variant = 'primary',
+    size = 'md',
+    icon: Icon,
+    iconRight: IconRight,
+    className = '',
+    disabled = false,
+    children,
+    ...rest
+  },
+  ref
+) {
+  const classes = `inline-flex items-center justify-center font-sans transition-all cursor-pointer disabled:opacity-55 disabled:pointer-events-none disabled:shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen ${
     BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.primary
   } ${BUTTON_SIZES[size] || BUTTON_SIZES.md} ${className}`;
 
+  const content = (
+    <>
+      {Icon && <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />}
+      {children}
+      {IconRight && <IconRight className="w-4 h-4 shrink-0" aria-hidden="true" />}
+    </>
+  );
+
   if (to) {
     return (
-      <Link to={to} className={classes} {...rest}>
-        {children}
+      <Link ref={ref} to={to} state={state} replace={replace} className={classes} {...rest}>
+        {content}
       </Link>
     );
   }
 
   if (href) {
     return (
-      <a href={href} className={classes} {...rest}>
-        {children}
+      <a ref={ref} href={href} className={classes} {...rest}>
+        {content}
       </a>
     );
   }
 
   return (
-    <button type={type} disabled={disabled} className={classes} {...rest}>
-      {children}
+    <button ref={ref} type={type} disabled={disabled} className={classes} {...rest}>
+      {content}
     </button>
+  );
+});
+
+/**
+ * Backwards-compatible alias for NotebookButton.
+ */
+export const Button = NotebookButton;
+
+/**
+ * Standardized Back navigation button matching composition-notebook tactile tokens (min 44px hit target).
+ */
+export function NotebookBackButton({
+  to,
+  state,
+  onClick,
+  label,
+  children,
+  variant = 'secondary',
+  size = 'md',
+  className = '',
+  'aria-label': ariaLabel,
+  ...rest
+}) {
+  const text = label || children || 'Back';
+  const resolvedAriaLabel = ariaLabel || (typeof text === 'string' ? text : 'Go back');
+
+  return (
+    <NotebookButton
+      to={to}
+      state={state}
+      onClick={onClick}
+      variant={variant}
+      size={size}
+      aria-label={resolvedAriaLabel}
+      className={`min-h-[44px] whitespace-nowrap ${className}`}
+      {...rest}
+    >
+      <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden="true" />
+      <span>{text}</span>
+    </NotebookButton>
   );
 }
 
@@ -136,7 +192,7 @@ export function Field({
         </p>
       )}
       {error && (
-        <p id={errorId} className="mt-1 text-xs text-redpen font-medium">
+        <p id={errorId} className="mt-1 text-xs text-redpen-dark dark:text-red-400 font-medium">
           {error}
         </p>
       )}
@@ -172,7 +228,7 @@ export function NotebookCard({
             <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-chalkboard-borderSubtle shadow-inner inline-block" />
             <span className="w-3 h-3 rounded-full bg-paper dark:bg-chalkboard border border-ink/40 dark:border-chalkboard-borderSubtle shadow-inner inline-block" />
           </div>
-          <span className="text-[11px] font-semibold text-redpen tracking-wider uppercase">
+          <span className="text-[11px] font-semibold text-redpen-dark dark:text-red-400 tracking-wider uppercase">
             {pageLabel}
           </span>
         </div>
@@ -259,18 +315,10 @@ export function PortalShell({
         {skipLabel}
       </a>
 
-      <header className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors">
+      <header className="sticky top-0 z-30 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors">
         <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
           <Link
-            to={
-              user?.role === 'STUDENT'
-                ? '/student'
-                : user?.role === 'TEACHER'
-                  ? '/teacher'
-                  : user?.role === 'SUPER_ADMIN'
-                    ? '/super'
-                    : '/admin'
-            }
+            to={getRoleHome(user?.role)}
             className="group flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1 shrink-0"
             title="Go to dashboard"
           >
@@ -409,7 +457,7 @@ export function SessionVerificationBar({
                 <span>Verifying active notebook session…</span>
               </div>
             ) : pingError ? (
-              <div role="alert" className="flex items-center gap-1.5 mt-1 text-xs font-mono text-redpen">
+              <div role="alert" className="flex items-center gap-1.5 mt-1 text-xs font-mono text-redpen-dark dark:text-red-400">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>Unable to verify session: {pingError}</span>
               </div>
@@ -434,6 +482,96 @@ export function SessionVerificationBar({
         </Button>
       </div>
     </section>
+  );
+}
+
+/**
+ * Accessible Notebook Modal shell with Escape dismissal, scrollable viewport safety, and focusable close button.
+ */
+export function NotebookModal({
+  open,
+  onClose,
+  titleId,
+  title,
+  subtitle,
+  maxWidth = 'max-w-lg',
+  disableClose = false,
+  children,
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !disableClose && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, disableClose, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 dark:bg-black/65 backdrop-blur-sm p-4 overflow-y-auto animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !disableClose && onClose) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`w-full ${maxWidth} max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-lifted space-y-4`}
+      >
+        {(title || onClose) && (
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              {title && (
+                <h2 id={titleId} className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk">
+                  {title}
+                </h2>
+              )}
+              {subtitle && (
+                <p className="text-xs text-ink-muted dark:text-chalkboard-muted mt-0.5">{subtitle}</p>
+              )}
+            </div>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={disableClose}
+                aria-label="Close modal"
+                className="p-1.5 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted hover:text-ink dark:text-chalkboard-muted dark:hover:text-chalkboard-chalk cursor-pointer disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen shrink-0"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Consistent, non-jittery notebook loading state (uses clean mono text instead of decorative handwriting).
+ */
+export function NotebookLoader({ label = 'Loading…', className = '' }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`py-16 text-center space-y-3 ${className}`}
+    >
+      <RefreshCw className="w-7 h-7 animate-spin mx-auto text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
+      <p className="text-sm font-mono font-medium text-ink-muted dark:text-chalkboard-muted">
+        {label}
+      </p>
+    </div>
   );
 }
 

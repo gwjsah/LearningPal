@@ -136,7 +136,7 @@ export default function ClassRatingsTab({ ratingsSummary }) {
       {/* Materials Flagged for Improvement (≥ 3 ratings) */}
       {lowestRatedResourcesList.length > 0 && (
         <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-redpen/40 dark:border-redpen/50 rounded-2xl overflow-hidden shadow-notebook-sm">
-          <div className="px-5 py-3 bg-redpen-soft/40 border-b border-redpen/30 flex items-center justify-between">
+          <div className="px-5 py-3 bg-redpen-soft/40 dark:bg-red-950/40 border-b border-redpen/30 dark:border-red-500/40 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-redpen-dark dark:text-red-300">
               <AlertTriangle className="w-4 h-4" aria-hidden="true" />
               <span>Materials Flagged for Improvement (≥ 3 ratings)</span>

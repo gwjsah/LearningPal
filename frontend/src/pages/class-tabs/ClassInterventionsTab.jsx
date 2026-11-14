@@ -112,9 +112,9 @@ export default function ClassInterventionsTab({
                 setStatusFilter(tab.id);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 statusFilter === tab.id
-                  ? 'bg-ink text-white dark:bg-highlighter-mint dark:text-ink border-ink dark:border-chalkboard-border shadow-xs'
+                  ? 'bg-ink text-paper dark:bg-highlighter-mint dark:text-ink border-ink dark:border-chalkboard-border shadow-xs'
                   : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle hover:text-ink'
               }`}
             >
@@ -246,12 +246,12 @@ export default function ClassInterventionsTab({
                           value={itv.status}
                           disabled={isUpdating || actionLoading}
                           onChange={(e) => handleStatusChange(itv.id, e.target.value)}
-                          className={`px-2 py-1 rounded-lg text-xs font-mono font-bold border transition-colors focus:outline-none cursor-pointer ${
+                          className={`px-2 py-1 rounded-lg text-xs font-mono font-bold border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer ${
                             isDone
-                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                              ? 'bg-highlighter-mintSoft text-ink border-highlighter-mint/60 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
                               : isCancelled
-                              ? 'bg-ink/10 text-ink-muted border-ink/20'
-                              : 'bg-cyan-100 text-cyan-900 border-cyan-300 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800'
+                              ? 'bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
+                              : 'bg-paper-warm text-ink-blue border-ink-blue/30 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
                           }`}
                           aria-label={`Change status for intervention with ${itv.studentName}`}
                         >
@@ -261,7 +261,7 @@ export default function ClassInterventionsTab({
                           <option value="CANCELLED">CANCELLED</option>
                         </select>
                         {isUpdating && (
-                          <RefreshCw className="w-3 h-3 animate-spin text-ink-muted" aria-hidden="true" />
+                          <RefreshCw className="w-3 h-3 animate-spin text-ink-muted dark:text-chalkboard-muted" aria-hidden="true" />
                         )}
                       </div>
                     </NotebookTableCell>
@@ -272,12 +272,12 @@ export default function ClassInterventionsTab({
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
                             itv.outcome === 'IMPROVED'
-                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
                               : itv.outcome === 'DECLINED'
-                              ? 'bg-redpen-soft text-redpen-dark border-redpen/40'
+                              ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-redpen/40 dark:border-red-500/50'
                               : itv.outcome === 'SAME'
-                              ? 'bg-amber-100 text-amber-900 border-amber-300'
-                              : 'bg-paper-warm text-ink-muted border-ink/20'
+                              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700'
+                              : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
                           }`}
                         >
                           {itv.outcome === 'NO_NEW_DATA' ? (

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services/adminService';
-import { PortalShell, NotebookCard, Button } from '../components/NotebookPrimitives';
+import { PortalShell, NotebookCard, Button, NotebookBackButton } from '../components/NotebookPrimitives';
 
 /**
  * Accessible (?) plain-language explainer button + disclosure panel.
@@ -53,6 +53,7 @@ export default function AdminEvaluationDashboard() {
 
   const [exportingRatings, setExportingRatings] = useState(false);
   const [exportingSurvey, setExportingSurvey] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   // Plain-language (?) explainer toggle states
   const [openExplainers, setOpenExplainers] = useState({
@@ -89,22 +90,24 @@ export default function AdminEvaluationDashboard() {
   }, []);
 
   const handleExportRatings = async () => {
+    setExportError('');
     setExportingRatings(true);
     try {
       await adminService.downloadRatingsExport();
     } catch (err) {
-      alert(`Export failed: ${err.message}`);
+      setExportError(err.message || 'Failed to export ratings CSV.');
     } finally {
       setExportingRatings(false);
     }
   };
 
   const handleExportSurvey = async () => {
+    setExportError('');
     setExportingSurvey(true);
     try {
       await adminService.downloadSurveyExport();
     } catch (err) {
-      alert(`Export failed: ${err.message}`);
+      setExportError(err.message || 'Failed to export survey CSV.');
     } finally {
       setExportingSurvey(false);
     }
@@ -136,8 +139,8 @@ export default function AdminEvaluationDashboard() {
           hasEnoughSample
             ? 'bg-highlighter-mint text-ink border-ink/20'
             : isNotMet
-            ? 'bg-redpen-soft text-redpen-dark border-redpen/30'
-            : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20'
+            ? 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-redpen/30 dark:border-red-500/50'
+            : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
         }`}
       >
         {hasEnoughSample && <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />}
@@ -170,18 +173,14 @@ export default function AdminEvaluationDashboard() {
       title="User Testing & Evaluation Ledger"
       subtitle="Monitor project objectives with empirical data across helpfulness, usability, and algorithmic gap validation."
       headerRight={
-        <Button to="/admin" variant="secondary" size="sm" className="text-xs">
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-          <span>Back to Admin Home</span>
-        </Button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <NotebookBackButton to="/admin" label="Back to Admin Home" />
+        </div>
       }
     >
       <div className="space-y-6">
         {/* EDUCATIONAL / CONTEXTUAL NOTICE */}
-        <NotebookCard
-          borderStyle="sketch"
-          className="p-5 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border flex items-start gap-3"
-        >
+        <NotebookCard className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border flex items-start gap-3">
           <div className="p-2 rounded-xl bg-highlighter-mint/30 text-ink border border-ink/15 shrink-0 mt-0.5">
             <TrendingUp className="w-5 h-5 text-ink-blue" aria-hidden="true" />
           </div>
@@ -195,6 +194,15 @@ export default function AdminEvaluationDashboard() {
           </div>
         </NotebookCard>
 
+        {exportError && (
+          <div
+            role="alert"
+            className="p-3 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-xs font-mono font-bold"
+          >
+            Export failed: {exportError}
+          </div>
+        )}
+
         {loading ? (
           <NotebookCard className="p-12 text-center bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border">
             <div className="inline-flex items-center gap-2 text-ink-muted dark:text-chalkboard-muted">
@@ -205,7 +213,10 @@ export default function AdminEvaluationDashboard() {
             </div>
           </NotebookCard>
         ) : error ? (
-          <div className="p-6 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 text-sm">
+          <div
+            role="alert"
+            className="p-6 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-sm"
+          >
             {error}
           </div>
         ) : (
@@ -213,18 +224,16 @@ export default function AdminEvaluationDashboard() {
             {/* CARD 1: HELPFULNESS RATINGS (80% TARGET) */}
             {ratingsSummary && (
               <NotebookCard
-                ruled
-                marginLine
                 lifted
-                className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
+                className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <Star className="w-5 h-5 text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
-                      <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
+                      <h2 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
                         Feedback & Resource Helpfulness
-                      </h3>
+                      </h2>
                       <PlainLanguageExplainer
                         id="explainer-helpfulness"
                         label="Explain helpfulness rating metric in plain language"
@@ -326,18 +335,16 @@ export default function AdminEvaluationDashboard() {
             {/* CARD 2: USABILITY SURVEY (4.0 / 5.0 TARGET) */}
             {surveySummary && (
               <NotebookCard
-                ruled
-                marginLine
                 lifted
-                className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
+                className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <MessageSquare className="w-5 h-5 text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
-                      <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
+                      <h2 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
                         In-App Usability Survey
-                      </h3>
+                      </h2>
                       <PlainLanguageExplainer
                         id="explainer-usability"
                         label="Explain usability survey score in plain language"
@@ -454,18 +461,16 @@ export default function AdminEvaluationDashboard() {
             {/* CARD 3: VALIDATION LAB AGREEMENT & COHEN'S KAPPA (85% TARGET) */}
             {validationReport && (
               <NotebookCard
-                ruled
-                marginLine
                 lifted
-                className="p-6 sm:p-8 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
+                className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-5"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <FlaskConical className="w-5 h-5 text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
-                      <h3 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
+                      <h2 className="text-xl font-extrabold text-ink dark:text-chalkboard-chalk">
                         Validation Lab Agreement &amp; Cohen&apos;s Kappa
-                      </h3>
+                      </h2>
                       <PlainLanguageExplainer
                         id="explainer-kappa"
                         label="Explain validation agreement and Cohen's kappa in plain language"

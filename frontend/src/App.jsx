@@ -28,6 +28,7 @@ import AdminValidationReport from './pages/AdminValidationReport';
 import UsabilitySurvey from './pages/UsabilitySurvey';
 import AdminEvaluationDashboard from './pages/AdminEvaluationDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import NotFound from './pages/NotFound';
 
 /**
  * Main application router wiring:
@@ -79,6 +80,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRole="STUDENT">
                   <TopicProgressDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/classes/:classId/assessments/:id/take"
+              element={
+                <ProtectedRoute allowedRole="STUDENT">
+                  <TakeAssessment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/classes/:classId/attempts/:id/result"
+              element={
+                <ProtectedRoute allowedRole="STUDENT">
+                  <AttemptResult />
                 </ProtectedRoute>
               }
             />
@@ -286,7 +303,7 @@ export default function App() {
             />
 
             {/* Catch-all Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

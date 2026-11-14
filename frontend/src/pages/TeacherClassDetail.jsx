@@ -25,7 +25,10 @@ import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
 import {
   Button,
+  NotebookButton,
+  NotebookBackButton,
   NotebookCard,
+  NotebookLoader,
   PortalShell,
   NotebookTabs,
   NotebookTabPanel,
@@ -408,7 +411,7 @@ export default function TeacherClassDetail() {
       onLogout={logout}
       badgeIcon={BookOpenCheck}
       badgeLabel={classDetail ? `Class Section • ${classDetail.name}` : 'Class Roster'}
-      badgeColorClass={isArchived ? 'bg-amber-100 text-amber-900' : 'bg-highlighter-mint text-ink'}
+      badgeColorClass={isArchived ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200' : 'bg-highlighter-mint text-ink'}
       title={classDetail ? `${classDetail.subject.name} (${classDetail.name})` : 'Class Section'}
       subtitle={
         classDetail
@@ -418,38 +421,28 @@ export default function TeacherClassDetail() {
           : 'View your class join code, student roster, and topic gap overview.'
       }
       headerRight={
-        <div className="flex items-center gap-2">
-          <Link
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <NotebookButton
             to={`/teacher/classes/${id}/validation`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-highlighter-mint hover:bg-highlighter-mintSoft shadow-xs transition-colors"
+            variant="mint"
+            size="md"
+            icon={FlaskConical}
           >
-            <FlaskConical className="w-3.5 h-3.5 text-ink-blue" aria-hidden="true" />
-            <span>Validation Lab</span>
-          </Link>
-          <Link
-            to="/teacher"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-ink/25 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface shadow-xs transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Back to Classes</span>
-          </Link>
+            Validation Lab
+          </NotebookButton>
+          <NotebookBackButton to="/teacher" label="Back to Classes" />
         </div>
       }
     >
       <div className="w-full space-y-6">
         {/* Loading state */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" aria-hidden="true" />
-            <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Loading class roster, join codes, and topic gap overview…
-            </p>
-          </div>
+          <NotebookLoader message="Loading class roster, join codes, and topic gap overview…" />
         )}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-5 rounded-2xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-6 h-6 shrink-0" aria-hidden="true" />
               <div>
@@ -457,9 +450,7 @@ export default function TeacherClassDetail() {
                 <p className="text-xs mt-0.5">Please check your permissions or return to your classes.</p>
               </div>
             </div>
-            <Button size="sm" variant="secondary" onClick={() => navigate('/teacher')}>
-              Back to My Classes
-            </Button>
+            <NotebookBackButton to="/teacher" label="Back to My Classes" />
           </div>
         )}
 
@@ -481,7 +472,7 @@ export default function TeacherClassDetail() {
 
         {/* Action Error Banner */}
         {actionError && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex items-center justify-between">
+          <div className="p-4 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <AlertCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
               <span>{actionError}</span>
@@ -526,18 +517,18 @@ export default function TeacherClassDetail() {
                     type="button"
                     onClick={handleCopyCode}
                     disabled={isArchived}
-                    className="p-1 rounded-md hover:bg-paper-card dark:hover:bg-chalkboard-card text-ink-muted hover:text-ink transition-colors cursor-pointer"
+                    className="p-1 rounded-md hover:bg-paper-card dark:hover:bg-chalkboard-card text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors cursor-pointer"
                     title="Copy Join Code to Clipboard"
                     aria-label="Copy Join Code"
                   >
                     {copied ? (
-                      <Check className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                     ) : (
                       <Copy className="w-4 h-4" aria-hidden="true" />
                     )}
                   </button>
                   {copied && (
-                    <span className="text-[10px] font-mono text-emerald-600 font-bold">Copied!</span>
+                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">Copied!</span>
                   )}
                 </div>
 
@@ -546,7 +537,7 @@ export default function TeacherClassDetail() {
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold border ${
                     classDetail.enrollmentOpen && !isArchived
                       ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
-                      : 'bg-redpen-soft text-redpen-dark border-redpen/40'
+                      : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-redpen/40 dark:border-red-500/50'
                   }`}
                 >
                   {classDetail.enrollmentOpen && !isArchived ? (
@@ -602,9 +593,9 @@ export default function TeacherClassDetail() {
                       type="button"
                       onClick={() => setShowArchiveModal(true)}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border border-redpen/30 text-redpen-dark bg-redpen-soft/40 hover:bg-redpen-soft transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border border-redpen/30 dark:border-red-500/50 text-redpen-dark dark:text-red-300 bg-redpen-soft/40 dark:bg-red-950/40 hover:bg-redpen-soft dark:hover:bg-red-950/70 transition-colors cursor-pointer"
                     >
-                      <Archive className="w-3.5 h-3.5 text-redpen" aria-hidden="true" />
+                      <Archive className="w-3.5 h-3.5 text-redpen dark:text-red-400" aria-hidden="true" />
                       <span>Archive</span>
                     </button>
                   </>
@@ -713,7 +704,7 @@ export default function TeacherClassDetail() {
             aria-labelledby="schedule-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-5">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-5">
               <div className="flex items-center gap-3 text-ink dark:text-chalkboard-chalk">
                 <Clock className="w-6 h-6 text-redpen dark:text-highlighter-yellow" aria-hidden="true" />
                 <div>
@@ -727,7 +718,7 @@ export default function TeacherClassDetail() {
               </div>
 
               {actionError && (
-                <div className="p-3 bg-redpen-soft border border-redpen/30 rounded-xl text-redpen-dark text-xs font-mono">
+                <div role="alert" className="p-3 bg-redpen-soft dark:bg-red-950/60 border border-redpen/30 dark:border-red-500/50 rounded-xl text-redpen-dark dark:text-red-300 text-xs font-mono">
                   {actionError}
                 </div>
               )}
@@ -735,10 +726,11 @@ export default function TeacherClassDetail() {
               <form onSubmit={handleSaveSchedule} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
+                    <label htmlFor="schedule-available-from" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                       Available From
                     </label>
                     <input
+                      id="schedule-available-from"
                       type="datetime-local"
                       value={scheduleForm.availableFrom}
                       onChange={(e) =>
@@ -746,7 +738,7 @@ export default function TeacherClassDetail() {
                       }
                       className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     />
-                    <span className="text-[10px] text-ink-muted block mt-1">
+                    <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted block mt-1">
                       Leave empty to open immediately
                     </span>
                   </div>
@@ -763,7 +755,7 @@ export default function TeacherClassDetail() {
                       }
                       className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                     />
-                    <span className="text-[10px] text-ink-muted block mt-1">
+                    <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted block mt-1">
                       Leave empty for no deadline
                     </span>
                   </div>
@@ -815,9 +807,9 @@ export default function TeacherClassDetail() {
             aria-labelledby="unlock-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-md bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-3 text-ink dark:text-chalkboard-chalk">
-                <Unlock className="w-6 h-6 text-emerald-600" aria-hidden="true" />
+                <Unlock className="w-6 h-6 text-ink-blue dark:text-highlighter-mint" aria-hidden="true" />
                 <div>
                   <h3 id="unlock-modal-title" className="text-lg font-bold">
                     Unlock Retake: {unlockModal.assessmentTitle}
@@ -829,17 +821,18 @@ export default function TeacherClassDetail() {
               </div>
 
               {actionError && (
-                <div className="p-3 bg-redpen-soft border border-redpen/30 rounded-xl text-redpen-dark text-xs font-mono">
+                <div role="alert" className="p-3 bg-redpen-soft dark:bg-red-950/60 border border-redpen/30 dark:border-red-500/50 rounded-xl text-redpen-dark dark:text-red-300 text-xs font-mono">
                   {actionError}
                 </div>
               )}
 
               <form onSubmit={handleSaveUnlock} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
+                  <label htmlFor="unlock-student-select" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                     Select Enrolled Student
                   </label>
                   <select
+                    id="unlock-student-select"
                     value={unlockModal.studentId}
                     onChange={(e) =>
                       setUnlockModal((prev) => ({ ...prev, studentId: e.target.value }))
@@ -883,7 +876,7 @@ export default function TeacherClassDetail() {
                     }
                     className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
                   />
-                  <span className="text-[10px] text-ink-muted block mt-1">
+                  <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted block mt-1">
                     Leave blank if no extension is needed
                   </span>
                 </div>
@@ -924,9 +917,9 @@ export default function TeacherClassDetail() {
             aria-labelledby="log-intervention-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 shadow-notebook space-y-4">
               <div className="flex items-center gap-3 text-ink dark:text-chalkboard-chalk">
-                <HeartHandshake className="w-6 h-6 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
+                <HeartHandshake className="w-6 h-6 text-ink-blue dark:text-highlighter-mint" aria-hidden="true" />
                 <div>
                   <h3 id="log-intervention-modal-title" className="text-lg font-bold">
                     Log Pedagogical Intervention
@@ -938,7 +931,7 @@ export default function TeacherClassDetail() {
               </div>
 
               {actionError && (
-                <div className="p-3 bg-redpen-soft border border-redpen/30 rounded-xl text-redpen-dark text-xs font-mono">
+                <div role="alert" className="p-3 bg-redpen-soft dark:bg-red-950/60 border border-redpen/30 dark:border-red-500/50 rounded-xl text-redpen-dark dark:text-red-300 text-xs font-mono">
                   {actionError}
                 </div>
               )}
@@ -946,10 +939,11 @@ export default function TeacherClassDetail() {
               <form onSubmit={handleCreateIntervention} className="space-y-4">
                 {/* Select Student */}
                 <div>
-                  <label className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
+                  <label htmlFor="intervention-student-select" className="block text-xs font-mono uppercase text-ink-muted dark:text-chalkboard-muted mb-1">
                     Student
                   </label>
                   <select
+                    id="intervention-student-select"
                     value={intervForm.studentId}
                     onChange={(e) =>
                       setIntervForm((prev) => ({ ...prev, studentId: e.target.value }))

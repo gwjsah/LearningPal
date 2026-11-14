@@ -19,6 +19,7 @@ import { teacherService } from '../services/teacherService';
 import {
   Button,
   NotebookCard,
+  NotebookLoader,
   PortalShell,
 } from '../components/NotebookPrimitives';
 
@@ -28,7 +29,6 @@ export default function TeacherHome() {
 
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
-  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [surveyDismissed, setSurveyDismissed] = useState(() => {
@@ -199,17 +199,12 @@ export default function TeacherHome() {
 
         {/* Loading state */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Loading your classes…
-            </p>
-          </div>
+          <NotebookLoader message="Loading your classes…" />
         )}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-5 rounded-2xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-6 h-6 flex-shrink-0" />
               <div>
@@ -392,7 +387,7 @@ export default function TeacherHome() {
                                   title="Copy code"
                                 >
                                   {isCopied ? (
-                                    <Check className="w-4 h-4 text-emerald-700" />
+                                    <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                                   ) : (
                                     <Copy className="w-4 h-4" />
                                   )}
@@ -439,10 +434,10 @@ export default function TeacherHome() {
                         >
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-mono font-bold uppercase text-ink-muted">
+                              <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted">
                                 {cls.subject.code}
                               </span>
-                              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
                                 Archived
                               </span>
                             </div>
@@ -483,7 +478,7 @@ export default function TeacherHome() {
             aria-labelledby="create-class-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs"
           >
-            <div className="w-full max-w-lg bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 sm:p-7 shadow-notebook space-y-5">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border rounded-2xl p-6 sm:p-7 shadow-notebook space-y-5">
               <div className="flex items-center justify-between border-b border-ink/15 dark:border-chalkboard-borderSubtle pb-3">
                 <h3
                   id="create-class-title"
@@ -494,7 +489,7 @@ export default function TeacherHome() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer"
                   aria-label="Close dialog"
                 >
                   <X className="w-5 h-5" />
@@ -502,7 +497,7 @@ export default function TeacherHome() {
               </div>
 
               {createError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{createError}</span>
                 </div>

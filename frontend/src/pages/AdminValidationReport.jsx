@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldCheck, FlaskConical } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, ShieldCheck, FlaskConical, BarChart3 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services/adminService';
-import { PortalShell, Button } from '../components/NotebookPrimitives';
+import { PortalShell, Button, NotebookBackButton } from '../components/NotebookPrimitives';
 import ValidationReportView from '../components/ValidationReportView';
 
 export default function AdminValidationReport() {
@@ -42,15 +43,13 @@ export default function AdminValidationReport() {
       title="Institution Validation Lab"
       subtitle="Aggregate validation agreement across all sections and teachers in your institution."
       headerRight={
-        <Button
-          to="/admin"
-          variant="secondary"
-          size="sm"
-          className="text-xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-          <span>Back to Admin Home</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <Button as={Link} to="/admin/evaluation" variant="secondary" size="sm">
+            <BarChart3 className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Evaluation Ledger</span>
+          </Button>
+          <NotebookBackButton to="/admin" label="Back to Admin Home" />
+        </div>
       }
     >
       <ValidationReportView

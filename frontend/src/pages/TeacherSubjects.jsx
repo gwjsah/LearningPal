@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   BookOpen,
   Plus,
-  Copy,
   FolderOpen,
   AlertCircle,
   RefreshCw,
@@ -24,7 +23,9 @@ import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
 import {
   Button,
+  NotebookBackButton,
   NotebookCard,
+  NotebookLoader,
   PortalShell,
 } from '../components/NotebookPrimitives';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -46,9 +47,6 @@ export default function TeacherSubjects() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
   const [confirmState, setConfirmState] = useState(null);
-
-  // Sample copy confirmation
-  const [copyingSample, setCopyingSample] = useState(false);
 
   const loadSubjects = async () => {
     setLoading(true);
@@ -127,21 +125,6 @@ export default function TeacherSubjects() {
     }
   };
 
-  const handleCopySample = async () => {
-    if (copyingSample) return;
-    setCopyingSample(true);
-    try {
-      const copied = await teacherService.copySampleSubject();
-      setSubjects((prev) => [copied, ...prev]);
-      setSuccessToast(`Sample subject copied as "${copied.name}"! You now have a private, editable copy.`);
-      setTimeout(() => setSuccessToast(''), 5000);
-    } catch (err) {
-      setError(err.message || 'Failed to copy sample subject.');
-    } finally {
-      setCopyingSample(false);
-    }
-  };
-
   const handleConfirmAction = async () => {
     if (!confirmState?.onConfirm) {
       setConfirmState(null);
@@ -213,16 +196,6 @@ export default function TeacherSubjects() {
       headerRight={
         <div className="flex items-center gap-2.5">
           <Button
-            variant="secondary"
-            size="md"
-            onClick={handleCopySample}
-            disabled={copyingSample}
-            className="flex items-center gap-1.5 shadow-notebook-sm"
-          >
-            <Copy className="w-4 h-4 text-ink-muted dark:text-chalkboard-muted" />
-            <span>{copyingSample ? 'Copying…' : 'Copy Sample Subject'}</span>
-          </Button>
-          <Button
             variant="primary"
             size="md"
             onClick={() => {
@@ -240,17 +213,9 @@ export default function TeacherSubjects() {
       }
     >
       <div className="w-full space-y-8">
-        {/* Breadcrumb back to classes */}
-        <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link
-            to="/teacher"
-            className="hover:underline hover:text-ink dark:hover:text-chalkboard-chalk inline-flex items-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Teacher Home</span>
-          </Link>
-          <span>/</span>
-          <span className="text-ink dark:text-chalkboard-chalk font-bold">My Subjects</span>
+        {/* Navigation back to classes */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <NotebookBackButton to="/teacher" label="Back to Classes" />
         </div>
 
         {/* Success toast */}
@@ -274,17 +239,12 @@ export default function TeacherSubjects() {
 
         {/* Loading state */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-9 h-9 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink-muted dark:text-chalkboard-muted">
-              Loading your subjects…
-            </p>
-          </div>
+          <NotebookLoader message="Loading your subjects…" />
         )}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-5 rounded-2xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-6 h-6 flex-shrink-0" />
               <div>
@@ -309,20 +269,10 @@ export default function TeacherSubjects() {
                 You don't own any subjects yet
               </h3>
               <p className="text-sm text-ink-muted dark:text-chalkboard-muted max-w-md mx-auto">
-                Create a new subject from scratch, or copy the seeded C Language Basics curriculum to get started right away.
+                Create a new subject to start authoring topics, questions, and quizzes.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={handleCopySample}
-                disabled={copyingSample}
-                className="shadow-notebook-sm"
-              >
-                <Copy className="w-4 h-4 mr-1.5" />
-                <span>{copyingSample ? 'Copying…' : 'Copy Sample Subject'}</span>
-              </Button>
               <Button
                 variant="primary"
                 size="md"
@@ -382,7 +332,7 @@ export default function TeacherSubjects() {
                             setShowEditModal(sub);
                           }}
                           aria-label={`Edit ${sub.name}`}
-                          className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                          className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Edit subject name/description"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -391,7 +341,7 @@ export default function TeacherSubjects() {
                           type="button"
                           onClick={() => handleArchive(sub)}
                           aria-label={`Archive ${sub.name}`}
-                          className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                          className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-amber-700 dark:hover:text-amber-400 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Archive subject"
                         >
                           <Archive className="w-4 h-4" />
@@ -401,7 +351,7 @@ export default function TeacherSubjects() {
                             type="button"
                             onClick={() => handleDelete(sub)}
                             aria-label={`Delete ${sub.name}`}
-                            className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                            className="p-2 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                             title="Delete unused subject"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -493,7 +443,7 @@ export default function TeacherSubjects() {
             aria-modal="true"
             aria-labelledby="create-subject-title"
           >
-            <div className="w-full max-w-lg rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-5">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-5">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 id="create-subject-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
@@ -505,15 +455,16 @@ export default function TeacherSubjects() {
                 </div>
                 <button
                   type="button"
+                  aria-label="Close modal"
                   onClick={() => setShowCreateModal(false)}
-                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
               {modalError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{modalError}</span>
                 </div>
@@ -591,7 +542,7 @@ export default function TeacherSubjects() {
             aria-modal="true"
             aria-labelledby="edit-subject-title"
           >
-            <div className="w-full max-w-lg rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-5">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border p-6 shadow-notebook-lg space-y-5">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 id="edit-subject-title" className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
@@ -603,15 +554,16 @@ export default function TeacherSubjects() {
                 </div>
                 <button
                   type="button"
+                  aria-label="Close modal"
                   onClick={() => setShowEditModal(null)}
-                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-paper-warm dark:hover:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
 
               {modalError && (
-                <div className="p-3 rounded-xl border border-redpen bg-redpen-soft text-redpen-dark text-xs flex items-center gap-2">
+                <div className="p-3 rounded-xl border border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{modalError}</span>
                 </div>

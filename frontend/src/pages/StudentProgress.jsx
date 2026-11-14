@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
-import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { Button, NotebookBackButton, NotebookCard, NotebookLoader, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 
 export default function StudentProgress() {
@@ -97,55 +97,25 @@ export default function StudentProgress() {
       subtitle="Track your conceptual strengths, identify learning gaps, and focus your study time where it matters most."
     >
       <div className="w-full space-y-8">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between text-xs font-mono">
-          <Link
-            to={backUrl}
-            className="inline-flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted hover:text-ink dark:hover:text-chalkboard-chalk transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>{backLabel}</span>
-          </Link>
-          <div className="flex items-center gap-1.5 text-ink-muted dark:text-chalkboard-muted">
-            <Link to="/student" className="hover:underline">My Classes</Link>
-            {validClassId && (
-              <>
-                <span>/</span>
-                <Link to={`/student/classes/${validClassId}`} className="hover:underline">Class #{validClassId}</Link>
-              </>
-            )}
-            {!validClassId && validSubjectId && (
-              <>
-                <span>/</span>
-                <Link to={`/student/subjects/${validSubjectId}`} className="hover:underline">Subject #{validSubjectId}</Link>
-              </>
-            )}
-            <span>/</span>
-            <span className="font-bold text-ink dark:text-chalkboard-chalk">Curriculum Progress</span>
-          </div>
+        {/* Back Navigation */}
+        <div className="flex items-center">
+          <NotebookBackButton to={backUrl} label={backLabel} />
         </div>
 
         {/* Loading state */}
         {loading && (
-          <div className="py-20 text-center space-y-4">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-redpen" />
-            <p className="font-hand text-2xl text-ink dark:text-chalkboard-chalk">
-              Analyzing your quiz submissions and computing topic mastery...
-            </p>
-          </div>
+          <NotebookLoader message="Analyzing your quiz submissions and computing topic mastery..." />
         )}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft text-redpen-dark flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <p className="text-sm font-semibold">{error}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="secondary" onClick={() => navigate('/student')}>
-                Back to My Classes
-              </Button>
+              <NotebookBackButton to="/student" label="Back to My Classes" />
               <Button size="sm" variant="primary" onClick={loadProgress}>
                 <RefreshCw className="w-3.5 h-3.5 mr-1" />
                 Retry
@@ -276,9 +246,9 @@ export default function StudentProgress() {
                 {/* 2. All 6 Curriculum Topics List */}
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
+                    <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
                       All Curriculum Topics
-                    </h3>
+                    </h2>
                     <p className="text-xs sm:text-sm text-ink-muted dark:text-chalkboard-muted">
                       Select any topic to review your question-by-question answer history.
                     </p>
@@ -288,23 +258,13 @@ export default function StudentProgress() {
                     {progress.topics?.map((topic, idx) => {
                       const topicDetailUrl = getTopicDetailUrl(topic.topicId);
                       return (
-                        <div
+                        <Link
                           key={topic.topicId}
-                          onClick={() => navigate(topicDetailUrl)}
-                          className="group flex h-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen rounded-2xl"
-                          tabIndex={0}
-                          role="link"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              navigate(topicDetailUrl);
-                            }
-                          }}
+                          to={topicDetailUrl}
+                          className="group flex h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen rounded-2xl"
                         >
                           <NotebookCard
-                            pattern="ruled"
-                            borderStyle="sketch"
-                            className="w-full h-full p-5 flex flex-col justify-between gap-4 transition-all hover:shadow-notebook group-hover:-translate-y-0.5"
+                            className="w-full h-full flex flex-col justify-between gap-4 transition-all hover:shadow-notebook group-hover:-translate-y-0.5"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="space-y-1.5 flex-1 min-w-0">
@@ -365,7 +325,7 @@ export default function StudentProgress() {
                               </div>
                             </div>
                           </NotebookCard>
-                        </div>
+                        </Link>
                       );
                     })}
                   </div>

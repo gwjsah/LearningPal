@@ -12,8 +12,8 @@ export default {
           DEFAULT: '#FDFBF7',   // Primary warm cream notebook page
           warm: '#F6F1E6',      // Aged manila / secondary section paper
           card: '#FFFDF9',      // Crisp index card white-cream
-          hover: '#FFFFFF',     // Slightly lighter shade of paper for subtle button hover
-          pressed: '#FFFFFF',   // Pressed shade matching lighter paper hue
+          hover: '#FFFDF9',     // Subtle warm cream hover (never pure #FFFFFF)
+          pressed: '#F6F1E6',   // Aged manila pressed state
           rule: '#D8E3EC',      // Classic cyan-blue notebook ruling line
           grid: '#E3DEC8',      // Subtle graph-paper grid line
           edge: '#E5DEC9',      // Paper border / deckle edge

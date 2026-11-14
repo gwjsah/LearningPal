@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
-import { PortalShell, NotebookCard, Button } from '../components/NotebookPrimitives';
+import { PortalShell, NotebookCard, NotebookLoader, Button, NotebookButton, NotebookBackButton } from '../components/NotebookPrimitives';
 
 export default function TeacherValidationHub() {
   const { classId } = useParams();
@@ -74,26 +74,16 @@ export default function TeacherValidationHub() {
       title="Blind Topic Validation"
       subtitle="Evaluate student topic mastery blindly to measure automated gap detection accuracy."
       headerRight={
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            to={`/teacher/classes/${classId}`}
-            variant="secondary"
-            size="sm"
-            className="text-xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            <span>Back to Class</span>
-          </Button>
-
-          <Button
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <NotebookBackButton to={`/teacher/classes/${classId}`} label="Back to Class" />
+          <NotebookButton
             to={`/teacher/classes/${classId}/validation/report`}
             variant="primary"
-            size="sm"
-            className="text-xs"
+            size="md"
+            icon={BarChart3}
           >
-            <BarChart3 className="w-3.5 h-3.5 mr-1" />
-            <span>View Validation Report</span>
-          </Button>
+            View Validation Report
+          </NotebookButton>
         </div>
       }
     >
@@ -123,9 +113,7 @@ export default function TeacherValidationHub() {
 
         {/* PROGRESS TOWARDS 30-STUDENT TARGET */}
         <NotebookCard
-          ruled
-          marginLine
-          lifted
+          borderStyle="sketch"
           className="p-6 bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border space-y-4"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -210,11 +198,12 @@ export default function TeacherValidationHub() {
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-              Loading student roster...
-            </div>
+            <NotebookLoader message="Loading student roster..." />
           ) : error ? (
-            <div className="p-4 rounded-xl border border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 text-xs">
+            <div
+              role="alert"
+              className="p-4 rounded-xl border-2 border-redpen bg-redpen-soft dark:bg-red-950/40 text-redpen-dark dark:text-red-200 text-xs"
+            >
               {error}
             </div>
           ) : filteredStudents.length === 0 ? (

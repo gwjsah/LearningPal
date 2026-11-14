@@ -102,9 +102,9 @@ export default function ClassAssessmentsTab({
                 setStatusFilter(tab.id);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
                 statusFilter === tab.id
-                  ? 'bg-ink text-white dark:bg-highlighter-mint dark:text-ink border-ink dark:border-chalkboard-border shadow-xs'
+                  ? 'bg-ink text-paper dark:bg-highlighter-mint dark:text-ink border-ink dark:border-chalkboard-border shadow-xs'
                   : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle hover:text-ink'
               }`}
             >
@@ -203,7 +203,7 @@ export default function ClassAssessmentsTab({
                           {asm.title}
                         </span>
                         {asm.ungradedEssayCount > 0 && (
-                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-400">
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-400 dark:border-amber-700">
                             <Clock className="w-3 h-3" aria-hidden="true" />
                             {asm.ungradedEssayCount} Needs Review
                           </span>
@@ -225,8 +225,8 @@ export default function ClassAssessmentsTab({
                             : isScheduled
                             ? 'bg-highlighter-yellowSoft text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
                             : isClosed
-                            ? 'bg-ink/10 text-ink-muted border-ink/20'
-                            : 'bg-paper-warm text-ink-muted border-ink/20'
+                            ? 'bg-ink/10 dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
+                            : 'bg-paper-warm dark:bg-chalkboard-surface text-ink-muted dark:text-chalkboard-muted border-ink/20 dark:border-chalkboard-borderSubtle'
                         }`}
                       >
                         {isPublished ? (
@@ -277,8 +277,8 @@ export default function ClassAssessmentsTab({
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
                           retakesAllowed
-                            ? 'bg-emerald-100/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900'
-                            : 'bg-redpen-soft text-redpen-dark border border-redpen/30'
+                            ? 'bg-emerald-100/60 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900'
+                            : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border border-redpen/30 dark:border-red-500/50'
                         }`}
                       >
                         {retakesAllowed ? (
@@ -301,7 +301,7 @@ export default function ClassAssessmentsTab({
                             e.stopPropagation();
                             navigate(submissionsUrl);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-ink dark:border-chalkboard-border bg-ink text-white dark:bg-highlighter-mint dark:text-ink hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-ink dark:border-chalkboard-border bg-ink text-paper dark:bg-highlighter-mint dark:text-ink hover:opacity-90 transition-opacity cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
                           title="Open enrolled student submissions and grade attempts"
                         >
                           <span>Submissions</span>

@@ -20,7 +20,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { teacherService } from '../services/teacherService';
 import { aiService } from '../services/aiService';
-import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { Button, NotebookBackButton, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
 
 export default function TeacherAttemptReview() {
   const { classId, studentId, attemptId } = useParams();
@@ -40,6 +40,7 @@ export default function TeacherAttemptReview() {
   const [editForms, setEditForms] = useState({});
   const [globalNotice, setGlobalNotice] = useState('');
   const [aiStatus, setAiStatus] = useState(null);
+  const [answerFilter, setAnswerFilter] = useState('all');
 
   const loadData = async () => {
     setLoading(true);
@@ -347,510 +348,530 @@ export default function TeacherAttemptReview() {
       badgeLabel="Gradebook Review"
       user={user}
       onLogout={logout}
+      headerRight={
+        <NotebookBackButton
+          onClick={() => navigate(returnTo)}
+          label={shortReturnLabel}
+        />
+      }
     >
-      <div className="space-y-6 max-w-5xl mx-auto pb-12">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-          <Link
-            to={`/teacher/classes/${classId}`}
-            className="hover:text-redpen underline transition-colors"
-          >
-            Class Overview
-          </Link>
-          <span>/</span>
-          <Link
-            to={returnTo}
-            className="hover:text-redpen underline transition-colors"
-          >
-            {location.state?.returnTo ? 'Assessment Submissions' : 'Student Progress'}
-          </Link>
-          <span>/</span>
-          <span className="text-ink dark:text-chalkboard-chalk font-bold">Attempt Review</span>
-        </div>
+      <div className="space-y-6 w-full pb-12">
 
-        {/* Global Notice */}
-        {globalNotice && (
-          <div
-            role="status"
-            className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 rounded-xl text-emerald-900 dark:text-emerald-200 text-xs font-mono flex items-start gap-2 shadow-notebook-sm"
-          >
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <span className="font-bold block">Progress was recalculated</span>
-              <span>{globalNotice}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <NotebookCard className="p-12 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted space-y-3">
-            <div className="inline-block animate-spin w-6 h-6 border-2 border-redpen border-t-transparent rounded-full" />
-            <p>Loading attempt review & answers…</p>
-          </NotebookCard>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <NotebookCard className="p-8 text-center text-redpen space-y-4">
-            <AlertCircle className="w-8 h-8 mx-auto" />
-            <p className="text-sm font-mono">{error}</p>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate(returnTo)}
-            >
-              {returnLabel}
-            </Button>
-          </NotebookCard>
-        )}
-
-        {/* Main Content */}
-        {review && !loading && (
-          <>
-            {/* Attempt Overview Card */}
-            <NotebookCard className="p-6 border-3 border-ink/20 dark:border-chalkboard-border shadow-notebook space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-4">
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
-                    {review.assessmentTitle}
-                  </h1>
-                  <p className="text-xs text-ink-muted dark:text-chalkboard-muted font-mono mt-0.5">
-                    Student: <strong className="text-ink dark:text-chalkboard-chalk">{review.studentName}</strong> ({review.studentEmail}) • Class: {review.className}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate(returnTo)}
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-1.5" />
-                    {shortReturnLabel}
-                  </Button>
+            {/* Global Notice */}
+            {globalNotice && (
+              <div
+                role="status"
+                className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 rounded-xl text-emerald-900 dark:text-emerald-200 text-xs font-mono flex items-start gap-2 shadow-notebook-sm"
+              >
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <span className="font-bold block">Progress was recalculated</span>
+                  <span>{globalNotice}</span>
                 </div>
               </div>
+            )}
 
-              {/* Score summary tiles */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
-                  <span className="text-[10px] font-mono uppercase text-ink-muted block">Total Score</span>
-                  <span className="text-xl sm:text-2xl font-bold font-mono text-ink dark:text-chalkboard-chalk">
-                    {review.totalScore} / {review.maxScore}
-                  </span>
-                </div>
+            {/* Loading State */}
+            {loading && (
+              <NotebookCard className="p-12 text-center text-xs font-mono text-ink-muted dark:text-chalkboard-muted space-y-3">
+                <div className="inline-block animate-spin w-6 h-6 border-2 border-redpen border-t-transparent rounded-full" />
+                <p>Loading attempt review & answers…</p>
+              </NotebookCard>
+            )}
 
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
-                  <span className="text-[10px] font-mono uppercase text-ink-muted block">Score Percent</span>
-                  <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
-                    {review.percentage}%
-                  </span>
-                </div>
+            {/* Error State */}
+            {error && !loading && (
+              <NotebookCard className="p-8 text-center text-redpen space-y-4">
+                <AlertCircle className="w-8 h-8 mx-auto" />
+                <p className="text-sm font-mono">{error}</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate(returnTo)}
+                >
+                  {returnLabel}
+                </Button>
+              </NotebookCard>
+            )}
 
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
-                  <span className="text-[10px] font-mono uppercase text-ink-muted block">Attempt Status</span>
-                  <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk mt-1 block">
-                    {review.awaitingTeacherGrading
-                      ? `Awaiting teacher grading (${review.ungradedEssayCount})`
-                      : review.status}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
-                  <span className="text-[10px] font-mono uppercase text-ink-muted block">Submitted Date</span>
-                  <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted mt-1 block">
-                    {formatDate(review.submittedAt)}
-                  </span>
-                </div>
-              </div>
-            </NotebookCard>
-
-            {/* Questions & Grading Forms */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
-                  Question Responses ({review.answers.length} items)
-                </h2>
-                <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                  Overrides automatically recalculate student topic mastery
-                </span>
-              </div>
-
-              {review.answers.map((ans, idx) => {
-                const form = editForms[ans.answerId] || {};
-                const qType = ans.type || 'MULTIPLE_CHOICE';
-                const isCorrect =
-                  qType === 'MULTIPLE_CHOICE'
-                    ? ans.correctChoiceId != null && ans.correctChoiceId === ans.studentChoiceId
-                    : ans.finalScore != null && ans.finalScore >= ans.pointsPossible;
-
-                return (
-                  <NotebookCard
-                    key={ans.answerId}
-                    pattern="ruled"
-                    borderStyle="margin"
-                    className="p-6 space-y-5 border-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-notebook-sm"
-                  >
-                    {/* Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted">
-                          Item #{idx + 1}
-                        </span>
-                        <span>•</span>
-                        <span className="px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink font-mono text-xs font-bold border border-ink/20">
-                          {ans.topicName}
-                        </span>
-                        <span>•</span>
-                        <span className="text-xs font-mono text-ink-muted">
-                          Max: {ans.pointsPossible} pts
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {qType === 'ESSAY' ? (
-                          <span
-                            className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border flex items-center gap-1 ${
-                              ans.graded
-                                ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                                : 'bg-amber-100 text-amber-900 border-amber-400'
-                            }`}
-                          >
-                            {ans.graded ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                            {ans.graded ? `Graded: ${ans.finalScore} / ${ans.pointsPossible} pt` : 'Ungraded Essay'}
-                          </span>
-                        ) : (
-                          <>
-                            {ans.adjusted && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-                                <Sparkles className="w-3 h-3 text-amber-700" />
-                                ADJUSTED
-                              </span>
-                            )}
-
-                            <span
-                              className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border flex items-center gap-1 ${
-                                isCorrect
-                                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                                  : 'bg-redpen-soft text-redpen-dark border-redpen/30'
-                              }`}
-                            >
-                              {isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                              Auto: {ans.autoScore} / {ans.pointsPossible} pt
+            {/* Main Content */}
+            {review && !loading && (
+              <>
+                {/* Attempt Overview Card */}
+                <NotebookCard className="border-2 border-ink/20 dark:border-chalkboard-border shadow-notebook space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
+                        <div className="min-w-0">
+                          <h2 className="text-xl sm:text-2xl font-bold text-ink dark:text-chalkboard-chalk">
+                            {review.assessmentTitle}
+                          </h2>
+                          <p className="text-xs text-ink-muted dark:text-chalkboard-muted font-mono mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span>
+                              Student: <strong className="text-ink dark:text-chalkboard-chalk">{review.studentName}</strong>
                             </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Question Text */}
-                    <p className="text-sm font-medium text-ink dark:text-chalkboard-chalk whitespace-pre-wrap leading-relaxed">
-                      {ans.questionText}
-                    </p>
-
-                    {/* Student Answer Display by Type */}
-                    {qType === 'ENUMERATION' ? (
-                      <div className="space-y-2 pt-1">
-                        <div className="p-3 rounded-xl border border-ink/20 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-1">
-                          <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
-                            Student Answer:
-                          </span>
-                          <p className="text-sm font-mono text-ink dark:text-chalkboard-chalk whitespace-pre-wrap">
-                            {ans.studentTextAnswer && ans.studentTextAnswer.trim() ? ans.studentTextAnswer : '— (No answer submitted)'}
+                            <span className="break-all">({review.studentEmail})</span>
+                            <span>• Class: {review.className}</span>
                           </p>
                         </div>
-                        {ans.acceptedAnswers && ans.acceptedAnswers.length > 0 && (
-                          <div className="p-3 rounded-xl border border-emerald-600/40 bg-emerald-50/60 dark:bg-emerald-950/30 space-y-1">
-                            <span className="text-xs font-mono font-bold uppercase text-emerald-800 dark:text-emerald-300 block">
-                              Accepted Answers:
+                  </div>
+
+                  {/* Score summary tiles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                      <span className="text-[10px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted block">Total Score</span>
+                      <span className="text-xl sm:text-2xl font-bold font-mono text-ink dark:text-chalkboard-chalk">
+                        {review.totalScore} / {review.maxScore}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                      <span className="text-[10px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted block">Score Percent</span>
+                      <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                        {review.percentage}%
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                      <span className="text-[10px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted block">Attempt Status</span>
+                      <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk mt-1 block">
+                        {review.awaitingTeacherGrading
+                          ? `Awaiting teacher grading (${review.ungradedEssayCount})`
+                          : review.status}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle bg-paper-warm/50 dark:bg-chalkboard-surface/50">
+                      <span className="text-[10px] font-mono uppercase text-ink-muted dark:text-chalkboard-muted block">Submitted Date</span>
+                      <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted mt-1 block">
+                        {formatDate(review.submittedAt)}
+                      </span>
+                    </div>
+                  </div>
+                </NotebookCard>
+
+                {/* Questions & Grading Forms */}
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-bold text-ink dark:text-chalkboard-chalk">
+                        Question Responses ({review.answers.length} items)
+                      </h2>
+                      <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                        Overrides automatically recalculate student topic mastery
+                      </span>
+                    </div>
+
+                    {review.answers.length > 1 && (
+                      <div
+                        role="group"
+                        aria-label="Filter question responses"
+                        className="inline-flex items-center gap-1 p-1 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle self-start sm:self-auto"
+                      >
+                        <button
+                          type="button"
+                          aria-pressed={answerFilter === 'all'}
+                          onClick={() => setAnswerFilter('all')}
+                          className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+                            answerFilter === 'all'
+                              ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/20'
+                              : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink'
+                          }`}
+                        >
+                          All ({review.answers.length})
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed={answerFilter === 'needs_grading'}
+                          onClick={() => setAnswerFilter('needs_grading')}
+                          className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+                            answerFilter === 'needs_grading'
+                              ? 'bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk shadow-xs border border-ink/20'
+                              : 'text-ink-muted dark:text-chalkboard-muted hover:text-ink'
+                          }`}
+                        >
+                          Essays &amp; Ungraded (
+                          {review.answers.filter((a) => a.questionType === 'ESSAY' || !a.graded).length}
+                          )
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {review.answers
+                    .filter((ans) => answerFilter === 'all' || ans.questionType === 'ESSAY' || !ans.graded)
+                    .map((ans, idx) => {
+                    const form = editForms[ans.answerId] || {};
+                    const qType = ans.type || 'MULTIPLE_CHOICE';
+                    const isCorrect =
+                      qType === 'MULTIPLE_CHOICE'
+                        ? ans.correctChoiceId != null && ans.correctChoiceId === ans.studentChoiceId
+                        : ans.finalScore != null && ans.finalScore >= ans.pointsPossible;
+
+                    return (
+                      <NotebookCard
+                        key={ans.answerId}
+                        pattern="ruled"
+                        borderStyle="margin"
+                        className="p-6 space-y-5 border-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-notebook-sm"
+                      >
+                        {/* Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted">
+                              Item #{idx + 1}
                             </span>
-                            <p className="text-xs font-mono text-ink dark:text-chalkboard-chalk">
-                              {ans.acceptedAnswers.join(' | ')}
+                            <span>•</span>
+                            <span className="px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink font-mono text-xs font-bold border border-ink/20">
+                              {ans.topicName}
+                            </span>
+                            <span>•</span>
+                            <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                              Max: {ans.pointsPossible} pts
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {qType === 'ESSAY' ? (
+                              <span
+                                className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border flex items-center gap-1 ${
+                                  ans.graded
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
+                                    : 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-400 dark:border-amber-700'
+                                }`}
+                              >
+                                {ans.graded ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                                {ans.graded ? `Graded: ${ans.finalScore} / ${ans.pointsPossible} pt` : 'Ungraded Essay'}
+                              </span>
+                            ) : (
+                              <>
+                                {ans.adjusted && (
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+                                    ADJUSTED
+                                  </span>
+                                )}
+
+                                <span
+                                  className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border flex items-center gap-1 ${
+                                    isCorrect
+                                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
+                                      : 'bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 border-redpen/30 dark:border-red-500/50'
+                                  }`}
+                                >
+                                  {isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                                  Auto: {ans.autoScore} / {ans.pointsPossible} pt
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Question Text */}
+                        <p className="text-sm font-medium text-ink dark:text-chalkboard-chalk whitespace-pre-wrap leading-relaxed">
+                          {ans.questionText}
+                        </p>
+
+                        {/* Student Answer Display by Type */}
+                        {qType === 'ENUMERATION' ? (
+                          <div className="space-y-2 pt-1">
+                            <div className="p-3 rounded-xl border border-ink/20 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-1">
+                              <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
+                                Student Answer:
+                              </span>
+                              <p className="text-sm font-mono text-ink dark:text-chalkboard-chalk whitespace-pre-wrap">
+                                {ans.studentTextAnswer && ans.studentTextAnswer.trim() ? ans.studentTextAnswer : '— (No answer submitted)'}
+                              </p>
+                            </div>
+                            {ans.acceptedAnswers && ans.acceptedAnswers.length > 0 && (
+                              <div className="p-3 rounded-xl border border-emerald-600/40 bg-emerald-50/60 dark:bg-emerald-950/30 space-y-1">
+                                <span className="text-xs font-mono font-bold uppercase text-emerald-800 dark:text-emerald-300 block">
+                                  Accepted Answers:
+                                </span>
+                                <p className="text-xs font-mono text-ink dark:text-chalkboard-chalk">
+                                  {ans.acceptedAnswers.join(' | ')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ) : qType === 'ESSAY' ? (
+                          <div className="p-3.5 rounded-xl border border-ink/20 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-1">
+                            <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
+                              Student Essay Response:
+                            </span>
+                            <p className="text-sm text-ink dark:text-chalkboard-chalk whitespace-pre-wrap leading-relaxed">
+                              {ans.studentTextAnswer && ans.studentTextAnswer.trim() ? ans.studentTextAnswer : '— (No response submitted)'}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 pt-1">
+                            <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
+                              Answer Choices:
+                            </span>
+                            <div className="space-y-1.5">
+                              {ans.choices.map((c) => {
+                                const isStudentChoice = c.id === ans.studentChoiceId;
+                                const isCorrectChoice = c.id === ans.correctChoiceId;
+
+                                let choiceStyle = 'border border-ink/10 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30';
+                                if (isCorrectChoice) {
+                                  choiceStyle = 'border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 font-semibold';
+                                } else if (isStudentChoice && !isCorrectChoice) {
+                                  choiceStyle = 'border-2 border-redpen dark:border-red-500/60 bg-redpen-soft dark:bg-red-950/60 text-redpen-dark dark:text-red-300 font-semibold';
+                                }
+
+                                return (
+                                  <div
+                                    key={c.id}
+                                    className={`p-2.5 sm:p-3 rounded-xl flex items-start justify-between gap-3 text-xs sm:text-sm ${choiceStyle}`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <span className="font-mono font-bold text-redpen">{c.label})</span>
+                                      <span>{c.text}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0 text-[10px] font-mono font-bold">
+                                      {isStudentChoice && (
+                                        <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk">
+                                          Student Choice
+                                        </span>
+                                      )}
+                                      {isCorrectChoice && (
+                                        <span className="px-2 py-0.5 rounded bg-emerald-700 text-white flex items-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3" />
+                                          Correct Choice
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Explanation */}
+                        {ans.explanation && (
+                          <div className="p-3.5 rounded-xl border border-dashed border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/60 dark:bg-chalkboard-surface/60 space-y-1">
+                            <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-redpen">
+                              <Lightbulb className="w-3.5 h-3.5" />
+                              <span>Pedagogical Explanation:</span>
+                            </div>
+                            <p className="text-xs text-ink dark:text-chalkboard-chalk leading-relaxed">
+                              {ans.explanation}
                             </p>
                           </div>
                         )}
-                      </div>
-                    ) : qType === 'ESSAY' ? (
-                      <div className="p-3.5 rounded-xl border border-ink/20 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-1">
-                        <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
-                          Student Essay Response:
-                        </span>
-                        <p className="text-sm text-ink dark:text-chalkboard-chalk whitespace-pre-wrap leading-relaxed">
-                          {ans.studentTextAnswer && ans.studentTextAnswer.trim() ? ans.studentTextAnswer : '— (No response submitted)'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 pt-1">
-                        <span className="text-xs font-mono font-bold uppercase text-ink-muted dark:text-chalkboard-muted block">
-                          Answer Choices:
-                        </span>
-                        <div className="space-y-1.5">
-                          {ans.choices.map((c) => {
-                            const isStudentChoice = c.id === ans.studentChoiceId;
-                            const isCorrectChoice = c.id === ans.correctChoiceId;
 
-                            let choiceStyle = 'border border-ink/10 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30';
-                            if (isCorrectChoice) {
-                              choiceStyle = 'border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 font-semibold';
-                            } else if (isStudentChoice && !isCorrectChoice) {
-                              choiceStyle = 'border-2 border-redpen bg-redpen-soft text-redpen-dark font-semibold';
-                            }
-
-                            return (
-                              <div
-                                key={c.id}
-                                className={`p-2.5 sm:p-3 rounded-xl flex items-start justify-between gap-3 text-xs sm:text-sm ${choiceStyle}`}
+                        {/* Teacher Grading Form (Rubric for ESSAY, Manual Override for MCQ/ENUMERATION) */}
+                        <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card space-y-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div>
+                              <label
+                                htmlFor={`score-${ans.answerId}`}
+                                className="block text-xs font-mono font-bold uppercase text-ink dark:text-chalkboard-chalk"
                               >
-                                <div className="flex items-start gap-2">
-                                  <span className="font-mono font-bold text-redpen">{c.label})</span>
-                                  <span>{c.text}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 flex-shrink-0 text-[10px] font-mono font-bold">
-                                  {isStudentChoice && (
-                                    <span className="px-2 py-0.5 rounded bg-ink/10 dark:bg-chalkboard-highlight text-ink dark:text-chalkboard-chalk">
-                                      Student Choice
+                                {qType === 'ESSAY'
+                                  ? `Rubric Grading for Item #${idx + 1}`
+                                  : `Teacher Override Score for Item #${idx + 1}`}
+                              </label>
+                              <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted">
+                                {qType === 'ESSAY'
+                                  ? `Enter integer points per criterion. Current score: ${ans.finalScore ?? 'Ungraded'} / ${ans.pointsPossible} pt`
+                                  : <>Range: 0.00 to {ans.pointsPossible} (max 2 decimals). Final score currently: <strong>{ans.finalScore} pt</strong></>}
+                              </span>
+                            </div>
+                            {ans.gradedAt && (
+                              <span className="text-[10px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                                Graded: {formatDate(ans.gradedAt)}
+                              </span>
+                            )}
+                          </div>
+
+                          {form.error && (
+                            <div className="p-2 bg-redpen-soft dark:bg-red-950/60 border border-redpen/30 dark:border-red-500/50 rounded-lg text-redpen-dark dark:text-red-300 text-xs font-mono">
+                              {form.error}
+                            </div>
+                          )}
+
+                          {qType === 'ESSAY' ? (
+                            <div className="space-y-3">
+                              {/* On-Demand AI Suggestion Controls & Status */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl border border-ink/15 bg-paper-warm/40 dark:bg-chalkboard-surface/40">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={form.suggesting || form.saving}
+                                    onClick={() => handleSuggestEssayGrade(ans)}
+                                    className="text-xs focus:ring-2 focus:ring-ink"
+                                  >
+                                    {form.suggesting ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                                        <span>Suggesting…</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Bot className="w-3.5 h-3.5 mr-1" />
+                                        <span>Suggest grade with AI</span>
+                                      </>
+                                    )}
+                                  </Button>
+
+                                  {ans.aiSuggestion?.status === 'SUGGESTED' && (
+                                    <>
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-[11px] font-mono font-bold text-amber-900 dark:text-amber-200">
+                                        <Sparkles className="w-3 h-3" />
+                                        <span>AI suggested, not final</span>
+                                      </span>
+                                      <button
+                                        type="button"
+                                        disabled={form.suggesting || form.saving}
+                                        onClick={() => handleDiscardSuggestion(ans)}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-ink/20 dark:border-chalkboard-borderSubtle text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted hover:text-redpen dark:hover:text-red-400 hover:border-redpen/40 focus:outline-none focus:ring-2 focus:ring-redpen cursor-pointer"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                        <span>Discard</span>
+                                      </button>
+                                    </>
+                                  )}
+
+                                  {(ans.aiSuggestion?.status === 'ACCEPTED' || ans.aiSuggestion?.status === 'EDITED') && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-paper-card dark:bg-chalkboard-card border border-ink/20 dark:border-chalkboard-borderSubtle text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                                      <Bot className="w-3 h-3" />
+                                      <span>
+                                        Started from AI suggestion ({ans.aiSuggestion.status === 'ACCEPTED' ? 'Accepted' : 'Edited'})
+                                      </span>
                                     </span>
                                   )}
-                                  {isCorrectChoice && (
-                                    <span className="px-2 py-0.5 rounded bg-emerald-700 text-white flex items-center gap-1">
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      Correct Choice
-                                    </span>
-                                  )}
                                 </div>
+
+                                {aiStatus?.provider === 'gemini' && (
+                                  <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                                    Cloud mode: this student's answer text is sent to Google.
+                                  </span>
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Explanation */}
-                    {ans.explanation && (
-                      <div className="p-3.5 rounded-xl border border-dashed border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/60 dark:bg-chalkboard-surface/60 space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-redpen">
-                          <Lightbulb className="w-3.5 h-3.5" />
-                          <span>Pedagogical Explanation:</span>
-                        </div>
-                        <p className="text-xs text-ink dark:text-chalkboard-chalk leading-relaxed">
-                          {ans.explanation}
-                        </p>
-                      </div>
-                    )}
+                              <div className="space-y-2">
+                                {(ans.rubricCriteria || []).map((rc) => {
+                                  const activeReason = ans.aiSuggestion?.status === 'SUGGESTED'
+                                    ? ans.aiSuggestion.criteria?.find((sc) => sc.criterionId === rc.criterionId)?.reason
+                                    : null;
+                                  return (
+                                    <div
+                                      key={rc.criterionId}
+                                      className="p-2.5 rounded-xl border border-ink/15 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-1.5"
+                                    >
+                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div className="space-y-0.5">
+                                          <span className="text-xs font-bold text-ink dark:text-chalkboard-chalk block">
+                                            {rc.name}
+                                          </span>
+                                          {rc.description && (
+                                            <span className="text-[11px] text-ink-muted dark:text-chalkboard-muted block">
+                                              {rc.description}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={rc.maxPoints}
+                                            step={1}
+                                            value={form.rubricScores?.[rc.criterionId] ?? ''}
+                                            onChange={(e) => handleRubricPointChange(ans.answerId, rc.criterionId, e.target.value)}
+                                            className="w-16 px-2 py-1.5 rounded-lg border-2 border-ink/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-center text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen focus:ring-1 focus:ring-redpen"
+                                            aria-label={`Points for ${rc.name}`}
+                                          />
+                                          <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                                            / {rc.maxPoints} pts
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {activeReason && (
+                                        <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted pl-2 border-l-2 border-amber-400">
+                                          AI reason: {activeReason}
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
 
-                    {/* Teacher Grading Form (Rubric for ESSAY, Manual Override for MCQ/ENUMERATION) */}
-                    <div className="p-4 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card space-y-3">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                        <div>
-                          <label
-                            htmlFor={`score-${ans.answerId}`}
-                            className="block text-xs font-mono font-bold uppercase text-ink dark:text-chalkboard-chalk"
-                          >
-                            {qType === 'ESSAY'
-                              ? `Rubric Grading for Item #${idx + 1}`
-                              : `Teacher Override Score for Item #${idx + 1}`}
-                          </label>
-                          <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted">
-                            {qType === 'ESSAY'
-                              ? `Enter integer points per criterion. Current score: ${ans.finalScore ?? 'Ungraded'} / ${ans.pointsPossible} pt`
-                              : <>Range: 0.00 to {ans.pointsPossible} (max 2 decimals). Final score currently: <strong>{ans.finalScore} pt</strong></>}
-                          </span>
-                        </div>
-                        {ans.gradedAt && (
-                          <span className="text-[10px] font-mono text-ink-muted">
-                            Graded: {formatDate(ans.gradedAt)}
-                          </span>
-                        )}
-                      </div>
+                              <textarea
+                                rows={2}
+                                maxLength={2000}
+                                placeholder="Optional feedback to the student (max 2000 chars)"
+                                value={form.comment}
+                                onChange={(e) => handleCommentChange(ans.answerId, e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                              />
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="sm:col-span-1">
+                                <input
+                                  id={`score-${ans.answerId}`}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  max={ans.pointsPossible}
+                                  placeholder={`e.g. ${ans.pointsPossible}`}
+                                  value={form.teacherScore}
+                                  onChange={(e) => handleScoreChange(ans.answerId, e.target.value)}
+                                  className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                                />
+                              </div>
 
-                      {form.error && (
-                        <div className="p-2 bg-redpen-soft border border-redpen/30 rounded-lg text-redpen-dark text-xs font-mono">
-                          {form.error}
-                        </div>
-                      )}
+                              <div className="sm:col-span-2">
+                                <input
+                                  type="text"
+                                  maxLength={500}
+                                  placeholder="Optional instructor comment to the student (max 500 chars)"
+                                  value={form.comment}
+                                  onChange={(e) => handleCommentChange(ans.answerId, e.target.value)}
+                                  className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
+                                />
+                              </div>
+                            </div>
+                          )}
 
-                      {qType === 'ESSAY' ? (
-                        <div className="space-y-3">
-                          {/* On-Demand AI Suggestion Controls & Status */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl border border-ink/15 bg-paper-warm/40 dark:bg-chalkboard-surface/40">
-                            <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            {qType !== 'ESSAY' && ans.adjusted && (
                               <Button
                                 type="button"
                                 variant="secondary"
                                 size="sm"
-                                disabled={form.suggesting || form.saving}
-                                onClick={() => handleSuggestEssayGrade(ans)}
-                                className="text-xs focus:ring-2 focus:ring-ink"
+                                disabled={form.saving}
+                                onClick={() => handleSaveGrade(ans, true)}
+                                title="Remove manual override and restore auto-graded score"
+                                className="text-xs"
                               >
-                                {form.suggesting ? (
-                                  <>
-                                    <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                                    <span>Suggesting…</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Bot className="w-3.5 h-3.5 mr-1" />
-                                    <span>Suggest grade with AI</span>
-                                  </>
-                                )}
+                                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                                Revert to Auto ({ans.autoScore} pt)
                               </Button>
-
-                              {ans.aiSuggestion?.status === 'SUGGESTED' && (
-                                <>
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-[11px] font-mono font-bold text-amber-900 dark:text-amber-200">
-                                    <Sparkles className="w-3 h-3" />
-                                    <span>AI suggested, not final</span>
-                                  </span>
-                                  <button
-                                    type="button"
-                                    disabled={form.suggesting || form.saving}
-                                    onClick={() => handleDiscardSuggestion(ans)}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-ink/20 text-[11px] font-mono text-ink-muted hover:text-redpen hover:border-redpen/40 focus:outline-none focus:ring-2 focus:ring-redpen cursor-pointer"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                    <span>Discard</span>
-                                  </button>
-                                </>
-                              )}
-
-                              {(ans.aiSuggestion?.status === 'ACCEPTED' || ans.aiSuggestion?.status === 'EDITED') && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-paper-card dark:bg-chalkboard-card border border-ink/20 text-[11px] font-mono text-ink-muted">
-                                  <Bot className="w-3 h-3" />
-                                  <span>
-                                    Started from AI suggestion ({ans.aiSuggestion.status === 'ACCEPTED' ? 'Accepted' : 'Edited'})
-                                  </span>
-                                </span>
-                              )}
-                            </div>
-
-                            {aiStatus?.provider === 'gemini' && (
-                              <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
-                                Cloud mode: this student's answer text is sent to Google.
-                              </span>
                             )}
-                          </div>
-
-                          <div className="space-y-2">
-                            {(ans.rubricCriteria || []).map((rc) => {
-                              const activeReason = ans.aiSuggestion?.status === 'SUGGESTED'
-                                ? ans.aiSuggestion.criteria?.find((sc) => sc.criterionId === rc.criterionId)?.reason
-                                : null;
-                              return (
-                                <div
-                                  key={rc.criterionId}
-                                  className="p-2.5 rounded-xl border border-ink/15 bg-paper-warm/40 dark:bg-chalkboard-surface/40 space-y-1.5"
-                                >
-                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                    <div className="space-y-0.5">
-                                      <span className="text-xs font-bold text-ink dark:text-chalkboard-chalk block">
-                                        {rc.name}
-                                      </span>
-                                      {rc.description && (
-                                        <span className="text-[11px] text-ink-muted dark:text-chalkboard-muted block">
-                                          {rc.description}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        max={rc.maxPoints}
-                                        step={1}
-                                        value={form.rubricScores?.[rc.criterionId] ?? ''}
-                                        onChange={(e) => handleRubricPointChange(ans.answerId, rc.criterionId, e.target.value)}
-                                        className="w-16 px-2 py-1.5 rounded-lg border-2 border-ink/20 bg-paper-card dark:bg-chalkboard-card text-xs font-mono text-center text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen focus:ring-1 focus:ring-redpen"
-                                        aria-label={`Points for ${rc.name}`}
-                                      />
-                                      <span className="text-xs font-mono text-ink-muted">
-                                        / {rc.maxPoints} pts
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {activeReason && (
-                                    <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted pl-2 border-l-2 border-amber-400">
-                                      AI reason: {activeReason}
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          <textarea
-                            rows={2}
-                            maxLength={2000}
-                            placeholder="Optional feedback to the student (max 2000 chars)"
-                            value={form.comment}
-                            onChange={(e) => handleCommentChange(ans.answerId, e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
-                          />
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="sm:col-span-1">
-                            <input
-                              id={`score-${ans.answerId}`}
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              max={ans.pointsPossible}
-                              placeholder={`e.g. ${ans.pointsPossible}`}
-                              value={form.teacherScore}
-                              onChange={(e) => handleScoreChange(ans.answerId, e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-2">
-                            <input
-                              type="text"
-                              maxLength={500}
-                              placeholder="Optional instructor comment to the student (max 500 chars)"
-                              value={form.comment}
-                              onChange={(e) => handleCommentChange(ans.answerId, e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border-2 border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/30 dark:bg-chalkboard-surface/30 text-xs font-mono text-ink dark:text-chalkboard-chalk focus:outline-none focus:border-redpen"
-                            />
+                            <Button
+                              type="button"
+                              variant="primary"
+                              size="sm"
+                              disabled={form.saving}
+                              onClick={() => handleSaveGrade(ans, false)}
+                              className="text-xs"
+                            >
+                              <Save className="w-3.5 h-3.5 mr-1" />
+                              {form.saving ? 'Saving…' : qType === 'ESSAY' ? 'Save Essay Grade' : 'Save Score'}
+                            </Button>
                           </div>
                         </div>
-                      )}
-
-                      <div className="flex items-center justify-end gap-2 pt-1">
-                        {qType !== 'ESSAY' && ans.adjusted && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            disabled={form.saving}
-                            onClick={() => handleSaveGrade(ans, true)}
-                            title="Remove manual override and restore auto-graded score"
-                            className="text-xs"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                            Revert to Auto ({ans.autoScore} pt)
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          disabled={form.saving}
-                          onClick={() => handleSaveGrade(ans, false)}
-                          className="text-xs"
-                        >
-                          <Save className="w-3.5 h-3.5 mr-1" />
-                          {form.saving ? 'Saving…' : qType === 'ESSAY' ? 'Save Essay Grade' : 'Save Score'}
-                        </Button>
-                      </div>
-                    </div>
-                  </NotebookCard>
-                );
-              })}
-            </div>
-          </>
-        )}
+                      </NotebookCard>
+                    );
+                  })}
+                </div>
+              </>
+            )}
       </div>
     </PortalShell>
   );
 }
-
