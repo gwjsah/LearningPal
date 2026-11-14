@@ -19,6 +19,9 @@ import {
   CheckCircle2,
   Clock,
   BarChart3,
+  AlertTriangle,
+  BookOpen,
+  ClipboardList,
 } from 'lucide-react';
 import { NotebookCard, Button } from '../../components/NotebookPrimitives';
 
@@ -172,105 +175,101 @@ export default function ClassOverviewTab({
       {/* 4 Real KPI Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Class Average Mastery */}
-        <NotebookCard className="p-4 sm:p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between shadow-notebook-sm border-2 border-ink dark:border-chalkboard-border rounded-2xl min-h-[108px]">
-          <div>
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted block">
-              Average Mastery
-            </span>
+        <div className="bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-paper rounded-2xl p-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle flex items-center justify-center shrink-0 text-ink dark:text-chalkboard-chalk">
+            <BarChart3 className="w-5 h-5" aria-hidden="true" />
           </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-ink dark:text-chalkboard-chalk tracking-tight block">
+          <div className="min-w-0">
+            <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted truncate">
+              Average Mastery
+            </p>
+            <p className="text-2xl font-extrabold tabular-nums text-ink dark:text-chalkboard-chalk leading-tight mt-0.5">
               {overview?.totals?.averageDiagnosticPercent != null
                 ? `${overview.totals.averageDiagnosticPercent}%`
                 : '—'}
-            </span>
-            <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted mt-0.5 block">
+            </p>
+            <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted mt-0.5 truncate">
               Diagnostic benchmark
-            </span>
+            </p>
           </div>
-        </NotebookCard>
+        </div>
 
         {/* KPI 2: Students Needing Attention (Clickable to filter Students Tab) */}
         <button
           type="button"
           onClick={() => onSelectTab && onSelectTab('students', { filter: 'attention' })}
-          className="text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 dark:focus-visible:ring-chalkboard-chalk/20 rounded-2xl"
+          className="text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 dark:focus-visible:ring-chalkboard-chalk/20 rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-paper hover:shadow-notebook transition-all p-4 flex items-center gap-3.5"
           aria-label={`View ${studentsNeedingAttentionCount} students needing attention`}
         >
-          <NotebookCard className="p-4 sm:p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between shadow-notebook-sm border-2 border-ink dark:border-chalkboard-border group-hover:shadow-notebook transition-all h-full rounded-2xl min-h-[108px]">
-            <div>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted block">
-                Needs Attention
+          <div className="w-10 h-10 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle flex items-center justify-center shrink-0 text-ink dark:text-chalkboard-chalk">
+            <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted truncate">
+              Needs Attention
+            </p>
+            <p className="text-2xl font-extrabold tabular-nums text-ink dark:text-chalkboard-chalk leading-tight mt-0.5">
+              {studentsNeedingAttentionCount}
+              <span className="text-xs font-mono font-normal text-ink-muted dark:text-chalkboard-muted ml-1.5">
+                / {roster.length}
               </span>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-ink dark:text-chalkboard-chalk tracking-tight">
-                  {studentsNeedingAttentionCount}
-                </span>
-                <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                  / {roster.length}
-                </span>
-              </div>
-              <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted group-hover:text-ink dark:group-hover:text-chalkboard-chalk group-hover:underline flex items-center gap-1 mt-0.5 transition-colors">
-                <span>≥ 2 learning gaps</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform opacity-70 group-hover:opacity-100" />
-              </span>
-            </div>
-          </NotebookCard>
+            </p>
+            <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted group-hover:text-ink dark:group-hover:text-chalkboard-chalk group-hover:underline flex items-center gap-1 mt-0.5 transition-colors truncate">
+              <span>≥ 2 learning gaps</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform opacity-70 group-hover:opacity-100 shrink-0" />
+            </p>
+          </div>
         </button>
 
         {/* KPI 3: Weakest Topic (Clickable) */}
         <button
           type="button"
           onClick={() => onSelectTab && onSelectTab('students')}
-          className="text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 dark:focus-visible:ring-chalkboard-chalk/20 rounded-2xl"
+          className="text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 dark:focus-visible:ring-chalkboard-chalk/20 rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-paper hover:shadow-notebook transition-all p-4 flex items-center gap-3.5"
           aria-label={`Weakest topic: ${weakestTopic?.topicName || 'None'}`}
         >
-          <NotebookCard className="p-4 sm:p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between shadow-notebook-sm border-2 border-ink dark:border-chalkboard-border group-hover:shadow-notebook transition-all h-full rounded-2xl min-h-[108px]">
-            <div>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted block">
-                Weakest Topic
-              </span>
-            </div>
-            <div className="mt-3">
-              <span className="text-base sm:text-lg font-bold font-sans text-ink dark:text-chalkboard-chalk truncate block leading-snug">
-                {weakestTopic?.topicName || 'None identified'}
-              </span>
-              <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted mt-0.5 block">
-                {weakestTopic
-                  ? `${weakestTopic.averageMasteryPercent ?? 0}% avg • ${weakestTopic.gapCount} gap${
-                      weakestTopic.gapCount === 1 ? '' : 's'
-                    }`
-                  : 'All topics strong'}
-              </span>
-            </div>
-          </NotebookCard>
+          <div className="w-10 h-10 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle flex items-center justify-center shrink-0 text-ink dark:text-chalkboard-chalk">
+            <BookOpen className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted truncate">
+              Weakest Topic
+            </p>
+            <p className="text-lg font-extrabold text-ink dark:text-chalkboard-chalk truncate leading-tight mt-0.5">
+              {weakestTopic?.topicName || 'None identified'}
+            </p>
+            <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted mt-0.5 truncate">
+              {weakestTopic
+                ? `${weakestTopic.averageMasteryPercent ?? 0}% avg • ${weakestTopic.gapCount} gap${
+                    weakestTopic.gapCount === 1 ? '' : 's'
+                  }`
+                : 'All topics strong'}
+            </p>
+          </div>
         </button>
 
         {/* KPI 4: Active Interventions (Clickable to Interventions Tab) */}
         <button
           type="button"
           onClick={() => onSelectTab && onSelectTab('interventions')}
-          className="text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 dark:focus-visible:ring-chalkboard-chalk/20 rounded-2xl"
+          className="text-left group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 dark:focus-visible:ring-chalkboard-chalk/20 rounded-2xl bg-paper-card dark:bg-chalkboard-card border-2 border-ink dark:border-chalkboard-border shadow-paper hover:shadow-notebook transition-all p-4 flex items-center gap-3.5"
           aria-label={`View ${activeInterventionsCount} active interventions`}
         >
-          <NotebookCard className="p-4 sm:p-5 bg-paper-card dark:bg-chalkboard-card flex flex-col justify-between shadow-notebook-sm border-2 border-ink dark:border-chalkboard-border group-hover:shadow-notebook transition-all h-full rounded-2xl min-h-[108px]">
-            <div>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted block">
-                Active Interventions
-              </span>
-            </div>
-            <div className="mt-3">
-              <span className="text-2xl sm:text-3xl font-extrabold font-mono text-ink dark:text-chalkboard-chalk tracking-tight block">
-                {activeInterventionsCount}
-              </span>
-              <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted group-hover:text-ink dark:group-hover:text-chalkboard-chalk group-hover:underline flex items-center gap-1 mt-0.5 transition-colors">
-                <span>Active support plans</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform opacity-70 group-hover:opacity-100" />
-              </span>
-            </div>
-          </NotebookCard>
+          <div className="w-10 h-10 rounded-xl bg-paper-warm dark:bg-chalkboard-surface border border-ink/15 dark:border-chalkboard-borderSubtle flex items-center justify-center shrink-0 text-ink dark:text-chalkboard-chalk">
+            <ClipboardList className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted truncate">
+              Active Interventions
+            </p>
+            <p className="text-2xl font-extrabold tabular-nums text-ink dark:text-chalkboard-chalk leading-tight mt-0.5">
+              {activeInterventionsCount}
+            </p>
+            <p className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted group-hover:text-ink dark:group-hover:text-chalkboard-chalk group-hover:underline flex items-center gap-1 mt-0.5 transition-colors truncate">
+              <span>Active support plans</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform opacity-70 group-hover:opacity-100 shrink-0" />
+            </p>
+          </div>
         </button>
       </div>
 

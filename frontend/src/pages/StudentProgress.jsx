@@ -284,14 +284,14 @@ export default function StudentProgress() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-5">
                     {progress.topics?.map((topic, idx) => {
                       const topicDetailUrl = getTopicDetailUrl(topic.topicId);
                       return (
                         <div
                           key={topic.topicId}
                           onClick={() => navigate(topicDetailUrl)}
-                          className="group block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen rounded-2xl"
+                          className="group flex h-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-redpen rounded-2xl"
                           tabIndex={0}
                           role="link"
                           onKeyDown={(e) => {
@@ -304,18 +304,18 @@ export default function StudentProgress() {
                           <NotebookCard
                             pattern="ruled"
                             borderStyle="sketch"
-                            className="p-5 space-y-4 transition-all hover:shadow-notebook group-hover:-translate-y-0.5"
+                            className="w-full h-full p-5 flex flex-col justify-between gap-4 transition-all hover:shadow-notebook group-hover:-translate-y-0.5"
                           >
                             <div className="flex items-start justify-between gap-3">
-                              <div className="space-y-1 flex-1">
+                              <div className="space-y-1.5 flex-1 min-w-0">
                                 <div className="flex items-center gap-2 text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                                  <span className="px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink font-bold border border-ink/20">
+                                  <span className="px-2 py-0.5 rounded bg-highlighter-yellow/30 text-ink font-bold border border-ink/20 shrink-0">
                                     Topic 0{idx + 1}
                                   </span>
                                   <span>•</span>
-                                  <span>{topic.questionsAnswered} distinct questions evaluated</span>
+                                  <span className="truncate">{topic.questionsAnswered} questions</span>
                                 </div>
-                                <h4 className="font-bold text-lg text-ink dark:text-chalkboard-chalk group-hover:text-redpen transition-colors">
+                                <h4 className="font-bold text-lg leading-snug text-ink dark:text-chalkboard-chalk group-hover:text-redpen transition-colors line-clamp-2 min-h-[3.1rem]">
                                   {topic.topicName}
                                 </h4>
                               </div>
@@ -326,39 +326,43 @@ export default function StudentProgress() {
                               </div>
                             </div>
 
-                            <div className="pt-2">
+                            <div className="space-y-3 mt-auto">
                               <MasteryBar
                                 percent={topic.masteryPercent}
                                 status={topic.status}
                               />
-                            </div>
 
-                            {topic.resourcesRecommended > 0 && (
-                              <div className="flex items-center justify-between text-xs font-mono pt-1">
+                              <div className="flex items-center justify-between text-xs font-mono min-h-[1.25rem]">
                                 <span className="text-ink-muted dark:text-chalkboard-muted">Study Resources:</span>
-                                <span className={`font-bold ${topic.status === 'GAP' ? 'text-redpen-dark dark:text-red-300' : 'text-ink dark:text-chalkboard-chalk'}`}>
-                                  {topic.resourcesCompleted} of {topic.resourcesRecommended} completed
+                                {topic.resourcesRecommended > 0 ? (
+                                  <span className={`font-bold ${topic.status === 'GAP' ? 'text-redpen-dark dark:text-red-300' : 'text-ink dark:text-chalkboard-chalk'}`}>
+                                    {topic.resourcesCompleted} of {topic.resourcesRecommended} completed
+                                  </span>
+                                ) : (
+                                  <span className="text-ink-muted/70 dark:text-chalkboard-muted/70">
+                                    None assigned
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="pt-2.5 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
+                                <span>
+                                  {topic.status === 'INSUFFICIENT_DATA'
+                                    ? 'Take topic quiz to assess'
+                                    : `Last tested: ${
+                                        topic.lastUpdated
+                                          ? new Date(topic.lastUpdated).toLocaleDateString('en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                            })
+                                          : 'Recent'
+                                      }`}
+                                </span>
+                                <span className="inline-flex items-center gap-1 font-bold text-ink dark:text-chalkboard-chalk group-hover:translate-x-1 transition-transform">
+                                  <span>Details & History</span>
+                                  <ArrowRight className="w-3.5 h-3.5" />
                                 </span>
                               </div>
-                            )}
-
-                            <div className="pt-2 border-t border-ink/10 dark:border-chalkboard-borderSubtle flex items-center justify-between text-xs font-mono text-ink-muted dark:text-chalkboard-muted">
-                              <span>
-                                {topic.status === 'INSUFFICIENT_DATA'
-                                  ? 'Take topic quiz to assess'
-                                  : `Last tested: ${
-                                      topic.lastUpdated
-                                        ? new Date(topic.lastUpdated).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                          })
-                                        : 'Recent'
-                                    }`}
-                              </span>
-                              <span className="inline-flex items-center gap-1 font-bold text-ink dark:text-chalkboard-chalk group-hover:translate-x-1 transition-transform">
-                                <span>Details & History</span>
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </span>
                             </div>
                           </NotebookCard>
                         </div>

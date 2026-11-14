@@ -14,8 +14,46 @@ public record TeacherClassAssessmentDto(
         Instant availableUntil,
         boolean allowRetakes,
         boolean hasCustomSetting,
-        int ungradedEssayCount
+        int ungradedEssayCount,
+        String status,
+        int totalQuestions,
+        int attemptCount,
+        int enrolledCount,
+        int submittedStudentCount
 ) {
+    public TeacherClassAssessmentDto(
+            Long assessmentId,
+            String title,
+            String description,
+            Integer timeLimitMinutes,
+            Instant availableFrom,
+            Instant availableUntil,
+            boolean allowRetakes,
+            boolean hasCustomSetting,
+            int ungradedEssayCount,
+            String status,
+            int totalQuestions,
+            int attemptCount
+    ) {
+        this(assessmentId, title, description, timeLimitMinutes, availableFrom, availableUntil,
+                allowRetakes, hasCustomSetting, ungradedEssayCount, status, totalQuestions, attemptCount, 0, 0);
+    }
+
+    public TeacherClassAssessmentDto(
+            Long assessmentId,
+            String title,
+            String description,
+            Integer timeLimitMinutes,
+            Instant availableFrom,
+            Instant availableUntil,
+            boolean allowRetakes,
+            boolean hasCustomSetting,
+            int ungradedEssayCount
+    ) {
+        this(assessmentId, title, description, timeLimitMinutes, availableFrom, availableUntil,
+                allowRetakes, hasCustomSetting, ungradedEssayCount, "PUBLISHED", 0, 0, 0, 0);
+    }
+
     public TeacherClassAssessmentDto(
             Long assessmentId,
             String title,
@@ -27,7 +65,7 @@ public record TeacherClassAssessmentDto(
             boolean hasCustomSetting
     ) {
         this(assessmentId, title, description, timeLimitMinutes, availableFrom, availableUntil,
-                allowRetakes, hasCustomSetting, 0);
+                allowRetakes, hasCustomSetting, 0, "PUBLISHED", 0, 0, 0, 0);
     }
 }
 

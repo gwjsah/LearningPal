@@ -38,6 +38,7 @@ export default function ProtectedRoute({ allowedRole, children }) {
         STUDENT: '/student',
         TEACHER: '/teacher',
         ADMIN: '/admin',
+        SUPER_ADMIN: '/super',
       };
       const destination = roleHomeMap[user.role] || '/';
       return <Navigate to={destination} replace />;

@@ -262,7 +262,15 @@ export function PortalShell({
       <header className="sticky top-0 z-50 w-full border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md shadow-sm transition-colors">
         <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 h-16 flex items-center justify-between gap-4">
           <Link
-            to={user?.role === 'STUDENT' ? '/student' : (user?.role === 'TEACHER' ? '/teacher' : '/admin')}
+            to={
+              user?.role === 'STUDENT'
+                ? '/student'
+                : user?.role === 'TEACHER'
+                  ? '/teacher'
+                  : user?.role === 'SUPER_ADMIN'
+                    ? '/super'
+                    : '/admin'
+            }
             className="group flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen rounded-lg p-1 shrink-0"
             title="Go to dashboard"
           >

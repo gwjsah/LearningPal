@@ -350,31 +350,33 @@ export default function AdminHome() {
   };
 
   const headerActions = (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button
-        to="/admin/evaluation"
-        variant="primary"
-        size="sm"
-        className="font-mono text-xs"
-      >
-        <BarChart3 className="w-3.5 h-3.5 mr-1 text-white" />
-        <span>Evaluation Dashboard</span>
-      </Button>
-      <Button
-        to="/admin/validation"
-        variant="mint"
-        size="sm"
-        className="font-mono text-xs"
-      >
-        <FlaskConical className="w-3.5 h-3.5 mr-1 text-ink-blue" />
-        <span>Validation Report</span>
-      </Button>
+    <div className="flex flex-col sm:items-end gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          to="/admin/evaluation"
+          variant="primary"
+          size="sm"
+          className="font-mono text-xs whitespace-nowrap"
+        >
+          <BarChart3 className="w-3.5 h-3.5 mr-1 text-white" />
+          <span>Evaluation Dashboard</span>
+        </Button>
+        <Button
+          to="/admin/validation"
+          variant="mint"
+          size="sm"
+          className="font-mono text-xs whitespace-nowrap"
+        >
+          <FlaskConical className="w-3.5 h-3.5 mr-1 text-ink-blue" />
+          <span>Validation Report</span>
+        </Button>
+      </div>
       <Button
         variant="secondary"
         size="sm"
         onClick={refreshAll}
         disabled={loadingPending || loadingUsers || loadingClasses}
-        className="font-mono text-xs"
+        className="font-mono text-xs self-start sm:self-end whitespace-nowrap"
       >
         <RefreshCw
           className={`w-3.5 h-3.5 mr-1 ${
@@ -382,7 +384,7 @@ export default function AdminHome() {
           }`}
           aria-hidden="true"
         />
-        <span>Refresh</span>
+        <span>Refresh Data</span>
       </Button>
     </div>
   );

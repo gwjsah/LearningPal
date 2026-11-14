@@ -149,7 +149,10 @@ public class ClassAssessmentAccessTests {
                 .andExpect(jsonPath("$", not(empty())))
                 .andExpect(jsonPath("$[0].assessmentId", is(assessment.getId().intValue())))
                 .andExpect(jsonPath("$[0].hasCustomSetting", is(false)))
-                .andExpect(jsonPath("$[0].allowRetakes", is(true)));
+                .andExpect(jsonPath("$[0].allowRetakes", is(true)))
+                .andExpect(jsonPath("$[0].status", is("PUBLISHED")))
+                .andExpect(jsonPath("$[0].totalQuestions", is(6)))
+                .andExpect(jsonPath("$[0].attemptCount", is(0)));
     }
 
     @Test
@@ -174,14 +177,44 @@ public class ClassAssessmentAccessTests {
                 .andExpect(jsonPath("$.hasCustomSetting", is(true)))
                 .andExpect(jsonPath("$.allowRetakes", is(false)))
                 .andExpect(jsonPath("$.availableFrom", notNullValue()))
-                .andExpect(jsonPath("$.availableUntil", notNullValue()));
+                .andExpect(jsonPath("$.availableUntil", notNullValue()))
+                .andExpect(jsonPath("$.status", is("PUBLISHED")))
+                .andExpect(jsonPath("$.totalQuestions", is(6)));
 
         // Verification via GET
         mockMvc.perform(get("/api/teacher/classes/" + classA.getId() + "/assessments")
                         .header("Authorization", "Bearer " + teacherAToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].hasCustomSetting", is(true)))
-                .andExpect(jsonPath("$[0].allowRetakes", is(false)));
+                .andExpect(jsonPath("$[0].allowRetakes", is(false)))
+                .andExpect(jsonPath("$[0].status", is("PUBLISHED")))
+                .andExpect(jsonPath("$[0].totalQuestions", is(6)));
+
+        // Future window resolves to SCHEDULED
+        UpdateClassAssessmentSettingRequest futureRequest = new UpdateClassAssessmentSettingRequest(
+                now.plus(1, ChronoUnit.HOURS),
+                now.plus(3, ChronoUnit.HOURS),
+                false
+        );
+        mockMvc.perform(put("/api/teacher/classes/" + classA.getId() + "/assessments/" + assessment.getId())
+                        .header("Authorization", "Bearer " + teacherAToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(futureRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("SCHEDULED")));
+
+        // Past window resolves to CLOSED
+        UpdateClassAssessmentSettingRequest pastRequest = new UpdateClassAssessmentSettingRequest(
+                now.minus(3, ChronoUnit.HOURS),
+                now.minus(1, ChronoUnit.HOURS),
+                false
+        );
+        mockMvc.perform(put("/api/teacher/classes/" + classA.getId() + "/assessments/" + assessment.getId())
+                        .header("Authorization", "Bearer " + teacherAToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pastRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CLOSED")));
     }
 
     @Test

@@ -69,6 +69,12 @@ export const teacherService = {
   getClassAssessments: (id) => apiRequest(`/teacher/classes/${id}/assessments`),
 
   /**
+   * Fetches all enrolled students and their submission statuses/scores for an assessment in a class.
+   */
+  getAssessmentSubmissions: (classId, assessmentId) =>
+    apiRequest(`/teacher/classes/${classId}/assessments/${assessmentId}/submissions`),
+
+  /**
    * Updates class-scoped assessment availability window and retake allowance.
    */
   updateClassAssessmentSetting: (id, assessmentId, settings) =>

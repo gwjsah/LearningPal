@@ -128,6 +128,17 @@ public class TeacherClassController {
     }
 
     /**
+     * Lists all enrolled students and their submission statuses/scores for an assessment in a class.
+     */
+    @GetMapping("/classes/{classId}/assessments/{assessmentId}/submissions")
+    public ResponseEntity<TeacherAssessmentSubmissionsDto> getAssessmentSubmissions(
+            @PathVariable Long classId,
+            @PathVariable Long assessmentId,
+            Principal principal) {
+        return ResponseEntity.ok(teacherClassService.getAssessmentSubmissions(principal.getName(), classId, assessmentId));
+    }
+
+    /**
      * Updates class-scoped schedule window and retake rules for an assessment.
      */
     @PutMapping("/classes/{id}/assessments/{assessmentId}")
