@@ -1,0 +1,527 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
+  HelpCircle,
+  RefreshCw,
+  Send,
+  Sparkles,
+  BookOpen,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { studentService } from '../services/studentService';
+import { Button, NotebookBackButton, NotebookCard, NotebookLoader, NotebookModal, PortalShell } from '../components/NotebookPrimitives';
+
+export default function TakeAssessment() {
+  const { id, classId, subjectId } = useParams();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const validClassId =
+    classId && classId !== 'undefined' && !isNaN(classId)
+      ? classId
+      : null;
+
+  const validSubjectId =
+    subjectId && subjectId !== 'undefined' && !isNaN(subjectId)
+      ? subjectId
+      : null;
+
+  const backToWorkspaceUrl = validClassId
+    ? `/student/classes/${validClassId}`
+    : validSubjectId
+    ? `/student/subjects/${validSubjectId}`
+    : '/student';
+
+  const [attemptData, setAttemptData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Current question index in questions array (0-based)
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Selected answers: map of questionId -> { selectedChoiceId?, textAnswer? }
+  const [answers, setAnswers] = useState({});
+
+  // Submit modal / confirmation state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    async function start() {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await studentService.startAttempt(id);
+        setAttemptData(data);
+        try {
+          const savedDraft = localStorage.getItem(`lp_attempt_draft_${data.attemptId}`);
+          if (savedDraft) {
+            setAnswers(JSON.parse(savedDraft));
+          }
+        } catch {
+          // Ignore malformed local draft
+        }
+      } catch (err) {
+        if (err.status === 401 || err.message?.includes('authentication is required')) {
+          logout();
+          navigate('/login', { replace: true });
+          return;
+        }
+        setError(err.message || 'Failed to start or resume assessment.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    start();
+  }, [id]);
+
+  const questions = attemptData?.questions || [];
+  const currentQuestion = questions[currentIndex];
+  const totalQuestions = questions.length;
+
+  const updateAnswerState = (questionId, patch) => {
+    setAnswers((prev) => {
+      const next = {
+        ...prev,
+        [questionId]: { ...(prev[questionId] || {}), ...patch },
+      };
+      if (attemptData?.attemptId) {
+        try {
+          localStorage.setItem(`lp_attempt_draft_${attemptData.attemptId}`, JSON.stringify(next));
+        } catch {
+          // Ignore storage quota errors
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleSelectChoice = (questionId, choiceId) => {
+    updateAnswerState(questionId, { selectedChoiceId: choiceId });
+  };
+
+  const handleTextAnswerChange = (questionId, textAnswer) => {
+    updateAnswerState(questionId, { textAnswer });
+  };
+
+  const isQuestionAnswered = (qId) => {
+    const entry = answers[qId];
+    if (!entry) return false;
+    return entry.selectedChoiceId != null || (entry.textAnswer != null && entry.textAnswer.trim().length > 0);
+  };
+
+  const answeredCount = questions.filter((q) => isQuestionAnswered(q.id)).length;
+  const unansweredCount = totalQuestions - answeredCount;
+  const progressPercent = totalQuestions > 0 ? Math.round(((currentIndex + 1) / totalQuestions) * 100) : 0;
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const payload = Object.entries(answers).map(([qId, entry]) => ({
+        questionId: Number(qId),
+        selectedChoiceId: entry.selectedChoiceId ?? null,
+        textAnswer: entry.textAnswer ?? null,
+      }));
+
+      const response = await studentService.submitAttempt(attemptData.attemptId, payload);
+      try {
+        localStorage.removeItem(`lp_attempt_draft_${attemptData.attemptId}`);
+      } catch {
+        // Ignore storage errors
+      }
+      const target = validClassId
+        ? `/student/classes/${validClassId}/attempts/${response.attemptId}/result`
+        : validSubjectId
+        ? `/student/subjects/${validSubjectId}/attempts/${response.attemptId}/result`
+        : `/student/attempts/${response.attemptId}/result`;
+      navigate(target, { replace: true });
+    } catch (err) {
+      if (err.status === 401 || err.message?.includes('authentication is required')) {
+        logout();
+        navigate('/login', { replace: true });
+        return;
+      }
+      setSubmitError(err.message || 'Submission failed. Please try again.');
+      setSubmitting(false);
+    }
+  };
+
+  // Helper to detect if question text contains code block snippet
+  const renderFormattedQuestion = (text) => {
+    if (!text) return null;
+    const parts = text.split('\n\n');
+
+    return (
+      <div className="space-y-4">
+        {parts.map((part, idx) => {
+          const isCode =
+            part.includes('#include') ||
+            part.includes('int main') ||
+            part.includes('printf(') ||
+            part.includes('scanf(') ||
+            part.includes('for (') ||
+            part.includes('while (');
+
+          if (isCode) {
+            return (
+              <pre
+                key={idx}
+                className="p-4 rounded-xl font-mono text-sm sm:text-base bg-paper-warm dark:bg-chalkboard-surface border border-ink/20 dark:border-chalkboard-borderSubtle whitespace-pre-wrap overflow-x-auto text-ink dark:text-chalkboard-chalk shadow-inner"
+              >
+                <code>{part}</code>
+              </pre>
+            );
+          }
+
+          return (
+            <p
+              key={idx}
+              className="text-lg sm:text-xl font-medium text-ink dark:text-chalkboard-chalk leading-relaxed"
+            >
+              {part}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-paper dark:bg-chalkboard flex flex-col items-center justify-center p-4">
+        <NotebookLoader message="Setting up your test booklet..." />
+      </div>
+    );
+  }
+
+  if (error || !currentQuestion) {
+    return (
+      <div className="min-h-screen bg-paper dark:bg-chalkboard flex flex-col items-center justify-center p-4">
+        <NotebookCard className="max-w-md p-6 text-center space-y-4">
+          <AlertTriangle className="w-10 h-10 text-redpen mx-auto" />
+          <h2 className="text-xl font-bold text-ink dark:text-chalkboard-chalk">Assessment Notice</h2>
+          <p className="text-sm text-ink-muted dark:text-chalkboard-muted">{error || 'No questions available.'}</p>
+          <Button variant="primary" onClick={() => navigate('/student')}>
+            Return to Dashboard
+          </Button>
+        </NotebookCard>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-paper dark:bg-chalkboard text-ink dark:text-chalkboard-chalk flex flex-col justify-between font-sans">
+      {/* Header bar */}
+      <header className="sticky top-0 z-30 bg-paper/95 dark:bg-chalkboard/95 backdrop-blur-md border-b-2 border-ink/15 dark:border-chalkboard-borderSubtle shadow-sm transition-colors">
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 min-h-16 py-2 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <NotebookBackButton
+              to={backToWorkspaceUrl}
+              label="Exit"
+              aria-label="Exit test and return to dashboard"
+              title="Exit test and return to dashboard"
+            />
+            <div className="min-w-0">
+              <h1 className="font-bold text-sm sm:text-base leading-tight truncate">
+                {attemptData.assessmentTitle}
+              </h1>
+              <span className="text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                Question {currentIndex + 1} of {totalQuestions}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="mint"
+              size="sm"
+              onClick={() => setShowConfirmModal(true)}
+              className="text-xs font-bold"
+            >
+              <Send className="w-3.5 h-3.5 mr-1" />
+              Finish & Submit
+            </Button>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full bg-paper-warm dark:bg-chalkboard-surface h-1.5 mt-2 rounded-full overflow-hidden">
+          <div
+            className="bg-redpen h-full transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </header>
+
+      {/* Main question workspace */}
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 space-y-6">
+        {/* Question Navigator Pills */}
+        <div className="p-3 bg-paper-card dark:bg-chalkboard-card rounded-xl border border-ink/15 dark:border-chalkboard-borderSubtle">
+          <div className="flex items-center justify-between mb-2 text-xs font-mono">
+            <span className="font-bold text-ink-muted dark:text-chalkboard-muted uppercase">
+              Question Navigator
+            </span>
+            <span className="text-ink-muted dark:text-chalkboard-muted">
+              {answeredCount} of {totalQuestions} answered
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {questions.map((q, idx) => {
+              const isAnswered = isQuestionAnswered(q.id);
+              const isCurrent = idx === currentIndex;
+
+              let pillStyle =
+                'border border-ink/20 text-ink-muted dark:text-chalkboard-muted bg-paper-warm dark:bg-chalkboard-surface';
+              if (isAnswered) {
+                pillStyle =
+                  'border-2 border-ink bg-highlighter-mint text-ink font-bold shadow-notebook-sm';
+              }
+              if (isCurrent) {
+                pillStyle =
+                  'border-2 border-redpen bg-redpen text-white font-extrabold shadow-notebook-sm ring-2 ring-redpen/30';
+              }
+
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => setCurrentIndex(idx)}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  className={`w-9 h-9 rounded-lg text-xs font-mono transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen cursor-pointer ${pillStyle}`}
+                  aria-label={`Jump to question ${idx + 1}${isAnswered ? ', answered' : ', unanswered'}`}
+                >
+                  {idx + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Question Card */}
+        <NotebookCard pattern="ruled" borderStyle="margin" className="p-6 sm:p-8 space-y-6">
+          {/* Topic header */}
+          <div className="flex items-center justify-between text-xs font-mono border-b border-ink/10 dark:border-chalkboard-borderSubtle pb-3">
+            <span className="px-2.5 py-1 rounded-md bg-highlighter-yellow/30 text-ink font-bold border border-ink/20">
+              Topic: {currentQuestion.topicName}
+            </span>
+            <span className="text-ink-muted dark:text-chalkboard-muted">
+              Worth {currentQuestion.points || 1.0} pt
+            </span>
+          </div>
+
+          {/* Formatted Question Text */}
+          {renderFormattedQuestion(currentQuestion.text)}
+
+          {/* Answer Input Area (by question type) */}
+          <div className="space-y-3 pt-4 border-t border-ink/10 dark:border-chalkboard-borderSubtle">
+            {currentQuestion.type === 'ENUMERATION' ? (
+              <div className="space-y-2">
+                <label
+                  htmlFor={`enum-input-${currentQuestion.id}`}
+                  className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block"
+                >
+                  Your Short Answer (max 200 characters):
+                </label>
+                <input
+                  id={`enum-input-${currentQuestion.id}`}
+                  type="text"
+                  maxLength={200}
+                  value={answers[currentQuestion.id]?.textAnswer || ''}
+                  onChange={(e) => handleTextAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="Type your answer…"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm sm:text-base focus:outline-none focus:border-redpen"
+                />
+                <div className="text-right text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                  {(answers[currentQuestion.id]?.textAnswer || '').length} / 200
+                </div>
+              </div>
+            ) : currentQuestion.type === 'ESSAY' ? (
+              <div className="space-y-2">
+                <label
+                  htmlFor={`essay-input-${currentQuestion.id}`}
+                  className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block"
+                >
+                  Your Essay Response (plain text, max 5000 characters):
+                </label>
+                <textarea
+                  id={`essay-input-${currentQuestion.id}`}
+                  rows={7}
+                  maxLength={5000}
+                  value={answers[currentQuestion.id]?.textAnswer || ''}
+                  onChange={(e) => handleTextAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="Write your response clearly…"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-ink/30 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk text-sm sm:text-base leading-relaxed focus:outline-none focus:border-redpen"
+                />
+                <div className="flex items-center justify-between text-[11px] font-mono text-ink-muted dark:text-chalkboard-muted">
+                  <span>Essays are graded by your teacher after submission.</span>
+                  <span>{(answers[currentQuestion.id]?.textAnswer || '').length} / 5000</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="text-xs font-mono font-bold text-ink-muted dark:text-chalkboard-muted uppercase block">
+                  Choose the best answer:
+                </span>
+
+                <div role="radiogroup" aria-label="Multiple choice options" className="space-y-2.5">
+                  {currentQuestion.choices.map((choice) => {
+                    const isSelected = answers[currentQuestion.id]?.selectedChoiceId === choice.id;
+
+                    return (
+                      <label
+                        key={choice.id}
+                        className={`flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer select-none ${
+                          isSelected
+                            ? 'border-ink dark:border-chalkboard-borderStrong bg-highlighter-yellow/40 dark:bg-chalkboard-surface shadow-notebook-sm font-semibold'
+                            : 'border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card hover:bg-paper-warm dark:hover:bg-chalkboard-surface'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${currentQuestion.id}`}
+                          value={choice.id}
+                          checked={isSelected}
+                          onChange={() => handleSelectChoice(currentQuestion.id, choice.id)}
+                          className="mt-1 w-4 h-4 text-redpen focus:ring-redpen"
+                        />
+                        <div className="flex-1 text-sm sm:text-base leading-relaxed">
+                          <span className="font-mono font-bold text-redpen mr-2">
+                            {choice.label})
+                          </span>
+                          <span>{choice.text}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </NotebookCard>
+      </main>
+
+      {/* Footer Navigation Bar */}
+      <footer className="sticky bottom-0 z-30 bg-paper-card dark:bg-chalkboard-card border-t-2 border-ink dark:border-chalkboard-borderSubtle px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Button
+            variant="secondary"
+            size="md"
+            disabled={currentIndex === 0}
+            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            Previous
+          </Button>
+
+          <span className="text-xs font-mono text-ink-muted dark:text-chalkboard-muted hidden sm:inline">
+            Use Previous / Next or the Navigator pills above
+          </span>
+
+          {currentIndex < totalQuestions - 1 ? (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
+            >
+              Next
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
+          ) : (
+            <Button
+              variant="mint"
+              size="md"
+              onClick={() => setShowConfirmModal(true)}
+            >
+              Review & Submit
+              <Send className="w-4 h-4 ml-1.5" />
+            </Button>
+          )}
+        </div>
+      </footer>
+
+      {/* Submit Confirmation Modal */}
+      <NotebookModal
+        open={showConfirmModal}
+        onClose={() => !submitting && setShowConfirmModal(false)}
+        title="Ready to submit?"
+        subtitle="Your answers will be finalized and auto-graded immediately."
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-5">
+          {/* Answer tally stats */}
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-highlighter-mint/40 border border-ink/20">
+              <span className="block text-2xl font-mono font-bold text-ink dark:text-chalkboard-chalk">{answeredCount}</span>
+              <span className="text-xs text-ink-muted dark:text-chalkboard-muted">Answered</span>
+            </div>
+            <div className={`p-3 rounded-xl border ${
+              unansweredCount > 0
+                ? 'bg-redpen-soft dark:bg-red-950/60 border-redpen dark:border-red-500/60 text-redpen-dark dark:text-red-300'
+                : 'bg-paper-warm dark:bg-chalkboard-surface border-ink/20 dark:border-chalkboard-borderSubtle text-ink dark:text-chalkboard-chalk'
+            }`}>
+              <span className="block text-2xl font-mono font-bold">{unansweredCount}</span>
+              <span className="text-xs">Unanswered</span>
+            </div>
+          </div>
+
+          {/* Unanswered warning banner */}
+          {unansweredCount > 0 && (
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl border-2 border-highlighter-yellow bg-highlighter-yellowSoft dark:bg-amber-950/40 text-ink dark:text-amber-200 flex items-start gap-2.5 text-xs sm:text-sm"
+            >
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 text-ink dark:text-amber-400 mt-0.5" aria-hidden="true" />
+              <p>
+                You have <strong className="font-bold">{unansweredCount} unanswered questions</strong>.
+                Unanswered questions receive zero points.
+              </p>
+            </div>
+          )}
+
+          {submitError && (
+            <div role="alert" className="p-3 rounded-lg bg-redpen-soft dark:bg-red-950/60 border border-redpen dark:border-red-500/60 text-redpen-dark dark:text-red-300 text-xs">
+              {submitError}
+            </div>
+          )}
+
+          {/* Modal Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              variant="secondary"
+              size="md"
+              className="flex-1"
+              disabled={submitting}
+              onClick={() => setShowConfirmModal(false)}
+            >
+              Return to Quiz
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              className="flex-1"
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin mr-1.5" aria-hidden="true" />
+                  Grading...
+                </>
+              ) : (
+                'Confirm & Submit'
+              )}
+            </Button>
+          </div>
+        </div>
+      </NotebookModal>
+    </div>
+  );
+}
+

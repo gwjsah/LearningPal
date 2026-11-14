@@ -1,0 +1,57 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies and Build Artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+target/
+graphify-out/
+storage/
+./storage/
+
+# Environment Variables & Secrets
+.env
+.env*.local
+!.env.example
+
+# Spring Boot Configuration & Secrets
+application.properties
+!application.properties.example
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Agent tooling & local skills cache
+.agents/
+.claude/
+.impeccable/
+frontend/.impeccable/
+skills-lock.json
+
+LearningPal_Handoff.md
+STUDENT_PAGE_AUDIT.md
+DEMO_VS_REAL_AUDIT.md
+FEATURE_GUIDE.md
+
+# Database dumps & local database files
+*.sql
+!database_backup.sql
+*.mv.db
+data/
+
