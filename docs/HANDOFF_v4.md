@@ -16,7 +16,16 @@ Continuing from `LearningPal_Handoff_v3.md`. Same working style: Claude writes p
 | 28 | New question types ENUMERATION and ESSAY with rubrics, rule-based enumeration grading, teacher rubric grading | Done and reviewed | 207 (2 skipped) |
 | 29 | AI drafting of ENUMERATION and ESSAY questions (one type per job) | Done and reviewed | 211 (3 skipped) |
 | 30 | AI "Suggest grade" for essays (suggest only, teacher confirms) | Done and reviewed | 218 (4 skipped) |
-| 31 | **Targeted security audit 2 (read-only, `docs/SECURITY_AUDIT_2.md`)** | **Prompt delivered; waiting for report** | n/a |
+| 31 | **Targeted security audit 2 (`docs/SECURITY_AUDIT_2.md`) + UX/a11y/routing overhaul + final cleanup** | **Done — verified build, test suite, and release branches** | **221 (217 passed, 4 skipped, 0 failed/errors)** |
+
+## 1b. Final Release & QA Sign-Off (2026-11-15)
+- **Backend Test Suite**: `.\mvnw.cmd clean test` -> **221 tests run, 217 passed, 0 failures, 0 errors, 4 skipped** (live Gemini opt-in tests).
+- **Frontend Production Build**: `npm run build` -> **exit code 0** (`dist/` compiled cleanly).
+- **Branches Pushed**:
+  - `gwjsah/dev` (`598784b`) — latest verified application code and UI/a11y fixes
+  - `testing` (`ef292d1`) — includes sanitized `database_backup.sql` with all 31 tables (`student_validation_assignments`, `ai_grade_suggestions`, `questions.type`, `questions.origin`)
+  - `main` (`415b51b`) — `v1.0.0` release with updated `README.md`
+- **Repository Hygiene**: Zero `.env`, real `application.properties`, private keys, or raw scratch scripts tracked.
 
 ## 2. Decisions made since v3 (update to settled decisions)
 
