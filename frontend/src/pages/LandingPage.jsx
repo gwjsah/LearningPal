@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 
 // Lazy-load below-the-fold landing page sections
 const HowItWorks = lazy(() => import('../components/HowItWorks'));
+const PalShowcase = lazy(() => import('../components/PalShowcase'));
 const InteractiveDemo = lazy(() => import('../components/InteractiveDemo'));
 const FinalCTA = lazy(() => import('../components/FinalCTA'));
 const Footer = lazy(() => import('../components/Footer'));
@@ -61,6 +62,7 @@ export default function LandingPage() {
 
         <Suspense fallback={<SectionFallback />}>
           <HowItWorks />
+          <PalShowcase />
           <InteractiveDemo activeRole={demoRole} onChangeRole={handleSelectDemoRole} />
           <FinalCTA onSelectDemoRole={handleSelectDemoRole} />
         </Suspense>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
+import { studentService } from '../services/studentService';
 
 // shortcut: JWT stored in localStorage for dev convenience; upgrade to HttpOnly SameSite=Strict cookies with reverse proxy for production XSS defense.
 const TOKEN_KEY = 'learningpal_token';
@@ -73,14 +74,47 @@ export function AuthProvider({ children }) {
    * Note: Students receive a token and are logged in immediately.
    * Teachers receive token=null and are NOT logged in (awaiting admin approval).
    */
-  const signup = useCallback(async ({ fullName, email, institutionCode, password, role }) => {
-    const response = await authService.signup({ fullName, email, institutionCode, password, role });
+  const signup = useCallback(async ({ fullName, email, institutionCode, password, role, palName, palStyle, palColor }) => {
+    const response = await authService.signup({
+      fullName,
+      email,
+      institutionCode,
+      password,
+      role,
+      palName,
+      palStyle,
+      palColor,
+    });
     if (response.token) {
       localStorage.setItem(TOKEN_KEY, response.token);
       setToken(response.token);
       setUser(response.user);
     }
     return response;
+  }, []);
+
+  /**
+   * Updates the authenticated student's Pal mascot preferences and syncs AuthContext state.
+   */
+  const updatePal = useCallback(async ({ palName, palStyle, palColor, palEnabled, palQuietInQuiz }) => {
+    const updatedUser = await studentService.updatePal({
+      palName,
+      palStyle,
+      palColor,
+      palEnabled,
+      palQuietInQuiz,
+    });
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
+  /**
+   * Updates the authenticated user's display name and syncs AuthContext state.
+   */
+  const updateProfile = useCallback(async ({ fullName }) => {
+    const updatedUser = await authService.updateProfile({ fullName });
+    setUser(updatedUser);
+    return updatedUser;
   }, []);
 
   /**
@@ -107,6 +141,8 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!token && !!user,
     login,
     signup,
+    updatePal,
+    updateProfile,
     logout,
   };
 

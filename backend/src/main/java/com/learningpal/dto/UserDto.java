@@ -21,6 +21,11 @@ public class UserDto {
     private String institutionName;
     private String institutionCode;
     private Instant createdAt;
+    private String palName;
+    private String palStyle;
+    private String palColor;
+    private Boolean palEnabled;
+    private Boolean palQuietInQuiz;
 
     public UserDto() {
     }
@@ -50,7 +55,7 @@ public class UserDto {
         String instName = user.getInstitution() != null ? user.getInstitution().getName() : null;
         String instCode = user.getInstitution() != null ? user.getInstitution().getCode() : null;
 
-        return new UserDto(
+        UserDto dto = new UserDto(
             user.getId(),
             user.getFullName(),
             user.getEmail(),
@@ -61,6 +66,12 @@ public class UserDto {
             instCode,
             user.getCreatedAt()
         );
+        dto.setPalName(user.getPalName() != null && !user.getPalName().isBlank() ? user.getPalName() : "Pip");
+        dto.setPalStyle(user.getPalStyle() != null && !user.getPalStyle().isBlank() ? user.getPalStyle() : "sticky");
+        dto.setPalColor(user.getPalColor() != null && !user.getPalColor().isBlank() ? user.getPalColor() : "yellow");
+        dto.setPalEnabled(user.getPalEnabled() != null ? user.getPalEnabled() : Boolean.TRUE);
+        dto.setPalQuietInQuiz(user.getPalQuietInQuiz() != null ? user.getPalQuietInQuiz() : Boolean.TRUE);
+        return dto;
     }
 
     public Long getId() {
@@ -133,5 +144,45 @@ public class UserDto {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPalName() {
+        return palName;
+    }
+
+    public void setPalName(String palName) {
+        this.palName = palName;
+    }
+
+    public String getPalStyle() {
+        return palStyle;
+    }
+
+    public void setPalStyle(String palStyle) {
+        this.palStyle = palStyle;
+    }
+
+    public String getPalColor() {
+        return palColor;
+    }
+
+    public void setPalColor(String palColor) {
+        this.palColor = palColor;
+    }
+
+    public Boolean getPalEnabled() {
+        return palEnabled;
+    }
+
+    public void setPalEnabled(Boolean palEnabled) {
+        this.palEnabled = palEnabled;
+    }
+
+    public Boolean getPalQuietInQuiz() {
+        return palQuietInQuiz;
+    }
+
+    public void setPalQuietInQuiz(Boolean palQuietInQuiz) {
+        this.palQuietInQuiz = palQuietInQuiz;
     }
 }

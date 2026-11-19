@@ -1,6 +1,6 @@
 import React, { useState, useEffect, forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun, MessageSquare, ArrowLeft, X } from 'lucide-react';
+import { Eye, EyeOff, LogOut, ShieldCheck, CheckCircle, AlertCircle, RefreshCw, Moon, Sun, MessageSquare, ArrowLeft, X, Settings } from 'lucide-react';
 import { LearningPalLogo, SquigglyUnderline } from './Doodles';
 import { ThemeToggleButton, useTheme } from '../context/ThemeContext';
 import { getRoleHome } from '../utils/roleHome';
@@ -362,6 +362,16 @@ export function PortalShell({
                 <span>Give Feedback</span>
               </Link>
             )}
+
+            {/* Settings & Preferences shortcut */}
+            <Link
+              to="/settings"
+              className="inline-flex items-center justify-center min-w-[36px] min-h-[36px] p-2 rounded-xl border border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellowSoft dark:hover:bg-chalkboard-surface transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen"
+              aria-label="Settings and Preferences"
+              title="Settings & Preferences"
+            >
+              <Settings className="w-4 h-4" aria-hidden="true" />
+            </Link>
 
             {/* Chalkboard / Night Study Toggle matching Navbar */}
             <button

@@ -143,4 +143,13 @@ export const studentService = {
       method: 'PUT',
       body: JSON.stringify({ rating, comment }),
     }),
+
+  /**
+   * Updates the student's LearningPal mascot preferences (name, style, highlighter color).
+   */
+  updatePal: ({ palName, palStyle, palColor, palEnabled, palQuietInQuiz }) =>
+    apiRequest('/student/pal', {
+      method: 'PATCH',
+      body: JSON.stringify({ palName, palStyle, palColor, palEnabled, palQuietInQuiz }),
+    }),
 };

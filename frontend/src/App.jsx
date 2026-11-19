@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { FloatingPal, PalProvider } from './components/FloatingPal';
+import Settings from './pages/Settings';
 
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -43,6 +45,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
+          <PalProvider>
           <Routes>
             {/* Public Landing & Authentication */}
             <Route path="/" element={<LandingPage />} />
@@ -302,9 +305,21 @@ export default function App() {
               }
             />
 
+            {/* User Settings & Personal Preferences (All Authenticated Roles) */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRole={['STUDENT', 'TEACHER', 'ADMIN', 'SUPER_ADMIN']}>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Catch-all Fallback */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <FloatingPal />
+          </PalProvider>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

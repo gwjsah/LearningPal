@@ -2,6 +2,7 @@ package com.learningpal.controller;
 
 import com.learningpal.dto.AuthResponse;
 import com.learningpal.dto.LoginRequest;
+import com.learningpal.dto.ProfileUpdateRequest;
 import com.learningpal.dto.SignupRequest;
 import com.learningpal.dto.UserDto;
 import com.learningpal.service.AuthService;
@@ -50,6 +51,17 @@ public class AuthController {
         String email = authentication.getName();
         UserDto user = authService.getCurrentUser(email);
         return ResponseEntity.ok(user);
+    }
+
+    /**
+     * Authenticated endpoint to update the current user's profile display name.
+     */
+    @PatchMapping("/profile")
+    public ResponseEntity<UserDto> updateProfile(
+            Authentication authentication,
+            @RequestBody ProfileUpdateRequest request) {
+        UserDto updated = authService.updateProfile(authentication.getName(), request);
+        return ResponseEntity.ok(updated);
     }
 }
 

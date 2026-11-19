@@ -32,6 +32,10 @@ public class SignupRequest {
     @NotBlank(message = "Institution code is required")
     private String institutionCode;
 
+    private String palName;
+    private String palStyle;
+    private String palColor;
+
     public SignupRequest() {
     }
 
@@ -85,5 +89,29 @@ public class SignupRequest {
 
     public void setInstitutionCode(String institutionCode) {
         this.institutionCode = institutionCode;
+    }
+
+    public String getPalName() {
+        return palName;
+    }
+
+    public void setPalName(String palName) {
+        this.palName = palName;
+    }
+
+    public String getPalStyle() {
+        return palStyle;
+    }
+
+    public void setPalStyle(String palStyle) {
+        this.palStyle = palStyle;
+    }
+
+    public String getPalColor() {
+        return palColor;
+    }
+
+    public void setPalColor(String palColor) {
+        this.palColor = palColor;
     }
 }

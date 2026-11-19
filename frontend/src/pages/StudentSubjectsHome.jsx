@@ -19,12 +19,15 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { Button, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import { usePalMoment } from '../components/FloatingPal';
+import { evaluateProgressPal, getPalProfile } from '../utils/palEngine';
 
 export default function StudentSubjectsHome() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [classes, setClasses] = useState([]);
+  const [overallProgress, setOverallProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [surveyDismissed, setSurveyDismissed] = useState(() => {
@@ -53,8 +56,12 @@ export default function StudentSubjectsHome() {
     setLoading(true);
     setError('');
     try {
-      const data = await studentService.getClasses();
-      setClasses(data);
+      const [classesData, progressData] = await Promise.all([
+        studentService.getClasses(),
+        studentService.getProgress().catch(() => null),
+      ]);
+      setClasses(classesData);
+      setOverallProgress(progressData);
     } catch (err) {
       if (err.status === 401 || err.message?.includes('authentication is required')) {
         logout();
@@ -148,6 +155,28 @@ export default function StudentSubjectsHome() {
   const institutionLabel = user?.institutionName
     ? `${user.institutionName} (${user.institutionCode || 'PILOT-2026'})`
     : 'Pilot University';
+
+  const pal = getPalProfile(user);
+  const palState = evaluateProgressPal(overallProgress, {
+    scope: 'global',
+    studentName: user?.fullName,
+    palName: pal.name,
+  });
+
+  usePalMoment(
+    !loading && !error
+      ? {
+          key: `desk-${palState.mood}-${palState.focusTopic?.topicId || 'none'}`,
+          onceKey: 'welcome_desk',
+          autoPop: true,
+          mood: palState.mood,
+          headline: palState.headline,
+          message: palState.message,
+          ctaLabel: palState.focusTopic ? 'Open Study Diary' : null,
+          ctaTo: palState.focusTopic ? '/student/progress' : null,
+        }
+      : null
+  );
 
   return (
     <PortalShell
