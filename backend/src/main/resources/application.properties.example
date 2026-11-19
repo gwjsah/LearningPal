@@ -4,6 +4,9 @@
 # LearningPal Backend Configuration
 # ===================================================================
 
+# Load root-level .env file if present (optional so tests/CI without .env still work)
+# spring.config.import=optional:file:.env[.properties],optional:file:../.env[.properties]
+
 server.port=8080
 
 # -------------------------------------------------------------------
