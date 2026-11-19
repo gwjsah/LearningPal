@@ -27,6 +27,8 @@ import { studentService } from '../services/studentService';
 import { apiDownload } from '../services/api';
 import { Button, NotebookButton, NotebookBackButton, NotebookCard, NotebookLoader, NotebookTabs, NotebookTabPanel, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
+import { usePalMoment } from '../components/FloatingPal';
+import { detectNewlyUnlockedAchievement, getPalProfile } from '../utils/palEngine';
 
 const RATING_LABELS = {
   1: 'Not helpful',
@@ -282,6 +284,22 @@ export default function TopicProgressDetail() {
   const [feedbackSaving, setFeedbackSaving] = useState(false);
   const [feedbackSaveSuccess, setFeedbackSaveSuccess] = useState(false);
   const [feedbackSaveError, setFeedbackSaveError] = useState('');
+  const [unlockedAch, setUnlockedAch] = useState(null);
+
+  const pal = getPalProfile(user);
+  usePalMoment(
+    unlockedAch
+      ? {
+          key: `topic-ach-${unlockedAch.id}`,
+          autoPop: true,
+          mood: 'thriving',
+          headline: `Achievement unlocked: ${unlockedAch.badge}!`,
+          message: `You earned ${unlockedAch.title} (${unlockedAch.condition}). Equip it on ${pal.name} in Settings!`,
+          ctaLabel: 'Equip in Settings',
+          ctaTo: '/settings',
+        }
+      : null
+  );
 
   // Sync feedback rating state from loaded topic detail
   useEffect(() => {
@@ -379,6 +397,13 @@ export default function TopicProgressDetail() {
         await studentService.uncompleteResource(resourceId, validClassId);
       } else {
         await studentService.completeResource(resourceId, validClassId);
+        studentService
+          .getProgress()
+          .then((overall) => {
+            const newlyUnlocked = detectNewlyUnlockedAchievement(overall, user?.id);
+            if (newlyUnlocked) setUnlockedAch(newlyUnlocked);
+          })
+          .catch(() => null);
       }
     } catch (err) {
       setTopicDetail(previousDetail);

@@ -37,6 +37,7 @@ public class AuthService {
     private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000L;
     private static final Set<String> ALLOWED_PAL_STYLES = Set.of("sticky", "owl", "cat", "shiba");
     private static final Set<String> ALLOWED_PAL_COLORS = Set.of("yellow", "mint", "pink", "sky");
+    private static final Set<String> ALLOWED_PAL_ACCESSORIES = Set.of("none", "pencil", "scarf", "cape", "crown", "gradcap");
     private final ConcurrentHashMap<String, FailedAttempt> loginAttempts = new ConcurrentHashMap<>();
 
     private record FailedAttempt(int count, long lockUntil, long lastAttempt) {}
@@ -203,6 +204,16 @@ public class AuthService {
         }
         if (request.palQuietInQuiz() != null) {
             user.setPalQuietInQuiz(request.palQuietInQuiz());
+        }
+        if (request.palAccessory() != null) {
+            String accessory = request.palAccessory().trim().toLowerCase(Locale.ROOT);
+            if (accessory.isEmpty()) {
+                accessory = "none";
+            }
+            if (!ALLOWED_PAL_ACCESSORIES.contains(accessory)) {
+                throw new BadRequestException("Invalid pal accessory. Choose none, pencil, scarf, cape, crown, or gradcap");
+            }
+            user.setPalAccessory(accessory);
         }
         User saved = userRepository.save(user);
         return UserDto.fromEntity(saved);

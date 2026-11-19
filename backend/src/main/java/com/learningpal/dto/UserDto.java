@@ -26,6 +26,7 @@ public class UserDto {
     private String palColor;
     private Boolean palEnabled;
     private Boolean palQuietInQuiz;
+    private String palAccessory;
 
     public UserDto() {
     }
@@ -71,6 +72,7 @@ public class UserDto {
         dto.setPalColor(user.getPalColor() != null && !user.getPalColor().isBlank() ? user.getPalColor() : "yellow");
         dto.setPalEnabled(user.getPalEnabled() != null ? user.getPalEnabled() : Boolean.TRUE);
         dto.setPalQuietInQuiz(user.getPalQuietInQuiz() != null ? user.getPalQuietInQuiz() : Boolean.TRUE);
+        dto.setPalAccessory(user.getPalAccessory() != null && !user.getPalAccessory().isBlank() ? user.getPalAccessory() : "none");
         return dto;
     }
 
@@ -184,5 +186,13 @@ public class UserDto {
 
     public void setPalQuietInQuiz(Boolean palQuietInQuiz) {
         this.palQuietInQuiz = palQuietInQuiz;
+    }
+
+    public String getPalAccessory() {
+        return palAccessory;
+    }
+
+    public void setPalAccessory(String palAccessory) {
+        this.palAccessory = palAccessory;
     }
 }
