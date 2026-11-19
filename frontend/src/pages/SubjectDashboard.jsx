@@ -29,6 +29,8 @@ import { studentService } from '../services/studentService';
 import { Button, NotebookButton, NotebookBackButton, NotebookCard, NotebookLoader, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 import { WashiTape } from '../components/Doodles';
+import { usePalMoment } from '../components/FloatingPal';
+import { evaluateProgressPal, getPalProfile } from '../utils/palEngine';
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B';
@@ -213,6 +215,28 @@ export default function SubjectDashboard() {
       : effectiveSubjectId
       ? `/student/subjects/${effectiveSubjectId}/attempts/${attemptId}/result`
       : `/student/attempts/${attemptId}/result`;
+
+  const pal = getPalProfile(user);
+  const palState = evaluateProgressPal(progress, {
+    scope: 'class',
+    studentName: user?.fullName,
+    palName: pal.name,
+  });
+
+  usePalMoment(
+    !loading && !error
+      ? {
+          key: `class-${classId || effectiveSubjectId}-${palState.mood}-${palState.focusTopic?.topicId || 'none'}`,
+          onceKey: palState.mood === 'foggy' ? `gap_class_${classId || effectiveSubjectId}` : null,
+          autoPop: palState.mood === 'foggy',
+          mood: palState.mood,
+          headline: palState.headline,
+          message: palState.message,
+          ctaLabel: palState.focusTopic ? `Review ${palState.focusTopic.topicName}` : null,
+          ctaTo: palState.focusTopic ? getTopicProgressUrl(palState.focusTopic.topicId) : null,
+        }
+      : null
+  );
 
   return (
     <PortalShell

@@ -26,6 +26,8 @@ import {
   PortalShell,
 } from '../components/NotebookPrimitives';
 import { StatusBadge } from '../components/MasteryPrimitives';
+import { usePalMoment } from '../components/FloatingPal';
+import { evaluateAttemptPal, getPalProfile } from '../utils/palEngine';
 
 function renderFormattedText(text) {
   if (!text) return null;
@@ -440,6 +442,35 @@ export default function AttemptResult() {
       }
     }
   };
+
+  const pal = getPalProfile(user);
+  const palState = evaluateAttemptPal(result, {
+    studentName: user?.fullName,
+    palName: pal.name,
+  });
+
+  const weakTopicUrl = palState.weakTopic?.topicId
+    ? validClassId
+      ? `/student/classes/${validClassId}/progress/topics/${palState.weakTopic.topicId}`
+      : validSubjectId
+      ? `/student/subjects/${validSubjectId}/progress/topics/${palState.weakTopic.topicId}`
+      : `/student/progress/topics/${palState.weakTopic.topicId}`
+    : progressUrl;
+
+  usePalMoment(
+    !loading && !error && result
+      ? {
+          key: `attempt-${result.attemptId}-${palState.mood}`,
+          onceKey: `attempt_${result.attemptId}`,
+          autoPop: true,
+          mood: palState.mood,
+          headline: palState.headline,
+          message: palState.message,
+          ctaLabel: palState.weakTopic ? `Review ${palState.weakTopic.topicName}` : null,
+          ctaTo: palState.weakTopic ? weakTopicUrl : null,
+        }
+      : null
+  );
 
   if (loading) {
     return (

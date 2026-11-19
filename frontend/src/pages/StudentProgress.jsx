@@ -17,6 +17,9 @@ import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
 import { Button, NotebookBackButton, NotebookCard, NotebookLoader, PortalShell } from '../components/NotebookPrimitives';
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
+import PalAvatar from '../components/PalAvatar';
+import { usePalMoment } from '../components/FloatingPal';
+import { buildPalDiary, evaluateProgressPal, getPalProfile } from '../utils/palEngine';
 
 export default function StudentProgress() {
   const { classId, subjectId } = useParams();
@@ -85,6 +88,29 @@ export default function StudentProgress() {
       ? `/student/subjects/${validSubjectId}/progress/topics/${topicId}`
       : `/student/progress/topics/${topicId}`;
 
+  const pal = getPalProfile(user);
+  const palScope = validClassId || validSubjectId ? 'class' : 'global';
+  const palState = evaluateProgressPal(progress, {
+    scope: palScope,
+    studentName: user?.fullName,
+    palName: pal.name,
+  });
+  const palDiary = buildPalDiary(progress, { palName: pal.name });
+
+  usePalMoment(
+    !loading && !error && progress
+      ? {
+          key: `progress-${validClassId || validSubjectId || 'global'}-${palState.mood}`,
+          autoPop: false,
+          mood: palState.mood,
+          headline: palState.headline,
+          message: palState.message,
+          ctaLabel: palState.focusTopic ? `Study ${palState.focusTopic.topicName}` : null,
+          ctaTo: palState.focusTopic ? getTopicDetailUrl(palState.focusTopic.topicId) : null,
+        }
+      : null
+  );
+
   return (
     <PortalShell
       portalSubtitle="Curriculum Diagnostic & Mastery Progress"
@@ -130,16 +156,21 @@ export default function StudentProgress() {
             {/* If no attempts yet: Empty state */}
             {!hasAnyAttempts ? (
               <NotebookCard pattern="ruled" borderStyle="sketch" className="p-8 sm:p-12 text-center space-y-6">
-                <div className="w-16 h-16 rounded-2xl bg-highlighter-yellow/40 border-2 border-ink dark:border-chalkboard-border flex items-center justify-center mx-auto shadow-notebook-sm">
-                  <BookOpen className="w-8 h-8 text-ink dark:text-chalkboard-chalk" />
+                <div className="flex justify-center">
+                  <PalAvatar
+                    style={pal.style}
+                    color={pal.color}
+                    mood="fresh"
+                    size={96}
+                    label={`${pal.name} ready to start`}
+                  />
                 </div>
                 <div className="max-w-md mx-auto space-y-2">
-                  <h3 className="text-2xl font-bold text-ink dark:text-chalkboard-chalk">
-                    No Diagnostic Data Yet
+                  <h3 className="font-hand text-3xl font-bold text-ink dark:text-chalkboard-chalk">
+                    {palState.headline}
                   </h3>
                   <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
-                    Take your first assessment to see your strengths and gaps! As soon as you complete the
-                    Comprehensive Diagnostic or a topic quiz, your conceptual mastery and trends will appear here.
+                    {palState.message}
                   </p>
                 </div>
                 <Button variant="primary" size="lg" onClick={() => navigate('/student')}>
@@ -149,6 +180,42 @@ export default function StudentProgress() {
               </NotebookCard>
             ) : (
               <>
+                {/* Pal's Study Diary Strip (no duplicate avatar; floating Pal stays in the corner) */}
+                <NotebookCard pattern="ruled" borderStyle="sketch" className="p-5 sm:p-6">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-hand text-2xl font-bold text-ink dark:text-chalkboard-chalk">
+                        {palDiary.title}
+                      </h3>
+                      <span className="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-paper-warm dark:bg-chalkboard-surface text-ink dark:text-chalkboard-chalk border border-ink/25 dark:border-chalkboard-border">
+                        {palState.statusLabel}
+                      </span>
+                    </div>
+                    <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                      So far we have mastered{' '}
+                      <span className="font-bold text-ink dark:text-chalkboard-chalk">
+                        {palDiary.masteredCount} topic{palDiary.masteredCount === 1 ? '' : 's'}
+                      </span>
+                      , checked off{' '}
+                      <span className="font-bold text-ink dark:text-chalkboard-chalk">
+                        {palDiary.resourcesDone} study resource{palDiary.resourcesDone === 1 ? '' : 's'}
+                      </span>
+                      {palDiary.gapCount > 0 && palDiary.nextTopic ? (
+                        <>
+                          , and have{' '}
+                          <span className="font-bold text-redpen-dark dark:text-red-300">
+                            {palDiary.gapCount} gap{palDiary.gapCount === 1 ? '' : 's'}
+                          </span>{' '}
+                          left to clear — starting with{' '}
+                          <span className="font-bold text-ink dark:text-chalkboard-chalk">{palDiary.nextTopic}</span>.
+                        </>
+                      ) : (
+                        ', with zero critical gaps right now.'
+                      )}
+                    </p>
+                  </div>
+                </NotebookCard>
+
                 {/* 1. Top Summary Banner & Study Next Highlight */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Study Next Highlight Card */}

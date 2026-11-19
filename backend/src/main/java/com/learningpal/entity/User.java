@@ -39,6 +39,21 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "pal_name", length = 30)
+    private String palName;
+
+    @Column(name = "pal_style", length = 20)
+    private String palStyle;
+
+    @Column(name = "pal_color", length = 20)
+    private String palColor;
+
+    @Column(name = "pal_enabled")
+    private Boolean palEnabled;
+
+    @Column(name = "pal_quiet_in_quiz")
+    private Boolean palQuietInQuiz;
+
     public User() {
     }
 
@@ -127,5 +142,45 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPalName() {
+        return palName;
+    }
+
+    public void setPalName(String palName) {
+        this.palName = palName;
+    }
+
+    public String getPalStyle() {
+        return palStyle;
+    }
+
+    public void setPalStyle(String palStyle) {
+        this.palStyle = palStyle;
+    }
+
+    public String getPalColor() {
+        return palColor;
+    }
+
+    public void setPalColor(String palColor) {
+        this.palColor = palColor;
+    }
+
+    public Boolean getPalEnabled() {
+        return palEnabled;
+    }
+
+    public void setPalEnabled(Boolean palEnabled) {
+        this.palEnabled = palEnabled;
+    }
+
+    public Boolean getPalQuietInQuiz() {
+        return palQuietInQuiz;
+    }
+
+    public void setPalQuietInQuiz(Boolean palQuietInQuiz) {
+        this.palQuietInQuiz = palQuietInQuiz;
     }
 }
