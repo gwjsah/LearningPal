@@ -50,19 +50,21 @@ class StudentPalTests {
                 .andExpect(jsonPath("$.user.palColor").value("yellow"))
                 .andExpect(jsonPath("$.user.palEnabled").value(true))
                 .andExpect(jsonPath("$.user.palQuietInQuiz").value(true))
+                .andExpect(jsonPath("$.user.palAccessory").value("none"))
                 .andReturn();
 
         JsonNode defaultJson = objectMapper.readTree(defaultRes.getResponse().getContentAsString());
         String token = defaultJson.get("token").asText();
 
-        // 2. PATCH /api/student/pal updates style, color, name, and visibility toggles
+        // 2. PATCH /api/student/pal updates style, color, name, visibility toggles, and accessory
         String updatePayload = """
             {
               "palName": "Mochi",
               "palStyle": "shiba",
               "palColor": "mint",
               "palEnabled": true,
-              "palQuietInQuiz": false
+              "palQuietInQuiz": false,
+              "palAccessory": "crown"
             }
             """;
 
@@ -75,7 +77,8 @@ class StudentPalTests {
                 .andExpect(jsonPath("$.palStyle").value("shiba"))
                 .andExpect(jsonPath("$.palColor").value("mint"))
                 .andExpect(jsonPath("$.palEnabled").value(true))
-                .andExpect(jsonPath("$.palQuietInQuiz").value(false));
+                .andExpect(jsonPath("$.palQuietInQuiz").value(false))
+                .andExpect(jsonPath("$.palAccessory").value("crown"));
 
         // 3. PATCH /api/auth/profile updates display name
         mockMvc.perform(patch("/api/auth/profile")
@@ -94,13 +97,20 @@ class StudentPalTests {
                 .andExpect(jsonPath("$.palStyle").value("shiba"))
                 .andExpect(jsonPath("$.palColor").value("mint"))
                 .andExpect(jsonPath("$.palEnabled").value(true))
-                .andExpect(jsonPath("$.palQuietInQuiz").value(false));
+                .andExpect(jsonPath("$.palQuietInQuiz").value(false))
+                .andExpect(jsonPath("$.palAccessory").value("crown"));
 
-        // 4. Invalid pal style rejected with 400
+        // 5. Invalid pal style or accessory rejected with 400
         mockMvc.perform(patch("/api/student/pal")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"palName\":\"Mochi\",\"palStyle\":\"dragon\",\"palColor\":\"mint\"}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(patch("/api/student/pal")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"palName\":\"Mochi\",\"palStyle\":\"shiba\",\"palColor\":\"mint\",\"palAccessory\":\"jetpack\"}"))
                 .andExpect(status().isBadRequest());
 
         // 5. Control characters in palName rejected with 400

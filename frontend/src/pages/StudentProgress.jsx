@@ -12,6 +12,8 @@ import {
   HelpCircle,
   TrendingUp,
   BookOpen,
+  Award,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { studentService } from '../services/studentService';
@@ -19,7 +21,13 @@ import { Button, NotebookBackButton, NotebookCard, NotebookLoader, PortalShell }
 import { StatusBadge, TrendIndicator, MasteryBar } from '../components/MasteryPrimitives';
 import PalAvatar from '../components/PalAvatar';
 import { usePalMoment } from '../components/FloatingPal';
-import { buildPalDiary, evaluateProgressPal, getPalProfile } from '../utils/palEngine';
+import {
+  buildPalDiary,
+  detectNewlyUnlockedAchievement,
+  evaluatePalAchievements,
+  evaluateProgressPal,
+  getPalProfile,
+} from '../utils/palEngine';
 
 export default function StudentProgress() {
   const { classId, subjectId } = useParams();
@@ -37,6 +45,7 @@ export default function StudentProgress() {
       : null;
 
   const [progress, setProgress] = useState(null);
+  const [unlockedToast, setUnlockedToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -50,6 +59,10 @@ export default function StudentProgress() {
         ? await studentService.getSubjectProgress(validSubjectId)
         : await studentService.getProgress();
       setProgress(data);
+      const newlyUnlocked = detectNewlyUnlockedAchievement(data, user?.id);
+      if (newlyUnlocked) {
+        setUnlockedToast(newlyUnlocked);
+      }
     } catch (err) {
       if (err.status === 401 || err.message?.includes('authentication is required')) {
         logout();
@@ -96,9 +109,20 @@ export default function StudentProgress() {
     palName: pal.name,
   });
   const palDiary = buildPalDiary(progress, { palName: pal.name });
+  const achSummary = evaluatePalAchievements(progress);
 
   usePalMoment(
-    !loading && !error && progress
+    unlockedToast
+      ? {
+          key: `ach-unlocked-${unlockedToast.id}`,
+          autoPop: true,
+          mood: 'thriving',
+          headline: `Achievement unlocked: ${unlockedToast.badge}!`,
+          message: `You earned ${unlockedToast.title} (${unlockedToast.condition}). Equip it on ${pal.name} in Settings!`,
+          ctaLabel: 'Equip in Settings',
+          ctaTo: '/settings',
+        }
+      : !loading && !error && progress
       ? {
           key: `progress-${validClassId || validSubjectId || 'global'}-${palState.mood}`,
           autoPop: false,
@@ -213,6 +237,43 @@ export default function StudentProgress() {
                         ', with zero critical gaps right now.'
                       )}
                     </p>
+
+                    {/* Compact Achievements Shelf */}
+                    <div className="pt-3 mt-2 border-t border-ink/15 dark:border-chalkboard-borderSubtle space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <span className="inline-flex items-center gap-1.5 font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
+                          <Award className="w-3.5 h-3.5 text-redpen dark:text-redpen-margin" aria-hidden="true" />
+                          Pal Achievements ({achSummary.unlockedCount} / {achSummary.totalCount})
+                        </span>
+                        <Link
+                          to="/settings"
+                          className="font-mono font-bold text-ink-blue dark:text-highlighter-sky hover:underline"
+                        >
+                          Equip Accessories →
+                        </Link>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {achSummary.achievements.map((a) => (
+                          <span
+                            key={a.id}
+                            title={`${a.title} — ${a.condition}`}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border ${
+                              a.unlocked
+                                ? 'bg-highlighter-mintSoft dark:bg-emerald-950/60 border-ink dark:border-emerald-500/50 text-ink dark:text-emerald-200 font-bold'
+                                : 'bg-paper-warm/60 dark:bg-chalkboard-surface/50 border-dashed border-ink/25 dark:border-chalkboard-border text-ink-muted dark:text-chalkboard-muted opacity-75'
+                            }`}
+                          >
+                            {a.unlocked ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                            ) : (
+                              <Lock className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            )}
+                            <span>{a.badge}</span>
+                            <span className="opacity-70">· {a.title}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </NotebookCard>
 

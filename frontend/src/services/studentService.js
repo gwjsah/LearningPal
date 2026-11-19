@@ -147,9 +147,9 @@ export const studentService = {
   /**
    * Updates the student's LearningPal mascot preferences (name, style, highlighter color).
    */
-  updatePal: ({ palName, palStyle, palColor, palEnabled, palQuietInQuiz }) =>
+  updatePal: ({ palName, palStyle, palColor, palEnabled, palQuietInQuiz, palAccessory }) =>
     apiRequest('/student/pal', {
       method: 'PATCH',
-      body: JSON.stringify({ palName, palStyle, palColor, palEnabled, palQuietInQuiz }),
+      body: JSON.stringify({ palName, palStyle, palColor, palEnabled, palQuietInQuiz, palAccessory }),
     }),
 };

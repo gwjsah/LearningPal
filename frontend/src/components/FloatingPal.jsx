@@ -244,6 +244,7 @@ export function FloatingPal() {
           style={pal.style}
           color={pal.color}
           mood={effectiveMood}
+          accessory={pal.accessory}
           size={112}
           className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 drop-shadow-sm dark:drop-shadow-[0_0_10px_rgba(255,253,249,0.22)]"
           label={`${pal.name} (${effectiveMood})`}

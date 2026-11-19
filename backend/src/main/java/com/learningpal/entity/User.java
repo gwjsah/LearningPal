@@ -54,6 +54,9 @@ public class User {
     @Column(name = "pal_quiet_in_quiz")
     private Boolean palQuietInQuiz;
 
+    @Column(name = "pal_accessory", length = 20)
+    private String palAccessory;
+
     public User() {
     }
 
@@ -182,5 +185,13 @@ public class User {
 
     public void setPalQuietInQuiz(Boolean palQuietInQuiz) {
         this.palQuietInQuiz = palQuietInQuiz;
+    }
+
+    public String getPalAccessory() {
+        return palAccessory;
+    }
+
+    public void setPalAccessory(String palAccessory) {
+        this.palAccessory = palAccessory;
     }
 }
