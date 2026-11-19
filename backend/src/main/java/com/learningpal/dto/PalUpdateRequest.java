@@ -5,5 +5,6 @@ public record PalUpdateRequest(
         String palStyle,
         String palColor,
         Boolean palEnabled,
-        Boolean palQuietInQuiz
+        Boolean palQuietInQuiz,
+        String palAccessory
 ) {}

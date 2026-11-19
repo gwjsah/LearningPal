@@ -117,13 +117,94 @@ function MoodProps({ mood, ink, red }) {
   return null;
 }
 
+function BehindAccessory({ accessory, style, ink, red }) {
+  if (accessory === 'cape') {
+    return (
+      <path
+        d="M30 62 C16 70, 14 86, 24 91 L56 86 L88 91 C98 86, 96 70, 82 62 Z"
+        fill={red}
+        fillOpacity="0.92"
+        stroke={ink}
+        strokeWidth="2.2"
+        strokeLinejoin="round"
+      />
+    );
+  }
+  if (accessory === 'pencil') {
+    const px = style === 'sticky' ? 81 : 78;
+    const py = style === 'sticky' ? 29 : 31;
+    return (
+      <g transform={`translate(${px}, ${py}) rotate(-34)`}>
+        <rect x="0" y="0" width="6.5" height="5" rx="1.2" fill="#F9A8D4" stroke={ink} strokeWidth="1.6" />
+        <rect x="0" y="4.5" width="6.5" height="19" rx="1" fill="#FDE047" stroke={ink} strokeWidth="1.8" />
+        <polygon points="0,23.5 3.25,30 6.5,23.5" fill="#FDBA74" stroke={ink} strokeWidth="1.6" strokeLinejoin="round" />
+        <polygon points="2,27.6 3.25,30 4.5,27.6" fill={red} />
+      </g>
+    );
+  }
+  return null;
+}
+
+function FrontAccessory({ accessory, style, ink, red }) {
+  const topY = style === 'sticky' ? 23 : 25;
+  if (accessory === 'scarf') {
+    return (
+      <g>
+        <path
+          d="M31 73 Q56 82 81 73 C82 78, 79 81, 75 82 Q56 88 37 82 C33 81, 30 78, 31 73 Z"
+          fill={red}
+          stroke={ink}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path d="M62 79 L69 78 L72 92 L63 93 Z" fill={red} stroke={ink} strokeWidth="1.9" strokeLinejoin="round" />
+        <line x1="65" y1="84" x2="70.5" y2="83.5" stroke="#FDE047" strokeWidth="2" />
+      </g>
+    );
+  }
+  if (accessory === 'cape') {
+    return (
+      <g>
+        <path d="M38 72 Q56 79 74 72" stroke={red} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="56" cy="76" r="4" fill="#FDE047" stroke={ink} strokeWidth="1.8" />
+      </g>
+    );
+  }
+  if (accessory === 'crown') {
+    return (
+      <g transform={`translate(38, ${topY - 16})`}>
+        <path
+          d="M3 16 L0 4 L10 10 L18 1 L26 10 L36 4 L33 16 Z"
+          fill="#FDE047"
+          stroke={ink}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <circle cx="18" cy="11" r="2.2" fill={red} />
+      </g>
+    );
+  }
+  if (accessory === 'gradcap') {
+    return (
+      <g transform={`translate(27, ${topY - 17})`}>
+        <polygon points="29,2 56,11 29,20 2,11" fill={ink} stroke={ink} strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M14 15 L14 22 C14 25, 44 25, 44 22 L44 15" fill={ink} stroke={ink} strokeWidth="1.6" />
+        <path d="M52 12 L52 24" stroke="#FDE047" strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="52" cy="25" r="2.4" fill={red} stroke={ink} strokeWidth="1.2" />
+      </g>
+    );
+  }
+  return null;
+}
+
 /**
- * Hand-drawn notebook-doodle mascot SVG that adapts to style, highlighter color, mastery mood, and Chalkboard mode.
+ * Hand-drawn notebook-doodle mascot SVG that adapts to style, highlighter color, mastery mood, and equipped accessory.
  */
 export default function PalAvatar({
   style = 'sticky',
   color = 'yellow',
   mood = 'fresh',
+  accessory = 'none',
   size = 84,
   animate = true,
   className = '',
@@ -148,6 +229,7 @@ export default function PalAvatar({
       className={`shrink-0 ${animClass} ${className}`}
     >
       <ellipse cx="56" cy="100" rx="26" ry="5" fill={ink} opacity="0.14" />
+      <BehindAccessory accessory={accessory} style={style} ink={ink} red={red} />
 
       {style === 'owl' && (
         <g>
@@ -249,6 +331,7 @@ export default function PalAvatar({
         </g>
       )}
 
+      <FrontAccessory accessory={accessory} style={style} ink={ink} red={red} />
       <MoodProps mood={mood} ink={ink} red={red} />
     </svg>
   );

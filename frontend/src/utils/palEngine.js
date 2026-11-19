@@ -14,6 +14,15 @@ export const PAL_COLORS = [
 
 export const PAL_PRESET_NAMES = ['Pip', 'Inky', 'Mochi', 'Scribble'];
 
+export const PAL_ACCESSORIES = [
+  { id: 'none', title: 'No Accessory', badge: 'Default', condition: 'Clean notebook look' },
+  { id: 'pencil', title: 'Pencil Ear', badge: 'First Refresher', condition: 'Complete 1 study resource' },
+  { id: 'scarf', title: 'Study Scarf', badge: 'Bookworm', condition: 'Complete 3+ study resources' },
+  { id: 'cape', title: 'Comeback Cape', badge: 'Comeback Kid', condition: 'Improve a topic trend' },
+  { id: 'crown', title: 'Star Crown', badge: 'Topic Master', condition: 'Master 1+ topic (≥ 80%)' },
+  { id: 'gradcap', title: 'Grad Cap', badge: 'Honor Roll', condition: 'Master all evaluated topics (2+)' },
+];
+
 export function getPalProfile(user) {
   return {
     name: user?.palName?.trim() || 'Pip',
@@ -21,6 +30,7 @@ export function getPalProfile(user) {
     color: PAL_COLORS.some((c) => c.id === user?.palColor) ? user.palColor : 'yellow',
     enabled: user?.palEnabled !== false,
     quietInQuiz: user?.palQuietInQuiz !== false,
+    accessory: PAL_ACCESSORIES.some((a) => a.id === user?.palAccessory) ? user.palAccessory : 'none',
   };
 }
 
@@ -208,4 +218,64 @@ export function buildPalDiary(progress, { palName = 'Pip' } = {}) {
     resourcesDone,
     nextTopic,
   };
+}
+
+/**
+ * Evaluates which achievement accessories are unlocked from existing progress data (no XP needed).
+ */
+export function evaluatePalAchievements(progress) {
+  const topics = Array.isArray(progress?.topics) ? progress.topics : [];
+  const evaluated = topics.filter((t) => t.status !== 'INSUFFICIENT_DATA' || (t.questionsAnswered ?? 0) > 0);
+  const totalResources = topics.reduce((sum, t) => sum + (t.resourcesCompleted ?? 0), 0);
+  const masteredCount = evaluated.filter((t) => isStrengthStatus(t.status)).length;
+  const hasImproving = evaluated.some((t) => t.trend === 'IMPROVING');
+
+  const unlockedMap = {
+    none: true,
+    pencil: totalResources >= 1,
+    scarf: totalResources >= 3,
+    cape: hasImproving,
+    crown: masteredCount >= 1,
+    gradcap: evaluated.length >= 2 && masteredCount === evaluated.length,
+  };
+
+  const achievements = PAL_ACCESSORIES.filter((a) => a.id !== 'none').map((a) => ({
+    ...a,
+    unlocked: Boolean(unlockedMap[a.id]),
+  }));
+
+  return {
+    unlockedMap,
+    achievements,
+    unlockedCount: achievements.filter((a) => a.unlocked).length,
+    totalCount: achievements.length,
+  };
+}
+
+/**
+ * Checks if any achievement was newly unlocked compared to what this browser already celebrated.
+ * Returns the first newly unlocked achievement object, or null.
+ */
+export function detectNewlyUnlockedAchievement(progress, userId) {
+  if (!progress || !userId) return null;
+  const { achievements } = evaluatePalAchievements(progress);
+  const unlockedIds = achievements.filter((a) => a.unlocked).map((a) => a.id);
+  const storageKey = `learningpal_pal_ach_${userId}`;
+
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const seen = raw ? JSON.parse(raw) : null;
+    if (!Array.isArray(seen)) {
+      // First load on this device: baseline existing unlocks without spamming old ones
+      localStorage.setItem(storageKey, JSON.stringify(unlockedIds));
+      return null;
+    }
+    const newlyUnlocked = achievements.find((a) => a.unlocked && !seen.includes(a.id)) || null;
+    if (newlyUnlocked) {
+      localStorage.setItem(storageKey, JSON.stringify(unlockedIds));
+    }
+    return newlyUnlocked;
+  } catch {
+    return null;
+  }
 }

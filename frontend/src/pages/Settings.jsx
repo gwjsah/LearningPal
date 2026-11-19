@@ -8,12 +8,16 @@ import {
   AlertCircle,
   Sparkles,
   RotateCcw,
+  Lock,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { studentService } from '../services/studentService';
 import { Button, Field, NotebookBackButton, NotebookCard, PortalShell } from '../components/NotebookPrimitives';
+import PalAvatar from '../components/PalAvatar';
 import { PalPickerFields } from '../components/PalCompanionCard';
-import { getPalProfile } from '../utils/palEngine';
+import { PAL_ACCESSORIES, evaluatePalAchievements, getPalProfile } from '../utils/palEngine';
 import { getRoleHome } from '../utils/roleHome';
 
 const ROLE_LABELS = {
@@ -118,9 +122,11 @@ export default function Settings() {
     palColor: pal.color,
     palEnabled: pal.enabled,
     palQuietInQuiz: pal.quietInQuiz,
+    palAccessory: pal.accessory,
   });
   const [palSaving, setPalSaving] = useState(false);
   const [palNotice, setPalNotice] = useState(null);
+  const [progress, setProgress] = useState(null);
 
   useEffect(() => {
     setFullName(user?.fullName || '');
@@ -134,8 +140,16 @@ export default function Settings() {
       palColor: current.color,
       palEnabled: current.enabled,
       palQuietInQuiz: current.quietInQuiz,
+      palAccessory: current.accessory,
     });
-  }, [user?.palName, user?.palStyle, user?.palColor, user?.palEnabled, user?.palQuietInQuiz]);
+  }, [user?.palName, user?.palStyle, user?.palColor, user?.palEnabled, user?.palQuietInQuiz, user?.palAccessory]);
+
+  useEffect(() => {
+    if (!isStudent) return;
+    studentService.getProgress().then(setProgress).catch(() => null);
+  }, [isStudent]);
+
+  const achSummary = evaluatePalAchievements(progress);
 
   const isProfileDirty = fullName.trim() !== (user?.fullName || '').trim();
   const isPalDirty =
@@ -143,7 +157,8 @@ export default function Settings() {
     palDraft.palStyle !== pal.style ||
     palDraft.palColor !== pal.color ||
     palDraft.palEnabled !== pal.enabled ||
-    palDraft.palQuietInQuiz !== pal.quietInQuiz;
+    palDraft.palQuietInQuiz !== pal.quietInQuiz ||
+    palDraft.palAccessory !== pal.accessory;
 
   const handleResetProfile = () => {
     setFullName(user?.fullName || '');
@@ -157,6 +172,7 @@ export default function Settings() {
       palColor: pal.color,
       palEnabled: pal.enabled,
       palQuietInQuiz: pal.quietInQuiz,
+      palAccessory: pal.accessory,
     });
     setPalNotice(null);
   };
@@ -200,6 +216,7 @@ export default function Settings() {
         palColor: palDraft.palColor,
         palEnabled: palDraft.palEnabled,
         palQuietInQuiz: palDraft.palQuietInQuiz,
+        palAccessory: palDraft.palAccessory,
       });
       setPalNotice({ type: 'success', text: 'Study Pal preferences saved across your devices.' });
     } catch (err) {
@@ -378,17 +395,83 @@ export default function Settings() {
                 />
               </div>
 
-              <div className={palDraft.palEnabled ? '' : 'opacity-50 pointer-events-none'}>
+              <div className={palDraft.palEnabled ? 'space-y-5' : 'space-y-5 opacity-50 pointer-events-none'}>
                 <PalPickerFields
                   palName={palDraft.palName}
                   palStyle={palDraft.palStyle}
                   palColor={palDraft.palColor}
+                  palAccessory={palDraft.palAccessory}
                   onChange={(next) => {
                     setPalDraft((prev) => ({ ...prev, ...next }));
                     if (palNotice) setPalNotice(null);
                   }}
                   disabled={palSaving || !palDraft.palEnabled}
                 />
+
+                {/* Achievement-Unlocked Accessories */}
+                <div className="space-y-2.5 pt-2 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-ink-muted dark:text-chalkboard-muted">
+                      <Award className="w-3.5 h-3.5 text-redpen dark:text-redpen-margin" aria-hidden="true" />
+                      Achievement Accessories
+                    </span>
+                    <span className="text-xs font-mono font-bold text-ink dark:text-chalkboard-chalk">
+                      {achSummary.unlockedCount} / {achSummary.totalCount} Unlocked
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Pal accessory">
+                    {PAL_ACCESSORIES.map((item) => {
+                      const unlocked = Boolean(achSummary.unlockedMap[item.id]);
+                      const active = palDraft.palAccessory === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          disabled={palSaving || !palDraft.palEnabled || !unlocked}
+                          onClick={() => {
+                            if (!unlocked) return;
+                            setPalDraft((prev) => ({ ...prev, palAccessory: item.id }));
+                            if (palNotice) setPalNotice(null);
+                          }}
+                          className={`relative flex flex-col items-center p-2.5 rounded-xl border-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-redpen ${
+                            active
+                              ? 'border-ink dark:border-chalkboard-chalk bg-highlighter-yellowSoft dark:bg-chalkboard-surface shadow-notebook-sm'
+                              : unlocked
+                              ? 'border-ink/20 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card hover:border-ink/60 cursor-pointer'
+                              : 'border-dashed border-ink/20 dark:border-chalkboard-borderSubtle bg-paper-warm/40 dark:bg-chalkboard-surface/40 opacity-60 cursor-not-allowed'
+                          }`}
+                        >
+                          {!unlocked && (
+                            <span
+                              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-paper-warm dark:bg-chalkboard-card border border-ink/20 text-ink-muted"
+                              title={`Locked: ${item.condition}`}
+                            >
+                              <Lock className="w-3 h-3" aria-hidden="true" />
+                            </span>
+                          )}
+                          <PalAvatar
+                            style={palDraft.palStyle}
+                            color={palDraft.palColor}
+                            mood="thriving"
+                            accessory={item.id}
+                            size={52}
+                            animate={false}
+                            className={unlocked ? '' : 'grayscale opacity-70'}
+                            label={item.title}
+                          />
+                          <span className="text-xs font-bold text-ink dark:text-chalkboard-chalk mt-1 leading-tight">
+                            {item.title}
+                          </span>
+                          <span className="text-[10px] text-ink-muted dark:text-chalkboard-muted mt-0.5 leading-snug">
+                            {item.condition}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               <InlineNotice notice={palNotice} />

@@ -6,7 +6,7 @@ import { PAL_COLORS, PAL_PRESET_NAMES, PAL_STYLES } from '../utils/palEngine';
 /**
  * Shared Pal name, style, and highlighter color picker used in Signup and Settings.
  */
-export function PalPickerFields({ palName, palStyle, palColor, onChange, disabled = false }) {
+export function PalPickerFields({ palName, palStyle, palColor, palAccessory = 'none', onChange, disabled = false }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 rounded-xl bg-paper-warm/70 dark:bg-chalkboard-surface border-2 border-ink/20 dark:border-chalkboard-border">
@@ -15,6 +15,7 @@ export function PalPickerFields({ palName, palStyle, palColor, onChange, disable
             style={palStyle}
             color={palColor}
             mood="thriving"
+            accessory={palAccessory}
             size={72}
             label={`${palName || 'Pip'} preview`}
           />

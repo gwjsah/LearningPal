@@ -96,13 +96,14 @@ export function AuthProvider({ children }) {
   /**
    * Updates the authenticated student's Pal mascot preferences and syncs AuthContext state.
    */
-  const updatePal = useCallback(async ({ palName, palStyle, palColor, palEnabled, palQuietInQuiz }) => {
+  const updatePal = useCallback(async ({ palName, palStyle, palColor, palEnabled, palQuietInQuiz, palAccessory }) => {
     const updatedUser = await studentService.updatePal({
       palName,
       palStyle,
       palColor,
       palEnabled,
       palQuietInQuiz,
+      palAccessory,
     });
     setUser(updatedUser);
     return updatedUser;
