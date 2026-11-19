@@ -9,10 +9,16 @@ export const authService = {
    * @param {{ fullName: string, email: string, institutionCode: string, password: string, role: 'STUDENT' | 'TEACHER' }} credentials
    * @returns {Promise<{ token?: string, user: object, message?: string }>}
    */
-  async signup({ fullName, email, institutionCode, password, role }) {
+  async signup({ fullName, email, institutionCode, password, role, palName, palStyle, palColor }) {
+    const payload = { fullName, email, institutionCode, password, role };
+    if (role === 'STUDENT') {
+      if (palName) payload.palName = palName;
+      if (palStyle) payload.palStyle = palStyle;
+      if (palColor) payload.palColor = palColor;
+    }
     return apiRequest('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ fullName, email, institutionCode, password, role }),
+      body: JSON.stringify(payload),
     });
   },
 
@@ -35,6 +41,16 @@ export const authService = {
   async me() {
     return apiRequest('/auth/me', {
       method: 'GET',
+    });
+  },
+
+  /**
+   * Updates the authenticated user's profile display name.
+   */
+  async updateProfile({ fullName }) {
+    return apiRequest('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ fullName }),
     });
   },
 };

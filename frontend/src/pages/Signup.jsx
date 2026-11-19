@@ -14,6 +14,8 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeToggleButton } from '../context/ThemeContext';
 import { LearningPalLogo } from '../components/Doodles';
 import { Button, Field, NotebookCard } from '../components/NotebookPrimitives';
+import PalAvatar from '../components/PalAvatar';
+import { PalPickerFields } from '../components/PalCompanionCard';
 import { getRoleHome } from '../utils/roleHome';
 
 // Password requirement regular expression (8 to 72 chars, >= 1 letter, >= 1 number)
@@ -24,6 +26,12 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const [role, setRole] = useState('STUDENT');
+  const [palDraft, setPalDraft] = useState({
+    palName: 'Pip',
+    palStyle: 'sticky',
+    palColor: 'yellow',
+  });
+  const [showPalPicker, setShowPalPicker] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -101,6 +109,13 @@ export default function Signup() {
         institutionCode: formData.institutionCode.trim().toUpperCase(),
         password: formData.password,
         role,
+        ...(role === 'STUDENT'
+          ? {
+              palName: palDraft.palName.trim() || 'Pip',
+              palStyle: palDraft.palStyle,
+              palColor: palDraft.palColor,
+            }
+          : {}),
       });
 
       if (role === 'TEACHER' && !response.token) {
@@ -345,6 +360,50 @@ export default function Signup() {
               placeholder="Confirm your password"
               error={clientErrors.confirmPassword}
             />
+
+            {role === 'STUDENT' && (
+              <div className="rounded-xl border-2 border-ink/25 dark:border-chalkboard-border bg-paper-warm/60 dark:bg-chalkboard-surface/70 p-3.5 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <PalAvatar
+                      style={palDraft.palStyle}
+                      color={palDraft.palColor}
+                      mood="fresh"
+                      size={48}
+                      animate={false}
+                      label={`${palDraft.palName || 'Pip'} preview`}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-ink dark:text-chalkboard-chalk truncate">
+                        Study Pal: {palDraft.palName.trim() || 'Pip'}
+                      </p>
+                      <p className="text-xs text-ink-muted dark:text-chalkboard-muted">
+                        Grows with your topic mastery. Customize now or anytime later.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPalPicker((prev) => !prev)}
+                    className="shrink-0 px-2.5 py-1 rounded-md text-xs font-bold border border-ink/30 dark:border-chalkboard-border bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk hover:bg-highlighter-yellow/40 transition focus:outline-none focus:ring-2 focus:ring-redpen"
+                  >
+                    {showPalPicker ? 'Done' : 'Customize'}
+                  </button>
+                </div>
+
+                {showPalPicker && (
+                  <div className="pt-2 border-t border-ink/15 dark:border-chalkboard-borderSubtle">
+                    <PalPickerFields
+                      palName={palDraft.palName}
+                      palStyle={palDraft.palStyle}
+                      palColor={palDraft.palColor}
+                      onChange={setPalDraft}
+                      disabled={submitting}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="pt-2">
               <Button type="submit" variant="primary" size="md" disabled={submitting} className="w-full py-3">

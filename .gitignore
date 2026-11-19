@@ -11,6 +11,7 @@ lerna-debug.log*
 node_modules/
 dist/
 dist-ssr/
+.vite/
 *.local
 target/
 graphify-out/
@@ -54,4 +55,10 @@ FEATURE_GUIDE.md
 !database_backup.sql
 *.mv.db
 data/
+
+# Pitch presentation & scratch files
+docs/LearningPal_Pitch_Deck.pptx
+docs/LearningPal_Pitch_Deck.pdf
+scratch/
+
 

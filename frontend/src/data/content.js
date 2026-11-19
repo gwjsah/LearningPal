@@ -14,6 +14,7 @@ export const siteMetadata = {
 
 export const navLinks = [
   { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Study Pal', href: '#study-pal' },
   { label: 'Interactive Demo', href: '#demo' },
 ];
 
@@ -122,6 +123,68 @@ export const howItWorksContent = {
       title: 'Blind Validation Lab & Honest Evaluation Targets',
       description:
         'Teachers label 3 randomly sampled eligible topics per student without seeing system scores. Reports unlock from the first label with honest sample gates: certifying project targets (≥ 85% agreement on ≥ 30 students, ≥ 80% helpfulness ratings of 4–5, and ≥ 4.0 / 5.0 usability score) requires real empirical data.',
+    },
+  ],
+};
+
+export const palShowcaseContent = {
+  headline: 'A study companion that reflects understanding, not XP',
+  subheadline:
+    'Every student gets a customizable notebook-doodle Pal saved to their account. Instead of awarding points for clicking around, your Pal reacts directly to your per-class mastery bands, quiz results, and ungraded essays.',
+  moods: [
+    {
+      id: 'fresh',
+      label: 'Fresh',
+      trigger: 'No attempts yet',
+      headline: 'Blank notebook, Maya!',
+      message: 'Take your first quiz in this class so Pip can spot your strengths and any foggy topics.',
+      statusLabel: 'Ready to Start',
+    },
+    {
+      id: 'foggy',
+      label: 'Foggy',
+      trigger: 'Learning Gap (< 60%)',
+      headline: 'Pointers & Memory is still a little foggy',
+      message: 'Pip spotted 2 recommended resources for Pointers & Memory. Review them together before your retake.',
+      statusLabel: '1 Gap Detected',
+    },
+    {
+      id: 'focused',
+      label: 'Focused',
+      trigger: 'Developing (60–79%) or Mixed Classes',
+      headline: 'Strong momentum — let’s clear Functions & Scope',
+      message: 'You are strong in Variables & Loops. Put on the study glasses and sharpen Functions & Scope next.',
+      statusLabel: 'On Track',
+    },
+    {
+      id: 'thriving',
+      label: 'Thriving',
+      trigger: 'Strength (≥ 80%)',
+      headline: 'Clean work, Maya!',
+      message: 'Every evaluated topic in this class is at mastery level. Your study notes are paying off.',
+      statusLabel: 'All Topics Strong',
+    },
+    {
+      id: 'waiting',
+      label: 'Waiting',
+      trigger: 'Ungraded Essay Submitted',
+      headline: 'Taking a quick breather while your teacher grades',
+      message: '1 written answer is waiting for teacher review. Your score and topic mastery update once grading finishes.',
+      statusLabel: 'Awaiting Review',
+    },
+  ],
+  facts: [
+    {
+      title: 'Floating & distraction-free',
+      detail: 'Docks quietly in the bottom-right corner across student pages, with a Quiet Companion mode during active quizzes and a full off toggle in Settings.',
+    },
+    {
+      title: 'Deterministic & private',
+      detail: 'Powered by the same rule-based mastery engine as your gradebook — zero AI prompts, zero black-box scoring, and per-class awareness.',
+    },
+    {
+      title: 'Synced to your account',
+      detail: 'Pick Sticky-Note, Owl, Cat, or Shiba in 4 highlighter colors at signup or anytime in Settings; saved in MySQL across devices.',
     },
   ],
 };

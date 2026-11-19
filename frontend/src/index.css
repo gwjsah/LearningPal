@@ -33,7 +33,31 @@
       transform: none !important;
       transition: none !important;
     }
+    .pal-float,
+    .pal-wiggle {
+      animation: none !important;
+    }
   }
+}
+
+@keyframes palFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes palWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2.5deg); }
+  75% { transform: rotate(2.5deg); }
+}
+
+.pal-float {
+  animation: palFloat 2.8s ease-in-out infinite;
+}
+
+.pal-wiggle {
+  animation: palWiggle 2.2s ease-in-out infinite;
+  transform-origin: center;
 }
 
 /* ==========================================================================

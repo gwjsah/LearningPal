@@ -44,6 +44,8 @@ import {
   MasteryBar,
   MASTERY_CONFIG,
 } from './MasteryPrimitives';
+import PalAvatar from './PalAvatar';
+import { evaluateProgressPal } from '../utils/palEngine';
 
 /**
  * Custom Recharts tooltip matching ClassOverviewTab.jsx.
@@ -183,6 +185,33 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
   const currentSubject = demoContent.subjects[activeSubjectKey];
   const teacherData = currentSubject.teacherData;
   const currentInterventions = interventionsBySubject[activeSubjectKey] || [];
+
+  const demoPal = { name: 'Pip', style: 'sticky', color: 'yellow' };
+  const demoPalProgress = useMemo(() => {
+    const topics = currentSubject.topics.map((t) => {
+      const done = (t.resources || []).filter((r) => completedResources[r.id]).length;
+      return {
+        topicId: t.id,
+        topicName: t.topic,
+        status: t.status,
+        questionsAnswered: t.questionsAnswered,
+        resourcesRecommended: (t.resources || []).length,
+        resourcesCompleted: done,
+      };
+    });
+    const focusMatch = topics.find((t) => t.topicId === currentSubject.focusTopic?.id) || null;
+    return { topics, studyNext: focusMatch };
+  }, [currentSubject, completedResources]);
+
+  const demoPalState = useMemo(
+    () =>
+      evaluateProgressPal(demoPalProgress, {
+        scope: 'class',
+        studentName: currentSubject.studentName,
+        palName: demoPal.name,
+      }),
+    [demoPalProgress, currentSubject.studentName]
+  );
 
   const toggleResourceComplete = (resId) => {
     setCompletedResources((prev) => ({
@@ -432,6 +461,49 @@ export default function InteractiveDemo({ activeRole = 'student', onChangeRole }
 
               {/* STUDENT TAB 1: CLASS WORKSPACE & STUDY NEXT */}
               <NotebookTabPanel id="workspace" activeTab={activeSubTab} className="space-y-6">
+                {/* Live Study Pal Companion (driven by the same rule-based engine as the real app) */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-paper-warm/70 dark:bg-chalkboard-surface border-2 border-ink dark:border-chalkboard-border shadow-notebook-sm flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-3 sm:block shrink-0">
+                    <PalAvatar
+                      style={demoPal.style}
+                      color={demoPal.color}
+                      mood={demoPalState.mood}
+                      size={72}
+                      label={`${demoPal.name} (${demoPalState.mood})`}
+                    />
+                    <div className="sm:hidden">
+                      <span className="font-hand text-xl font-bold text-ink dark:text-chalkboard-chalk block leading-tight">
+                        {demoPal.name}
+                      </span>
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk border border-ink/25 dark:border-chalkboard-border">
+                        {demoPalState.statusLabel}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="font-hand text-2xl font-bold text-ink dark:text-chalkboard-chalk leading-snug break-words">
+                        {demoPalState.headline}
+                      </h4>
+                      <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-md text-xs font-mono font-bold bg-paper-card dark:bg-chalkboard-card text-ink dark:text-chalkboard-chalk border border-ink/25 dark:border-chalkboard-border">
+                        {demoPalState.statusLabel}
+                      </span>
+                    </div>
+                    <p className="text-sm text-ink-muted dark:text-chalkboard-muted leading-relaxed">
+                      {demoPalState.message}
+                    </p>
+                    <div className="pt-1">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleSubTabChange('resources')}
+                      >
+                        <span>Open Recommended Resources</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Study Next ("Focus on") Priority Card */}
                 <div className="p-5 rounded-2xl bg-redpen-soft/40 dark:bg-red-950/30 border-2 border-redpen/50 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">

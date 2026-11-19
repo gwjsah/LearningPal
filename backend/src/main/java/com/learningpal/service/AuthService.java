@@ -3,6 +3,8 @@ package com.learningpal.service;
 import com.learningpal.config.JwtService;
 import com.learningpal.dto.AuthResponse;
 import com.learningpal.dto.LoginRequest;
+import com.learningpal.dto.PalUpdateRequest;
+import com.learningpal.dto.ProfileUpdateRequest;
 import com.learningpal.dto.SignupRequest;
 import com.learningpal.dto.UserDto;
 import com.learningpal.entity.Institution;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,6 +35,8 @@ public class AuthService {
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000L;
+    private static final Set<String> ALLOWED_PAL_STYLES = Set.of("sticky", "owl", "cat", "shiba");
+    private static final Set<String> ALLOWED_PAL_COLORS = Set.of("yellow", "mint", "pink", "sky");
     private final ConcurrentHashMap<String, FailedAttempt> loginAttempts = new ConcurrentHashMap<>();
 
     private record FailedAttempt(int count, long lockUntil, long lastAttempt) {}
@@ -90,6 +95,7 @@ public class AuthService {
                     UserStatus.ACTIVE,
                     institution
             );
+            applyPalPreferences(student, request.getPalName(), request.getPalStyle(), request.getPalColor());
             User saved = userRepository.save(student);
             String token = jwtService.generateToken(saved);
             return new AuthResponse(token, UserDto.fromEntity(saved), "Student account created successfully");
@@ -175,5 +181,76 @@ public class AuthService {
             throw new AccountStatusException("Account is not active");
         }
         return UserDto.fromEntity(user);
+    }
+
+    /**
+     * Updates a student's LearningPal mascot preferences (name, style, highlighter color).
+     */
+    @Transactional
+    public UserDto updateStudentPal(String email, PalUpdateRequest request) {
+        if (request == null) {
+            throw new BadRequestException("Pal preferences are required");
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new AccountStatusException("Account is not active");
+        }
+        applyPalPreferences(user, request.palName(), request.palStyle(), request.palColor());
+        if (request.palEnabled() != null) {
+            user.setPalEnabled(request.palEnabled());
+        }
+        if (request.palQuietInQuiz() != null) {
+            user.setPalQuietInQuiz(request.palQuietInQuiz());
+        }
+        User saved = userRepository.save(user);
+        return UserDto.fromEntity(saved);
+    }
+
+    /**
+     * Updates the authenticated user's display name.
+     */
+    @Transactional
+    public UserDto updateProfile(String email, ProfileUpdateRequest request) {
+        if (request == null || request.fullName() == null || request.fullName().isBlank()) {
+            throw new BadRequestException("Full name is required");
+        }
+        String trimmed = request.fullName().trim();
+        if (trimmed.length() > 120) {
+            throw new BadRequestException("Full name must be 120 characters or fewer");
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new AccountStatusException("Account is not active");
+        }
+        user.setFullName(trimmed);
+        return UserDto.fromEntity(userRepository.save(user));
+    }
+
+    private void applyPalPreferences(User user, String rawName, String rawStyle, String rawColor) {
+        String name = (rawName == null || rawName.isBlank()) ? "Pip" : rawName.trim();
+        if (name.length() > 30) {
+            throw new BadRequestException("Pal name must be 30 characters or fewer");
+        }
+        if (name.chars().anyMatch(Character::isISOControl)) {
+            throw new BadRequestException("Pal name cannot contain control characters");
+        }
+
+        String style = (rawStyle == null || rawStyle.isBlank()) ? "sticky" : rawStyle.trim().toLowerCase(Locale.ROOT);
+        if (!ALLOWED_PAL_STYLES.contains(style)) {
+            throw new BadRequestException("Invalid pal style. Choose sticky, owl, cat, or shiba");
+        }
+
+        String color = (rawColor == null || rawColor.isBlank()) ? "yellow" : rawColor.trim().toLowerCase(Locale.ROOT);
+        if (!ALLOWED_PAL_COLORS.contains(color)) {
+            throw new BadRequestException("Invalid pal color. Choose yellow, mint, pink, or sky");
+        }
+
+        user.setPalName(name);
+        user.setPalStyle(style);
+        user.setPalColor(color);
     }
 }
